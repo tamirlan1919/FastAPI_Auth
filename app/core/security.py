@@ -31,3 +31,6 @@ def decode_token(token: str) -> dict | None:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except JWTError:
         return None
+
+
+
