@@ -1,11 +1,11 @@
 from app.core.security import hash_password, verify_password
-from app.models.user import User
-from app.repositories.user_repo import user_repo
+from app.db.models import User
+from app.repositories.user_repo import UserRepo
 
-def register_user(username: str, email: str, password: str) -> User:
-    if user_repo.get_by_username(username):
+async def register_user(user_repo: UserRepo, username: str, email: str, password: str) -> User:
+    if await user_repo.get_by_username(username):
         raise ValueError('Username already exists')
-    return user_repo.create(
+    return await user_repo.create(
         username=username,
         email=email,
         hashed_password=hash_password(password),
@@ -13,8 +13,8 @@ def register_user(username: str, email: str, password: str) -> User:
     )
 
 
-def authenticate_user(username: str, password: str) -> User:
-    user = user_repo.get_by_username(username)
+async def authenticate_user(user_repo: UserRepo, username: str, password: str) -> User | None:
+    user = await user_repo.get_by_username(username)
     if user is None or not verify_password(password, user.hashed_password):
         return None
     return user
