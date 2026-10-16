@@ -1,6 +1,7 @@
-from app.db.models import User
+from app.db.models import Post, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 class UserRepo():
 
@@ -16,6 +17,37 @@ class UserRepo():
         stmt = select(User)
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def get_with_profile(self, username: str) -> User | None:
+        stmt = (
+            select(User)
+            .where(User.username == username)
+            .options(selectinload(User.profile))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_with_posts(self, username: str) -> User | None:
+        # Посты пользователя вместе с их тегами
+        stmt = (
+            select(User)
+            .where(User.username == username)
+            .options(selectinload(User.posts).selectinload(Post.tags))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_full(self, username: str) -> User | None:
+        stmt = (
+            select(User)
+            .where(User.username == username)
+            .options(
+                selectinload(User.profile),
+                selectinload(User.posts).selectinload(Post.tags),
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
 
     async def create(self, username: str, email: str, hashed_password: str,

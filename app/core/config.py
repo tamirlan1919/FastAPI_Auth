@@ -12,5 +12,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / '.env', env_file_encoding='utf-8')
 
+    mongo_url: str = 'mongodb://localhost:27017'
+    mongo_db: str = 'test_db'
+
 
 settings = Settings()

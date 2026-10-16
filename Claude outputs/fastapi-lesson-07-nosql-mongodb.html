@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPI · Урок 7 — NoSQL и MongoDB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  table.cmp td.ok{color:var(--hop); font-weight:600;} table.cmp td.bad{color:var(--danger); font-weight:600;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>FastAPI</div>
+  <p class="lead">Python · NoSQL + MongoDB · Урок 7</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор урока</a>
+    <div class="grp">Часть 1 · NoSQL и модель данных</div>
+    <a href="#nosql"><span class="n theory-dot">01</span>Что такое NoSQL</a>
+    <a href="#choose"><span class="n theory-dot">02</span>SQL или NoSQL: как выбирать</a>
+    <a href="#concepts"><span class="n theory-dot">03</span>Документ, коллекция, BSON, ObjectId</a>
+    <a href="#modeling"><span class="n theory-dot">04</span>Embedding vs referencing</a>
+    <div class="grp">Часть 2 · MongoDB + FastAPI</div>
+    <a href="#run"><span class="n practice-dot">05</span>Запуск MongoDB и mongosh</a>
+    <a href="#connect"><span class="n practice-dot">06</span>Драйвер и подключение (lifespan)</a>
+    <a href="#schemas"><span class="n practice-dot">07</span>Pydantic-схемы и ObjectId</a>
+    <a href="#crud"><span class="n practice-dot">08</span>CRUD: репозиторий задач</a>
+    <a href="#router"><span class="n practice-dot">09</span>Роутер и проверка в Swagger</a>
+    <a href="#operators"><span class="n practice-dot">10</span>Операторы и вложенные массивы</a>
+    <div class="grp">Часть 3 · Скорость и надёжность</div>
+    <a href="#indexes"><span class="n practice-dot">11</span>Индексы</a>
+    <a href="#transactions"><span class="n practice-dot">12</span>Транзакции</a>
+    <a href="#optimize"><span class="n practice-dot">13</span>Projection, explain, агрегации</a>
+    <div class="grp">Итоги</div>
+    <a href="#homework"><span class="n">14</span>Домашнее задание</a>
+    <a href="#checklist"><span class="n">15</span>Чек-лист и что дальше</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">FastAPI · Урок 7 · 2 часа · live-coding</p>
+  <h1>NoSQL и MongoDB</h1>
+  <p class="lead-p">На прошлом уроке мы построили в <code>auth-api</code> реляционную схему: <code>users</code>, <code>posts</code>, <code>profiles</code>, <code>tags</code>, связи через внешние ключи и миграции через Alembic. Сегодня посмотрим на данные с другой стороны — <strong>документоориентированная база MongoDB</strong>, где нет таблиц, JOIN-ов и миграций схемы, зато есть гибкие JSON-документы, вложенность и горизонтальное масштабирование. Разберём, <em>когда</em> это лучше SQL, а когда хуже, и добавим в проект настоящий модуль на MongoDB.</p>
+
+  <div class="hero">
+    <h3>ЧТО РАЗБЕРЁМ</h3>
+    <ul>
+      <li><b>NoSQL</b>: что это на самом деле, четыре типа баз и чем они отличаются от SQL.</li>
+      <li><b>Модель MongoDB</b>: документ, коллекция, BSON, устройство <code>ObjectId</code>.</li>
+      <li><b>Моделирование</b>: когда вкладывать данные (embedding), а когда ссылаться (referencing) — главный навык в NoSQL.</li>
+      <li><b>Async-подключение к FastAPI</b>: драйвер, жизненный цикл клиента, зависимости, Pydantic и <code>_id</code>.</li>
+      <li><b>CRUD, операторы, индексы, транзакции, explain, агрегации</b> — на живом модуле «Задачи» в нашем проекте.</li>
+    </ul>
+  </div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <p><strong>Что строим.</strong> В <code>auth-api</code> пользователи, авторизация, посты и теги остаются в SQL (SQLAlchemy + Alembic). Рядом появляется модуль <strong>«Задачи» (todos)</strong> на MongoDB: каждая задача принадлежит текущему пользователю (по JWT из урока 4), содержит вложенный чек-лист, теги, приоритет, а все важные события пишутся в журнал <code>activity</code>. Слои те же: <code>api · repositories · db · shemas · core</code>.</p>
+  </div></div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Что такое NoSQL, типы баз, масштабирование</td><td>теория</td></tr>
+      <tr><td class="t">0:10</td><td>SQL или NoSQL — критерии выбора, решение для нашего проекта</td><td>теория</td></tr>
+      <tr><td class="t">0:18</td><td>Документ, коллекция, BSON, ObjectId</td><td>теория</td></tr>
+      <tr><td class="t">0:26</td><td>Моделирование: embedding vs referencing</td><td>теория</td></tr>
+      <tr><td class="t">0:36</td><td>Запуск MongoDB в Docker (replica set), mongosh</td><td>практика</td></tr>
+      <tr><td class="t">0:44</td><td>Драйвер, подключение через lifespan, зависимости</td><td>практика</td></tr>
+      <tr><td class="t">0:56</td><td>Pydantic-схемы, ObjectId, «гибкая схема ≠ без схемы»</td><td>практика</td></tr>
+      <tr><td class="t">1:04</td><td>CRUD-репозиторий задач</td><td>практика</td></tr>
+      <tr><td class="t">1:18</td><td>Роутер, проверка в Swagger</td><td>практика</td></tr>
+      <tr><td class="t">1:24</td><td>Операторы запросов и обновлений, чек-лист</td><td>практика</td></tr>
+      <tr><td class="t">1:32</td><td>Индексы: составные, unique, TTL, правило ESR</td><td>практика</td></tr>
+      <tr><td class="t">1:44</td><td>Транзакции: «выполнить задачу + запись в журнал»</td><td>практика</td></tr>
+      <tr><td class="t">1:54</td><td>Projection, explain, агрегация статистики</td><td>практика</td></tr>
+      <tr><td class="t">2:00</td><td>Итоги, домашка</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · NoSQL и модель данных</span><span class="bar"></span></div>
+
+<!-- 01 NOSQL -->
+<section id="nosql">
+  <div class="sec-head"><h2>01 · Что такое NoSQL</h2><span class="tag theory">теория</span><span class="tag time">~10 мин</span></div>
+
+  <p><strong>NoSQL</strong> — это не «анти-SQL», а <strong>«Not Only SQL»</strong>, «не только SQL». Общее название для баз данных, которые хранят данные <em>не</em> в виде связанных таблиц со строгой схемой. Термин появился в конце 2000-х, когда компании вроде Google, Amazon и Facebook упёрлись в ограничения одной большой реляционной БД: данных и запросов стало столько, что один сервер — даже очень мощный — перестал справляться.</p>
+
+  <h3>Три ключевых отличия от SQL</h3>
+  <table class="cmp">
+    <thead><tr><th>&nbsp;</th><th>SQL (PostgreSQL, SQLite)</th><th>NoSQL (MongoDB)</th></tr></thead>
+    <tbody>
+      <tr><td>Схема</td><td>строгая: таблица с фиксированными колонками; новое поле → <code>ALTER TABLE</code> → миграция Alembic</td><td>гибкая: документы в одной коллекции могут иметь разные поля; новое поле — просто начинаем его писать</td></tr>
+      <tr><td>Модель данных</td><td>таблицы и строки, связи через FK, данные нормализованы</td><td>документы (JSON/BSON), пары ключ-значение, графы, колонки; данные часто денормализованы</td></tr>
+      <tr><td>Масштабирование</td><td>обычно <strong>вертикальное</strong>: мощнее сервер</td><td>изначально проектировалось под <strong>горизонтальное</strong>: больше серверов</td></tr>
+    </tbody>
+  </table>
+
+  <div class="diagram">
+<pre><span class="tn">Вертикальное</span> (scale up)            <span class="tn">Горизонтальное</span> (scale out, sharding)
+┌──────────┐      ┌────────────┐      ┌──────┐   ┌──────┐   ┌──────┐
+│ 4 CPU    │ ───▶ │ 64 CPU     │      │ шард │   │ шард │   │ шард │
+│ 16 GB    │      │ 512 GB     │      │ A–H  │   │ I–P  │   │ Q–Z  │
+└──────────┘      └────────────┘      └──────┘   └──────┘   └──────┘
+ упирается в потолок железа и цены     данные разрезаны по ключу,
+                                       нужен ещё — добавили сервер</pre>
+  </div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ NoSQL ПРОЩЕ МАСШТАБИРОВАТЬ</span>
+    <p>Горизонтальное масштабирование означает: разрезать данные на части (<strong>шарды</strong>) и разложить по разным серверам. Для SQL это больно: JOIN между таблицами на разных серверах и транзакция через несколько машин — очень дорогие операции. MongoDB изначально поощряет хранить всё, что читается вместе, в <strong>одном документе</strong>. Документ целиком живёт на одном шарде, поэтому большинство запросов вообще не требуют общения серверов между собой. Плата за это — денормализация и меньше гарантий «из коробки», чем у SQL.</p>
+  </div></div>
+
+  <h3>Четыре типа NoSQL-баз</h3>
+  <table class="cmp">
+    <thead><tr><th>Тип</th><th>Как хранит</th><th>Пример</th><th>Типичная задача</th></tr></thead>
+    <tbody>
+      <tr><td>Документоориентированные</td><td>JSON-подобные документы с вложенностью</td><td>MongoDB</td><td>каталоги, профили, контент, задачи — наш фокус</td></tr>
+      <tr><td>Ключ-значение</td><td>словарь <code>key → value</code> в памяти</td><td>Redis</td><td>кэш, сессии, rate-limit, очереди — следующие уроки</td></tr>
+      <tr><td>Графовые</td><td>узлы и рёбра</td><td>Neo4j</td><td>соцсети, рекомендации, «друзья друзей»</td></tr>
+      <tr><td>Колоночные (wide-column)</td><td>строки с динамическим набором колонок, оптимизация под запись</td><td>Cassandra</td><td>огромные потоки записей: метрики, IoT, логи</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Репликация: replica set</h3>
+  <p>Помимо шардирования, у MongoDB есть <strong>репликация</strong>: несколько серверов хранят <em>одинаковые</em> копии данных. Один — <strong>primary</strong>, принимает запись; остальные — <strong>secondary</strong>, повторяют его операции из журнала <code>oplog</code>. Упал primary — оставшиеся за секунды выбирают нового. Такая группа называется <strong>replica set</strong>.</p>
+
+  <div class="diagram">
+<pre>               запись
+   FastAPI ──────────────▶ ┌─────────┐
+                           │ <span class="pk">PRIMARY</span> │──oplog──┐
+                           └─────────┘         │
+                                ▲              ▼
+                      выборы    │       ┌────────────┐   ┌────────────┐
+                      при сбое  └────── │ secondary  │   │ secondary  │
+                                        └────────────┘   └────────────┘</pre>
+  </div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <p>Запомните слово <strong>replica set</strong> — оно понадобится в блоке про транзакции: мультидокументные транзакции в MongoDB работают <em>только</em> на replica set (или шардированном кластере). Поэтому даже локально мы сразу запустим MongoDB как replica set из одного узла.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 CHOOSE -->
+<section id="choose">
+  <div class="sec-head"><h2>02 · SQL или NoSQL: как выбирать</h2><span class="tag theory">теория</span><span class="tag time">~8 мин</span></div>
+
+  <p>Нет «лучшей» базы — есть подходящая под <strong>форму данных и способ доступа к ним</strong>. Задавайте себе вопросы не «что модно», а «как я буду читать и писать эти данные».</p>
+
+  <h3>MongoDB хорош, когда</h3>
+  <ul>
+    <li><strong>Структура часто меняется или неоднородна.</strong> Товары в магазине: у ноутбука — «диагональ, RAM», у кроссовок — «размер, материал». В SQL это либо 100 nullable-колонок, либо сложная схема EAV; в Mongo — просто разные поля в документах.</li>
+    <li><strong>Данные иерархичны и читаются целиком.</strong> Заказ с позициями, задача с чек-листом, статья с блоками — один документ, один запрос, без JOIN.</li>
+    <li><strong>Много записи и нужна горизонтальная масштабируемость.</strong> Логи, события, аналитика, IoT.</li>
+    <li><strong>Быстрое прототипирование (MVP).</strong> Нет миграций на каждое новое поле.</li>
+  </ul>
+
+  <h3>SQL лучше, когда</h3>
+  <ul>
+    <li><strong>Много связей и запросов «через» них</strong>: отчёты с JOIN по 5 таблицам, сложные фильтры по связанным сущностям.</li>
+    <li><strong>Критична строгая целостность</strong>: деньги, остатки на складе, бронирования. FK, CHECK, UNIQUE и транзакции в SQL — проверенная классика.</li>
+    <li><strong>Данные стабильно структурированы</strong>: пользователи, роли, права.</li>
+  </ul>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p>Частый миф: «в MongoDB нет транзакций и целостности». Это устарело. Операция над <strong>одним документом</strong> в MongoDB атомарна всегда, а с версии 4.0 есть <strong>мультидокументные ACID-транзакции</strong>. Другое дело, что они дороже, чем в SQL, и хорошая схема в Mongo старается в них не нуждаться. Об этом — в блоке 12.</p>
+  </div></div>
+
+  <h3>Решение для auth-api: polyglot persistence</h3>
+  <p>В реальных системах часто используют <strong>несколько баз сразу</strong>, каждую для своей задачи — это называется <em>polyglot persistence</em>. Так поступим и мы:</p>
+
+  <table class="cmp">
+    <thead><tr><th>Данные</th><th>Где храним</th><th>Почему</th></tr></thead>
+    <tbody>
+      <tr><td>users, роли, пароли</td><td>SQL</td><td>уникальность email/username, связи с posts/profiles, строгая схема, Alembic</td></tr>
+      <tr><td>posts, tags, profiles</td><td>SQL</td><td>много-ко-многим и запросы по связям — сильная сторона SQL (урок 6)</td></tr>
+      <tr><td><strong>todos</strong> (задачи)</td><td><strong>MongoDB</strong></td><td>вложенный чек-лист читается вместе с задачей, поля задач будут эволюционировать</td></tr>
+      <tr><td><strong>activity</strong> (журнал событий)</td><td><strong>MongoDB</strong></td><td>много записей, разная структура событий, автоудаление старых записей (TTL-индекс)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ЧЕСТНО О ВЫБОРЕ</span>
+    <p>Задачи с чек-листом прекрасно легли бы и в PostgreSQL (отдельная таблица или колонка <code>JSONB</code>). Мы берём MongoDB, потому что на этом модуле удобно показать <em>все</em> ключевые приёмы документной базы. В рабочем проекте добавлять вторую БД стоит только когда выигрыш перевешивает цену: ещё один сервис в инфраструктуре, бэкапы, мониторинг и отсутствие общей транзакции между SQL и Mongo. Умение объяснить <em>этот</em> компромисс на собеседовании ценнее, чем знание синтаксиса.</p>
+  </div></div>
+
+  <p>Обратите внимание на связь между базами: задача хранит <code>owner_id</code> — <code>id</code> пользователя из SQL. Внешнего ключа между двумя разными базами быть не может, поэтому <strong>целостность здесь обеспечивает приложение</strong>: мы берём <code>owner_id</code> только из проверенного JWT, а не из тела запроса.</p>
+</section>
+
+<hr>
+
+<!-- 03 CONCEPTS -->
+<section id="concepts">
+  <div class="sec-head"><h2>03 · Документ, коллекция, BSON, ObjectId</h2><span class="tag theory">теория</span><span class="tag time">~8 мин</span></div>
+
+  <table class="cmp">
+    <thead><tr><th>SQL</th><th>MongoDB</th><th>Комментарий</th></tr></thead>
+    <tbody>
+      <tr><td>база данных</td><td>база данных</td><td>создаётся автоматически при первой записи</td></tr>
+      <tr><td>таблица</td><td><strong>коллекция</strong> (collection)</td><td>группа документов, без обязательной схемы, тоже создаётся при первой вставке</td></tr>
+      <tr><td>строка</td><td><strong>документ</strong> (document)</td><td>BSON-объект, похож на <code>dict</code> Python</td></tr>
+      <tr><td>колонка</td><td>поле</td><td>может содержать вложенный документ или массив</td></tr>
+      <tr><td>PRIMARY KEY</td><td><code>_id</code></td><td>есть у каждого документа, уникален, индексируется автоматически</td></tr>
+      <tr><td>JOIN</td><td>вложенность / <code>$lookup</code></td><td>в Mongo предпочитают вкладывать, <code>$lookup</code> — запасной вариант</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Как выглядит наша задача</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">документ в коллекции todos</span><span class="role">json</span></figcaption>
+    <pre><code class="language-javascript">{
+  "_id": ObjectId("6710a3f2c8e1d2a3b4c5d6e7"),
+  "owner_id": 1,
+  "title": "Подготовить урок по MongoDB",
+  "description": "Слайды + live-coding",
+  "tags": ["work", "teaching"],
+  "priority": 1,
+  "is_completed": false,
+  "checklist": [
+    { "_id": ObjectId("6710a40ac8e1d2a3b4c5d6e8"), "text": "Теория", "done": true },
+    { "_id": ObjectId("6710a411c8e1d2a3b4c5d6e9"), "text": "Практика", "done": false }
+  ],
+  "created_at": ISODate("2026-10-16T09:00:00Z"),
+  "updated_at": ISODate("2026-10-16T09:30:00Z"),
+  "completed_at": null
+}</code></pre>
+  </figure>
+
+  <p>Всё, что в SQL потребовало бы двух таблиц (<code>todos</code> + <code>checklist_items</code> с FK) и JOIN-а, здесь лежит в одном документе и читается одним запросом.</p>
+
+  <h3>BSON — почему не просто JSON</h3>
+  <p>Внутри MongoDB хранит документы в формате <strong>BSON</strong> (Binary JSON). Он похож на JSON, но бинарный и с более богатым набором типов:</p>
+  <table class="cmp">
+    <thead><tr><th>Тип BSON</th><th>В Python</th><th>Зачем</th></tr></thead>
+    <tbody>
+      <tr><td><code>ObjectId</code></td><td><code>bson.ObjectId</code></td><td>идентификатор документа (в JSON такого типа нет!)</td></tr>
+      <tr><td><code>Date</code></td><td><code>datetime</code></td><td>настоящая дата (в JSON даты — просто строки); нужна для сортировки и TTL</td></tr>
+      <tr><td><code>Int32 / Int64 / Double</code></td><td><code>int / float</code></td><td>в JSON есть только «number»</td></tr>
+      <tr><td><code>Decimal128</code></td><td><code>bson.Decimal128</code></td><td>точные деньги без ошибок float</td></tr>
+      <tr><td><code>Binary</code></td><td><code>bytes</code></td><td>бинарные данные, UUID</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ЭТО ВАЖНО ДЛЯ FastAPI</span>
+    <p>FastAPI отдаёт клиенту JSON, а в JSON нет ни <code>ObjectId</code>, ни <code>Date</code>. Значит, на границе «БД → API» мы обязаны преобразовать <code>ObjectId</code> в строку, а <code>datetime</code> — в ISO-строку. Даты Pydantic сериализует сам, а вот <code>ObjectId</code> — нет: если вернуть «сырой» документ, получите ошибку сериализации. Решаем это в блоке 07.</p>
+  </div></div>
+
+  <h3>Анатомия ObjectId</h3>
+  <p><code>ObjectId</code> — 12 байт, которые генерирует <em>драйвер на стороне приложения</em>, а не сервер БД:</p>
+  <div class="diagram">
+<pre>   6710a3f2   c8e1d2a3b4   c5d6e7
+   └───┬──┘   └────┬───┘   └──┬─┘
+   4 байта      5 байт       3 байта
+   <span class="pk">время</span>        <span class="tn">случайное</span>    <span class="fk">счётчик</span>
+   (секунды)    (на процесс)  (растёт)</pre>
+  </div>
+  <ul>
+    <li><strong>Уникален без обращения к БД.</strong> Тысячи серверов приложения генерируют id параллельно и не конфликтуют — ключевое свойство для горизонтального масштабирования. Автоинкремент <code>1, 2, 3</code> из SQL так не умеет: ему нужен единый счётчик.</li>
+    <li><strong>Примерно упорядочен по времени</strong>: сортировка по <code>_id</code> ≈ сортировка по времени создания. А <code>ObjectId(...).generation_time</code> вернёт дату создания.</li>
+    <li><strong>Не секретен.</strong> По id видно время создания, поэтому id — не замена проверке прав. Мы всегда фильтруем ещё и по <code>owner_id</code>.</li>
+  </ul>
+
+  <h3>Важные ограничения</h3>
+  <ul>
+    <li><strong>Максимальный размер документа — 16 МБ.</strong> Это главная причина не вкладывать в документ бесконечно растущие списки.</li>
+    <li><code>_id</code> <strong>нельзя изменить</strong> после вставки.</li>
+    <li>Коллекции и базы создаются <strong>лениво</strong>: <code>db["todos"]</code> в Python ничего не создаёт — коллекция появится при первой вставке или создании индекса. Опечатка в имени коллекции не вызовет ошибку — вы просто запишете данные в новую коллекцию. Поэтому имена коллекций держим в одном месте (в репозитории).</li>
+  </ul>
+</section>
+
+<hr>
+
+<!-- 04 MODELING -->
+<section id="modeling">
+  <div class="sec-head"><h2>04 · Моделирование: embedding vs referencing</h2><span class="tag theory">теория</span><span class="tag time">~10 мин</span></div>
+
+  <p>В SQL правила проектирования одни: нормализуй, связывай через FK. В MongoDB главный вопрос другой: <strong>какие данные читаются вместе?</strong> У нас есть два инструмента.</p>
+
+  <table class="cmp">
+    <thead><tr><th>&nbsp;</th><th>Embedding (вложение)</th><th>Referencing (ссылка)</th></tr></thead>
+    <tbody>
+      <tr><td>Как</td><td>связанные данные лежат <em>внутри</em> документа</td><td>документ хранит <code>id</code> другого документа</td></tr>
+      <tr><td>Чтение</td><td class="ok">один запрос, без JOIN</td><td>два запроса или <code>$lookup</code></td></tr>
+      <tr><td>Атомарность</td><td class="ok">изменение одного документа атомарно всегда</td><td>для нескольких документов — транзакция</td></tr>
+      <tr><td>Рост</td><td class="bad">ограничен 16 МБ на документ</td><td class="ok">не ограничен</td></tr>
+      <tr><td>Дублирование</td><td>если данные общие — копии в разных документах</td><td class="ok">хранится один раз</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Правило большого пальца</h3>
+  <ol>
+    <li><strong>«Что читается вместе — хранится вместе».</strong> Чек-лист всегда показывают вместе с задачей → вкладываем.</li>
+    <li><strong>Один-к-нескольким</strong> (адреса пользователя, пункты чек-листа) → вкладываем массив.</li>
+    <li><strong>Один-к-очень-многим</strong> (события пользователя за годы, комментарии к популярному посту) → отдельная коллекция, ребёнок хранит ссылку на родителя (<code>user_id</code>). Иначе массив будет расти бесконечно и упрётся в 16 МБ.</li>
+    <li><strong>Данные живут сами по себе</strong> и нужны в разных местах (пользователь) → ссылка.</li>
+  </ol>
+
+  <h3>Тот же пример из урока 6 — глазами MongoDB</h3>
+  <p>В SQL у нас были <code>users</code>, <code>posts</code>, <code>tags</code> и связующая <code>post_tags</code>. В Mongo пост мог бы выглядеть так:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">posts — документная версия</span><span class="role">json</span></figcaption>
+    <pre><code class="language-javascript">{
+  "_id": ObjectId("..."),
+  "title": "Про Python",
+  "author": { "id": 1, "username": "alice" },   // снимок автора — денормализация
+  "tags": ["python", "fastapi"]                  // M-M без связующей таблицы
+}</code></pre>
+  </figure>
+  <ul>
+    <li><strong>Many-to-many исчезло</strong>: теги — просто массив строк. Поиск «все посты с тегом python» — <code>find({"tags": "python"})</code>, а индекс по массиву MongoDB строит сам (multikey-индекс).</li>
+    <li><strong>Автор скопирован в пост.</strong> Список постов показываем без второго запроса. Но если alice сменит username — придётся обновить его во всех её постах (<code>update_many</code>). Это и есть цена денормализации: <em>быстрое чтение в обмен на более сложное обновление</em>. Оправдано, когда данные читают в разы чаще, чем меняют.</li>
+  </ul>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">НАШИ РЕШЕНИЯ ДЛЯ TODOS</span>
+    <p><strong>Чек-лист → embedding</strong>: всегда читается с задачей, пунктов немного (ограничим 50), а добавление/отметка пункта — атомарная операция над одним документом без транзакций. <strong>Владелец → referencing</strong> (<code>owner_id</code>): пользователь живёт в другой базе. <strong>Журнал activity → отдельная коллекция</strong>: событий у пользователя может быть сотни тысяч, вкладывать их в документ пользователя или задачи нельзя.</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p>Если вы постоянно пишете <code>$lookup</code> (аналог JOIN) между коллекциями — это сигнал, что либо модель спроектирована «по-SQL-ному», либо данные действительно реляционные и им место в SQL. MongoDB проектируют от запросов, а не от сущностей.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · MongoDB + FastAPI</span><span class="bar"></span></div>
+
+<!-- 05 RUN -->
+<section id="run">
+  <div class="sec-head"><h2>05 · Запуск MongoDB и mongosh</h2><span class="tag practice">практика</span><span class="tag time">~8 мин</span></div>
+
+  <p>Варианты установки: <strong>Docker</strong> (наш выбор — одна команда, ничего не мусорит в системе), <strong>MongoDB Atlas</strong> (облако, есть бесплатный кластер — удобно для продакшена и деплоя) или локальная установка MongoDB Community Server.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">bash</span></figcaption>
+    <pre><code class="language-bash"># 1. запускаем MongoDB 8 как replica set из одного узла
+docker run -d --name auth-mongo \
+  -p 27017:27017 \
+  -v auth_mongo_data:/data/db \
+  mongo:8 --replSet rs0 --bind_ip_all
+
+# 2. один раз инициализируем replica set
+docker exec -it auth-mongo mongosh --eval \
+  'rs.initiate({_id: "rs0", members: [{_id: 0, host: "localhost:27017"}]})'
+
+# 3. проверяем: должно быть "stateStr" : "PRIMARY"
+docker exec -it auth-mongo mongosh --eval 'rs.status().members[0].stateStr'</code></pre>
+  </figure>
+
+  <h3>Разберём каждую часть</h3>
+  <ul>
+    <li><code>-p 27017:27017</code> — стандартный порт MongoDB, пробрасываем наружу, чтобы FastAPI на хосте до него достучался.</li>
+    <li><code>-v auth_mongo_data:/data/db</code> — именованный том. Без него при удалении контейнера пропадут все данные.</li>
+    <li><code>--replSet rs0</code> — сервер стартует как участник replica set с именем <code>rs0</code>. Без этого флага транзакции работать не будут.</li>
+    <li><code>--bind_ip_all</code> — слушать все интерфейсы внутри контейнера (иначе подключиться снаружи не получится).</li>
+    <li><code>rs.initiate(...)</code> — «собрать» replica set. Пока его не выполнить, узел не станет PRIMARY и не примет запись.</li>
+  </ul>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ REPLICA SET ДАЖЕ ЛОКАЛЬНО</span>
+    <p>Транзакции в MongoDB построены на механизме репликации (oplog). На одиночном сервере (standalone) попытка начать транзакцию упадёт с ошибкой <code>Transaction numbers are only allowed on a replica set member or mongos</code>. Чтобы dev-окружение вело себя как прод (где всегда replica set), запускаем replica set из одного узла. Ресурсов это не добавляет.</p>
+  </div></div>
+
+  <h3>Строка подключения</h3>
+  <p>Формат: <code>mongodb://[user:password@]host[:port]/[database][?опции]</code></p>
+  <ul>
+    <li>локально у нас: <code>mongodb://localhost:27017/?directConnection=true</code></li>
+    <li>с авторизацией: <code>mongodb://user:password@localhost:27017/?authSource=admin</code></li>
+    <li>Atlas: <code>mongodb+srv://user:password@cluster0.xxxxx.mongodb.net</code> — строку выдаёт интерфейс Atlas</li>
+  </ul>
+  <div class="callout note"><div class="ic">i</div><div>
+    <p><code>directConnection=true</code> говорит драйверу: «подключайся прямо к этому узлу, не пытайся обнаружить остальных участников replica set». Для локального однонодового кластера это убирает целый класс проблем с именами хостов. В продакшене с настоящим кластером эту опцию <em>не</em> ставят.</p>
+  </div></div>
+
+  <h3>Знакомство через mongosh</h3>
+  <p><code>mongosh</code> — консоль MongoDB (как <code>psql</code> для PostgreSQL). Синтаксис — JavaScript. Пройдём весь CRUD руками, прежде чем писать Python:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">docker exec -it auth-mongo mongosh</span><span class="role">mongosh</span></figcaption>
+    <pre><code class="language-javascript">use auth_api                       // переключиться на базу (создастся при первой записи)
+
+// CREATE
+db.todos.insertOne({ owner_id: 1, title: "Выучить MongoDB", tags: ["study"], priority: 1, is_completed: false })
+db.todos.insertMany([
+  { owner_id: 1, title: "Купить молоко", tags: ["home", "shop"], priority: 3, is_completed: false },
+  { owner_id: 2, title: "Чужая задача",  tags: ["work"],         priority: 2, is_completed: true  }
+])
+
+// READ
+db.todos.find({ owner_id: 1 })                         // все задачи пользователя 1
+db.todos.find({ tags: "home" })                        // поиск по элементу массива!
+db.todos.find({ priority: { $lte: 2 } })               // $lte: меньше или равно
+db.todos.find({ owner_id: 1 }, { title: 1, _id: 0 })   // projection: только title
+db.todos.countDocuments({ is_completed: false })
+
+// UPDATE
+db.todos.updateOne({ title: "Выучить MongoDB" }, { $set: { is_completed: true } })
+
+// DELETE
+db.todos.deleteOne({ title: "Купить молоко" })
+
+db.todos.drop()   // удалить коллекцию целиком — после экспериментов</code></pre>
+  </figure>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <p>Посмотрите: «таблицу» мы не создавали, а вставили документы с разным набором полей — и MongoDB не возражает. Фильтр <code>{ tags: "home" }</code> находит документ, если <code>"home"</code> есть <em>среди элементов</em> массива — в SQL для этого понадобилась бы связующая таблица и JOIN.</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> <code>rs.status()</code> показывает PRIMARY, в mongosh вставляются и находятся документы. Для GUI можно поставить MongoDB Compass и подключиться по той же строке.</div>
+</section>
+
+<hr>
+
+<!-- 06 CONNECT -->
+<section id="connect">
+  <div class="sec-head"><h2>06 · Драйвер и подключение (lifespan)</h2><span class="tag practice">практика</span><span class="tag time">~12 мин</span></div>
+
+  <h3>Какой драйвер: Motor или PyMongo Async</h3>
+  <p>Долгое время стандартом для async-работы с MongoDB был <strong>Motor</strong> — именно его вы встретите в большинстве статей и курсов. Но в 2025 году MongoDB выпустила нативный асинхронный API прямо в официальном драйвере <strong>PyMongo</strong> (<code>AsyncMongoClient</code>, PyMongo 4.13+) и объявила Motor устаревшим (deprecated) — он получает только критические исправления, а новые проекты рекомендуется писать на PyMongo Async.</p>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ПОЯВИЛАСЬ ЗАМЕНА</span>
+    <p>Motor был «обёрткой»: под капотом он запускал синхронный PyMongo в пуле потоков и превращал результаты в awaitable-объекты. Это работало, но добавляло накладные расходы на потоки. <code>AsyncMongoClient</code> написан на asyncio нативно — без пула потоков, быстрее и с меньшей задержкой. API при этом почти идентичен, поэтому всё, что вы знаете про Motor, переносится один в один.</p>
+  </div></div>
+
+  <table class="cmp">
+    <thead><tr><th>&nbsp;</th><th>Motor (legacy)</th><th>PyMongo Async (используем)</th></tr></thead>
+    <tbody>
+      <tr><td>Установка</td><td><code>pip install motor</code></td><td><code>pip install pymongo</code></td></tr>
+      <tr><td>Клиент</td><td><code>AsyncIOMotorClient(url)</code></td><td><code>AsyncMongoClient(url)</code></td></tr>
+      <tr><td>CRUD</td><td><code>await coll.insert_one(...)</code></td><td>то же самое</td></tr>
+      <tr><td>Курсор</td><td><code>async for doc in coll.find()</code></td><td>то же самое</td></tr>
+      <tr><td>Закрытие</td><td><code>client.close()</code></td><td><code>await client.close()</code></td></tr>
+      <tr><td>Сессия</td><td><code>async with await client.start_session()</code></td><td><code>async with client.start_session()</code></td></tr>
+      <tr><td>Агрегация</td><td><code>cursor = coll.aggregate(p)</code></td><td><code>cursor = await coll.aggregate(p)</code></td></tr>
+    </tbody>
+  </table>
+  <div class="callout note"><div class="ic">i</div><div>
+    <p>Если в вашем курсе/проекте уже Motor — код этого урока переносится заменой импорта и трёх строк из таблицы выше. Различия подробно описаны в официальном руководстве «Migrate to PyMongo Async» в документации MongoDB.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">bash</span></figcaption>
+    <pre><code class="language-bash">pip install "pymongo&gt;=4.13"
+pip freeze &gt; requirements.txt</code></pre>
+  </figure>
+
+  <h3>Шаг 1. Настройки</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/core/config.py</span></figcaption>
+    <pre><code class="language-python">class Settings(BaseSettings):
+    secret_key: str
+    algorithm: str = 'HS256'
+    access_token_expire_minutes: int = 30
+
+    # --- MongoDB ---
+    mongo_url: str = "mongodb://localhost:27017/?directConnection=true"
+    mongo_db: str = "auth_api"
+
+    model_config = SettingsConfigDict(env_file=BASE_DIR / '.env', env_file_encoding='utf-8')</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">.env</span><span class="role">дописываем</span></figcaption>
+    <pre><code class="language-bash">MONGO_URL=mongodb://localhost:27017/?directConnection=true
+MONGO_DB=auth_api</code></pre>
+  </figure>
+  <p>pydantic-settings сопоставляет переменные окружения с полями без учёта регистра: <code>MONGO_URL</code> → <code>mongo_url</code>. Значения по умолчанию позволяют запустить проект локально даже без правки <code>.env</code>, а на сервере URL с паролем приходит из окружения и в репозиторий не попадает.</p>
+
+  <h3>Шаг 2. Модуль подключения</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/db/mongo.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">from fastapi import Request
+from pymongo import AsyncMongoClient
+from pymongo.asynchronous.database import AsyncDatabase
+
+from app.core.config import settings
+
+
+def create_mongo_client() -&gt; AsyncMongoClient:
+    return AsyncMongoClient(
+        settings.mongo_url,
+        tz_aware=True,                  # даты из БД вернутся с tzinfo=UTC
+        serverSelectionTimeoutMS=5000,  # 5 с вместо 30 по умолчанию, если Mongo не запущена
+    )
+
+
+def get_mongo_db(request: Request) -&gt; AsyncDatabase:
+    """Зависимость FastAPI: отдаёт объект базы, созданный при старте приложения."""
+    return request.app.state.mongo_db</code></pre>
+  </figure>
+
+  <h4>Почему каждый параметр именно такой</h4>
+  <ul>
+    <li><strong>Один клиент на всё приложение.</strong> <code>AsyncMongoClient</code> — это не одно соединение, а <em>пул соединений</em> (по умолчанию до 100) плюс фоновый мониторинг кластера. Создавать клиента на каждый запрос — грубая ошибка: каждый раз заново TCP-рукопожатие, аутентификация и утечка ресурсов.</li>
+    <li><strong><code>tz_aware=True</code>.</strong> MongoDB хранит даты в UTC, но по умолчанию PyMongo возвращает «наивные» <code>datetime</code> без часового пояса. Сравнение наивной даты с <code>datetime.now(timezone.utc)</code> падает с <code>TypeError</code>, а клиент API получает дату без <code>Z</code> и может интерпретировать её как локальную. С <code>tz_aware=True</code> всё однозначно.</li>
+    <li><strong><code>serverSelectionTimeoutMS=5000</code>.</strong> Если Mongo не запущена, без этой опции приложение будет «висеть» 30 секунд на первом запросе. Быстрый и понятный сбой лучше.</li>
+    <li><strong><code>request.app.state</code></strong> — место для общих объектов приложения. Зависимость берёт базу оттуда, а не из глобальной переменной модуля — в тестах легко подменить через <code>app.dependency_overrides</code>.</li>
+  </ul>
+
+  <h3>Шаг 3. Жизненный цикл: lifespan</h3>
+  <p>Сейчас в <code>main.py</code> используется <code>@app.on_event("startup")</code>. Этот механизм в FastAPI <strong>устарел</strong>; современный способ — <strong>lifespan</strong>: одна функция-контекстный менеджер, где код до <code>yield</code> выполняется при старте, а после — при остановке.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/main.py</span></figcaption>
+    <pre><code class="language-python">from contextlib import asynccontextmanager
+
+import uvicorn
+from fastapi import FastAPI
+
+from app.api.routers import auth, todos, users
+from app.core.config import settings
+from app.db.mongo import create_mongo_client, ensure_indexes
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ---------- startup ----------
+    client = create_mongo_client()
+    await client.admin.command("ping")      # падаем сразу, если Mongo недоступна
+    db = client[settings.mongo_db]
+    await ensure_indexes(db)                # блок 11
+    app.state.mongo_client = client
+    app.state.mongo_db = db
+
+    yield                                   # приложение работает и принимает запросы
+
+    # ---------- shutdown ----------
+    await client.close()
+
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(users.router)
+app.include_router(auth.router)
+app.include_router(todos.router)
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="0.0.0.0", port=8000)</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ LIFESPAN, А НЕ on_event</span>
+    <p>Ресурс, открытый при старте, должен быть закрыт при остановке. С <code>on_event</code> это два несвязанных обработчика, и клиента приходится прятать в глобальную переменную, чтобы передать из одного в другой. В <code>lifespan</code> открытие и закрытие — в одной функции, в одной области видимости, как у <code>async with</code>. А <code>ping</code> при старте превращает «упало на первом пользовательском запросе через 5 минут» в «не стартовало, потому что Mongo недоступна» — такие ошибки ловятся сразу при деплое.</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p>Если в <code>main.py</code> ещё остался <code>Base.metadata.create_all</code> — после урока 6 схемой SQL управляет Alembic (<code>alembic upgrade head</code>), и <code>create_all</code> из старта лучше убрать. А вот индексы MongoDB создаём именно при старте: у Mongo нет Alembic, и <code>create_index</code> идемпотентен (повторный вызов с тем же описанием ничего не делает).</p>
+  </div></div>
+
+  <h3>Шаг 4. Зависимости</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/deps.py</span><span class="role">дописываем</span></figcaption>
+    <pre><code class="language-python">from pymongo.asynchronous.database import AsyncDatabase
+
+from app.db.mongo import get_mongo_db
+from app.repositories.todo_repo import TodoRepo
+
+MongoDbDep = Annotated[AsyncDatabase, Depends(get_mongo_db)]
+
+
+def get_todo_repo(db: MongoDbDep) -&gt; TodoRepo:
+    return TodoRepo(db)
+
+
+TodoRepoDep = Annotated[TodoRepo, Depends(get_todo_repo)]</code></pre>
+  </figure>
+  <p>Ровно тот же паттерн, что у <code>UserRepoDep</code> / <code>PostRepoDep</code>: роутер не знает, откуда берётся база, он получает готовый репозиторий. Разница лишь в источнике: SQL-репозиторий получает <code>AsyncSession</code>, Mongo-репозиторий — <code>AsyncDatabase</code>.</p>
+
+  <div class="expect"><b>Проверка:</b> <code>uvicorn app.main:app --reload</code> стартует без ошибок. Остановите контейнер (<code>docker stop auth-mongo</code>) и перезапустите приложение — оно должно упасть на старте через ~5 секунд с <code>ServerSelectionTimeoutError</code>. Запустите контейнер обратно.</div>
+</section>
+
+<hr>
+
+<!-- 07 SCHEMAS -->
+<section id="schemas">
+  <div class="sec-head"><h2>07 · Pydantic-схемы и ObjectId</h2><span class="tag practice">практика</span><span class="tag time">~8 мин</span></div>
+
+  <p>Задача схем — та же, что в уроке 3: разделить <em>что приходит</em> (Create/Update) и <em>что уходит</em> (Out). Новое — проблема <code>_id</code>: в базе это <code>ObjectId</code> в поле <code>_id</code>, а клиенту API нужен <code>"id": "6710a3f2..."</code> строкой.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/shemas/todo.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">from datetime import datetime
+from typing import Annotated
+
+from pydantic import BaseModel, BeforeValidator, Field
+
+# ObjectId -&gt; str ещё ДО проверки типа: валидатор срабатывает первым
+PyObjectId = Annotated[str, BeforeValidator(str)]
+
+
+# ---------- вход ----------
+class TodoCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
+    tags: list[str] = Field(default_factory=list, max_length=10)
+    priority: int = Field(default=2, ge=1, le=3)    # 1 — высокий, 3 — низкий
+
+
+class TodoUpdate(BaseModel):
+    # все поля необязательны: PATCH меняет только то, что прислали
+    title: str | None = Field(default=None, min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
+    tags: list[str] | None = Field(default=None, max_length=10)
+    priority: int | None = Field(default=None, ge=1, le=3)
+
+
+class ChecklistItemCreate(BaseModel):
+    text: str = Field(min_length=1, max_length=200)
+
+
+class ChecklistItemUpdate(BaseModel):
+    done: bool
+
+
+# ---------- выход ----------
+class ChecklistItemOut(BaseModel):
+    id: PyObjectId = Field(validation_alias="_id")
+    text: str
+    done: bool
+
+
+class TodoBrief(BaseModel):
+    """Короткая форма для списка — без описания и чек-листа."""
+    id: PyObjectId = Field(validation_alias="_id")
+    title: str
+    tags: list[str] = []
+    priority: int = 2
+    is_completed: bool = False
+    created_at: datetime
+
+
+class TodoOut(TodoBrief):
+    """Полная форма для одной задачи."""
+    owner_id: int
+    description: str | None = None
+    checklist: list[ChecklistItemOut] = []
+    updated_at: datetime
+    completed_at: datetime | None = None
+
+
+class TodoPage(BaseModel):
+    items: list[TodoBrief]
+    total: int
+    skip: int
+    limit: int</code></pre>
+  </figure>
+
+  <h3>Разберём ключевые детали</h3>
+  <ul>
+    <li><strong><code>PyObjectId = Annotated[str, BeforeValidator(str)]</code></strong> — «строка, но перед проверкой прогони значение через <code>str()</code>». Из базы приходит <code>ObjectId("6710...")</code>, валидатор превращает его в <code>"6710..."</code>, и дальше это обычная строка, которую FastAPI легко сериализует в JSON.</li>
+    <li><strong><code>Field(validation_alias="_id")</code></strong> — при <em>чтении</em> данных бери значение из ключа <code>_id</code>, а при <em>выдаче</em> используй имя поля <code>id</code>. Документ из Mongo читается как есть, а клиент получает привычный <code>"id"</code>.</li>
+    <li><strong>Нет <code>owner_id</code> и <code>is_completed</code> во входных схемах.</strong> Владельца берём из JWT, а выполнение задачи — отдельное действие с транзакцией (блок 12). Если бы <code>owner_id</code> был в <code>TodoCreate</code>, любой мог бы создать задачу от чужого имени.</li>
+    <li><strong><code>TodoOut(TodoBrief)</code></strong> — наследование схем: полная форма = короткая + дополнительные поля.</li>
+  </ul>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p>Во многих примерах пишут <code>id: str = Field(alias="_id")</code>. Ловушка: <code>alias</code> работает в обе стороны, а FastAPI отдаёт ответ <em>по алиасам</em> (<code>response_model_by_alias=True</code> по умолчанию). В итоге в JSON вы получите <code>"_id"</code>, а не <code>"id"</code>, и эту же схему можно случайно принимать на вход вместе с <code>_id</code> от клиента. <code>validation_alias</code> влияет только на чтение — то, что нужно.</p>
+  </div></div>
+
+  <h3>Гибкая схема ≠ отсутствие схемы</h3>
+  <p>MongoDB не проверяет структуру документов — значит, проверять должны мы. <strong>Схема никуда не делась: она переехала из базы в код</strong> — в Pydantic-модели. Всё, что попадает в базу, проходит через <code>TodoCreate</code>/<code>TodoUpdate</code>; всё, что уходит клиенту, — через <code>TodoOut</code>.</p>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">А КАК ЖЕ МИГРАЦИИ?</span>
+    <p>Alembic в Mongo не нужен, но эволюция данных никуда не исчезла. Допустим, через месяц мы добавили поле <code>priority</code>. Старые документы его не содержат. Два пути: (1) <strong>значение по умолчанию в схеме</strong> (<code>priority: int = 2</code> в <code>TodoBrief</code>) — старые документы читаются без ошибок; (2) <strong>скрипт-«миграция данных»</strong>, который проставит поле всем старым документам:</p>
+    <p><code>await db.todos.update_many({"priority": {"$exists": False}}, {"$set": {"priority": 2}})</code></p>
+    <p>Обычно делают оба: дефолт — чтобы не упасть сразу, скрипт — чтобы данные были однородными и по полю работали индексы и фильтры.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 CRUD -->
+<section id="crud">
+  <div class="sec-head"><h2>08 · CRUD: репозиторий задач</h2><span class="tag practice">практика</span><span class="tag time">~14 мин</span></div>
+
+  <p>Вся работа с MongoDB — в репозитории, как и с SQL. Роутер ничего не знает про <code>$set</code> и <code>ObjectId</code>-фильтры.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/todo_repo.py</span><span class="role">часть 1 · CRUD</span></figcaption>
+    <pre><code class="language-python">import re
+from datetime import datetime, timezone
+from typing import Any
+
+from bson import ObjectId
+from pymongo import DESCENDING, ReturnDocument
+from pymongo.asynchronous.database import AsyncDatabase
+from pymongo.errors import DuplicateKeyError
+
+from app.shemas.todo import TodoCreate, TodoUpdate
+
+Doc = dict[str, Any]
+
+# в список не тащим тяжёлые поля — подробно в блоке 13
+BRIEF_PROJECTION = {"description": 0, "checklist": 0}
+
+
+class TodoAlreadyExists(Exception):
+    """У пользователя уже есть задача с таким заголовком."""
+
+
+def utcnow() -&gt; datetime:
+    return datetime.now(timezone.utc)
+
+
+class TodoRepo:
+    MAX_CHECKLIST = 50
+
+    def __init__(self, db: AsyncDatabase) -&gt; None:
+        self.client = db.client          # понадобится для транзакций
+        self.todos = db["todos"]
+        self.activity = db["activity"]
+
+    # ---------- CREATE ----------
+    async def create(self, owner_id: int, data: TodoCreate) -&gt; Doc:
+        now = utcnow()
+        doc = {
+            **data.model_dump(),
+            "owner_id": owner_id,
+            "is_completed": False,
+            "checklist": [],
+            "created_at": now,
+            "updated_at": now,
+            "completed_at": None,
+        }
+        try:
+            result = await self.todos.insert_one(doc)
+        except DuplicateKeyError:
+            raise TodoAlreadyExists(data.title)
+        doc["_id"] = result.inserted_id
+        return doc
+
+    # ---------- READ ----------
+    async def get(self, owner_id: int, todo_id: ObjectId) -&gt; Doc | None:
+        return await self.todos.find_one({"_id": todo_id, "owner_id": owner_id})
+
+    async def list_for_owner(
+        self,
+        owner_id: int,
+        *,
+        completed: bool | None = None,
+        tag: str | None = None,
+        q: str | None = None,
+        skip: int = 0,
+        limit: int = 20,
+    ) -&gt; tuple[list[Doc], int]:
+        filt: Doc = {"owner_id": owner_id}
+        if completed is not None:
+            filt["is_completed"] = completed
+        if tag:
+            filt["tags"] = tag                       # совпадение с элементом массива
+        if q:
+            filt["title"] = {"$regex": re.escape(q), "$options": "i"}
+
+        cursor = (
+            self.todos.find(filt, BRIEF_PROJECTION)
+            .sort("created_at", DESCENDING)
+            .skip(skip)
+            .limit(limit)
+        )
+        items = await cursor.to_list(length=limit)
+        total = await self.todos.count_documents(filt)
+        return items, total
+
+    # ---------- UPDATE ----------
+    async def update(self, owner_id: int, todo_id: ObjectId, data: TodoUpdate) -&gt; Doc | None:
+        changes = data.model_dump(exclude_unset=True)
+        if not changes:
+            return await self.get(owner_id, todo_id)
+        changes["updated_at"] = utcnow()
+        try:
+            return await self.todos.find_one_and_update(
+                {"_id": todo_id, "owner_id": owner_id},
+                {"$set": changes},
+                return_document=ReturnDocument.AFTER,
+            )
+        except DuplicateKeyError:
+            raise TodoAlreadyExists(changes.get("title", ""))
+
+    # ---------- DELETE ----------
+    async def delete(self, owner_id: int, todo_id: ObjectId) -&gt; bool:
+        result = await self.todos.delete_one({"_id": todo_id, "owner_id": owner_id})
+        return result.deleted_count == 1</code></pre>
+  </figure>
+
+  <h3>Разбор по методам</h3>
+
+  <h4>create</h4>
+  <ul>
+    <li><code>insert_one</code> возвращает <code>InsertOneResult</code>, в котором <code>inserted_id</code> — сгенерированный <code>ObjectId</code>. (PyMongo к тому же дописывает <code>_id</code> прямо в переданный словарь; явное присваивание делает код понятнее.)</li>
+    <li>Служебные поля (<code>owner_id</code>, <code>is_completed</code>, даты) выставляет <strong>сервер</strong>, а не клиент — так мы гарантируем однородность документов.</li>
+    <li><code>DuplicateKeyError</code> возникнет из-за уникального индекса <code>(owner_id, title)</code> из блока 11. Переводим ошибку драйвера в доменное исключение — роутеру незачем знать про PyMongo.</li>
+  </ul>
+
+  <h4>get</h4>
+  <p>Фильтр <strong>всегда</strong> содержит <code>owner_id</code>. Даже если злоумышленник знает <code>_id</code> чужой задачи, <code>find_one</code> вернёт <code>None</code>, и он получит 404. Мы не проверяем владельца отдельным <code>if</code> после загрузки — мы вообще не загружаем чужое.</p>
+
+  <h4>list_for_owner</h4>
+  <ul>
+    <li><code>find()</code> <strong>не выполняет запрос</strong> и не требует <code>await</code> — он возвращает <em>курсор</em>, к которому мы цепочкой добавляем <code>sort / skip / limit</code>. Запрос уходит в БД только при чтении: <code>await cursor.to_list(...)</code> или <code>async for doc in cursor</code>.</li>
+    <li><code>to_list(length=limit)</code> — защита от загрузки миллиона документов в память.</li>
+    <li><code>count_documents(filt)</code> — общее количество под фильтр, для пагинации на фронтенде.</li>
+    <li><code>re.escape(q)</code> — экранирование пользовательского ввода. Без него строка <code>.*</code> или специально составленная регулярка превратится в «найди всё» или в ReDoS-атаку, которая загрузит сервер БД.</li>
+  </ul>
+
+  <h4>update</h4>
+  <ul>
+    <li><code>model_dump(exclude_unset=True)</code> — только реально присланные поля. Без этого PATCH <code>{"priority": 1}</code> затёр бы <code>title</code> значением <code>None</code>.</li>
+    <li><code>$set</code> — меняет только указанные поля. Если передать в <code>update_one</code> словарь <em>без оператора</em>, PyMongo выдаст ошибку; а <code>replace_one</code> заменил бы документ <em>целиком</em> — потеряли бы чек-лист.</li>
+    <li><code>find_one_and_update(..., return_document=ReturnDocument.AFTER)</code> — найти, обновить и вернуть <strong>новую</strong> версию документа одной атомарной операцией. Альтернатива <code>update_one</code> + <code>find_one</code> — два запроса, и между ними документ мог измениться.</li>
+  </ul>
+
+  <h4>delete</h4>
+  <p><code>delete_one</code> возвращает <code>DeleteResult</code>; <code>deleted_count == 0</code> означает «не нашли» — либо нет такой задачи, либо она чужая. Для клиента оба случая — 404.</p>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p><strong>NoSQL-инъекции.</strong> В MongoDB фильтр — это словарь, и если подставить в него «сырой» JSON от клиента, можно получить <code>{"owner_id": {"$ne": null}}</code> — «все задачи всех пользователей». Защита: никогда не передавайте в фильтр необработанные данные запроса; все значения проходят через типизированные параметры и Pydantic (<code>int</code>, <code>bool</code>, <code>str</code>), которые не пропустят словарь с операторами.</p>
+  </div></div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <p>Шпаргалка «SQL → MongoDB»: <code>INSERT</code> → <code>insert_one/insert_many</code>; <code>SELECT ... WHERE</code> → <code>find(filter)</code>; <code>ORDER BY / LIMIT / OFFSET</code> → <code>.sort() / .limit() / .skip()</code>; <code>COUNT(*)</code> → <code>count_documents</code>; <code>UPDATE ... SET</code> → <code>update_one/update_many + $set</code>; <code>DELETE</code> → <code>delete_one/delete_many</code>; <code>GROUP BY</code> → <code>aggregate + $group</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 09 ROUTER -->
+<section id="router">
+  <div class="sec-head"><h2>09 · Роутер и проверка в Swagger</h2><span class="tag practice">практика</span><span class="tag time">~6 мин</span></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/todos.py</span><span class="role">новый файл · CRUD</span></figcaption>
+    <pre><code class="language-python">from typing import Annotated
+
+from bson import ObjectId
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from app.api.deps import CurrentUserDep, TodoRepoDep
+from app.repositories.todo_repo import TodoAlreadyExists
+from app.shemas.todo import TodoCreate, TodoOut, TodoPage, TodoUpdate
+
+router = APIRouter(prefix="/todos", tags=["Задачи (MongoDB)"])
+
+NOT_FOUND = HTTPException(status.HTTP_404_NOT_FOUND, "Задача не найдена")
+
+
+def parse_todo_id(todo_id: str) -&gt; ObjectId:
+    """Строка из URL -&gt; ObjectId. Невалидный id = такой задачи точно нет."""
+    if not ObjectId.is_valid(todo_id):
+        raise NOT_FOUND
+    return ObjectId(todo_id)
+
+
+TodoIdDep = Annotated[ObjectId, Depends(parse_todo_id)]
+
+
+@router.post("/", response_model=TodoOut, status_code=status.HTTP_201_CREATED)
+async def create_todo(data: TodoCreate, user: CurrentUserDep, repo: TodoRepoDep):
+    try:
+        return await repo.create(user.id, data)
+    except TodoAlreadyExists:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Задача с таким заголовком уже есть")
+
+
+@router.get("/", response_model=TodoPage)
+async def list_todos(
+    user: CurrentUserDep,
+    repo: TodoRepoDep,
+    completed: bool | None = None,
+    tag: str | None = None,
+    q: Annotated[str | None, Query(max_length=50)] = None,
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+):
+    items, total = await repo.list_for_owner(
+        user.id, completed=completed, tag=tag, q=q, skip=skip, limit=limit,
+    )
+    return {"items": items, "total": total, "skip": skip, "limit": limit}
+
+
+@router.get("/{todo_id}", response_model=TodoOut)
+async def get_todo(todo_id: TodoIdDep, user: CurrentUserDep, repo: TodoRepoDep):
+    todo = await repo.get(user.id, todo_id)
+    if todo is None:
+        raise NOT_FOUND
+    return todo
+
+
+@router.patch("/{todo_id}", response_model=TodoOut)
+async def update_todo(todo_id: TodoIdDep, data: TodoUpdate, user: CurrentUserDep, repo: TodoRepoDep):
+    try:
+        todo = await repo.update(user.id, todo_id, data)
+    except TodoAlreadyExists:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Задача с таким заголовком уже есть")
+    if todo is None:
+        raise NOT_FOUND
+    return todo
+
+
+@router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_todo(todo_id: TodoIdDep, user: CurrentUserDep, repo: TodoRepoDep):
+    if not await repo.delete(user.id, todo_id):
+        raise NOT_FOUND</code></pre>
+  </figure>
+
+  <h3>Что здесь важно</h3>
+  <ul>
+    <li><strong><code>parse_todo_id</code> как зависимость.</strong> FastAPI видит параметр <code>todo_id: str</code> и берёт его из пути <code>/{todo_id}</code>. Строка <code>"abc"</code> — невалидный ObjectId: без проверки <code>ObjectId("abc")</code> бросит <code>InvalidId</code> → 500. Мы отвечаем 404: с точки зрения клиента такой задачи просто не существует.</li>
+    <li><strong><code>CurrentUserDep</code></strong> из урока 4: без токена — 401, а <code>user.id</code> — id из SQL-базы, он становится <code>owner_id</code>.</li>
+    <li><strong>Возвращаем «сырой» документ</strong>, а <code>response_model</code> сам прогоняет его через <code>TodoOut</code>: <code>_id</code> → <code>id</code>, ObjectId → строка, лишние поля отбрасываются.</li>
+    <li><strong>Коды ответа:</strong> 201 — создано, 204 — удалено (без тела), 404 — нет/чужая, 409 — конфликт уникальности.</li>
+  </ul>
+
+  <div class="expect"><b>Проверка в Swagger (<code>/docs</code>):</b> Authorize → логин из урока 4. <code>POST /todos</code> с <code>{"title": "Выучить MongoDB", "tags": ["study"]}</code> → 201, в ответе <code>"id"</code> строкой. Повторный POST с тем же title → 409. <code>GET /todos?tag=study</code> → задача в <code>items</code>, <code>total: 1</code>. <code>GET /todos/abc</code> → 404. Зайдите вторым пользователем — чужие задачи не видны. В mongosh: <code>db.todos.find().pretty()</code> — видим документ с <code>owner_id</code> и датами.</div>
+</section>
+
+<hr>
+
+<!-- 10 OPERATORS -->
+<section id="operators">
+  <div class="sec-head"><h2>10 · Операторы и вложенные массивы</h2><span class="tag practice">практика</span><span class="tag time">~8 мин</span></div>
+
+  <p>Операторы MongoDB начинаются с <code>$</code> и делятся на две группы: <strong>операторы запроса</strong> (что найти) и <strong>операторы обновления</strong> (как изменить).</p>
+
+  <table class="cmp">
+    <thead><tr><th>Оператор</th><th>Смысл</th><th>Пример</th></tr></thead>
+    <tbody>
+      <tr><td><code>$eq $ne</code></td><td>равно / не равно</td><td><code>{"priority": {"$ne": 3}}</code></td></tr>
+      <tr><td><code>$gt $gte $lt $lte</code></td><td>больше / меньше</td><td><code>{"created_at": {"$gte": week_ago}}</code></td></tr>
+      <tr><td><code>$in $nin</code></td><td>входит / не входит в список</td><td><code>{"priority": {"$in": [1, 2]}}</code></td></tr>
+      <tr><td><code>$and $or</code></td><td>логика</td><td><code>{"$or": [{"priority": 1}, {"tags": "urgent"}]}</code></td></tr>
+      <tr><td><code>$exists</code></td><td>поле есть / нет</td><td><code>{"completed_at": {"$exists": True}}</code></td></tr>
+      <tr><td><code>$all</code></td><td>массив содержит все значения</td><td><code>{"tags": {"$all": ["work", "urgent"]}}</code></td></tr>
+      <tr><td><code>$elemMatch</code></td><td>один элемент массива удовлетворяет всем условиям</td><td><code>{"checklist": {"$elemMatch": {"done": False, "text": "Теория"}}}</code></td></tr>
+      <tr><td><code>$regex</code></td><td>регулярное выражение</td><td><code>{"title": {"$regex": "^Купить", "$options": "i"}}</code></td></tr>
+    </tbody>
+  </table>
+
+  <table class="cmp">
+    <thead><tr><th>Оператор обновления</th><th>Что делает</th></tr></thead>
+    <tbody>
+      <tr><td><code>$set / $unset</code></td><td>установить поле / удалить поле</td></tr>
+      <tr><td><code>$inc</code></td><td>атомарно увеличить число (счётчики, балансы)</td></tr>
+      <tr><td><code>$push</code></td><td>добавить элемент в массив</td></tr>
+      <tr><td><code>$addToSet</code></td><td>добавить, только если такого элемента ещё нет (теги без дублей)</td></tr>
+      <tr><td><code>$pull</code></td><td>удалить из массива все элементы, подходящие под условие</td></tr>
+      <tr><td><code>"arr.$.field"</code></td><td>позиционный оператор: изменить <em>тот</em> элемент массива, что совпал в фильтре</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ОПЕРАТОРЫ, А НЕ «ПРОЧИТАЛ-ИЗМЕНИЛ-ЗАПИСАЛ»</span>
+    <p>Наивный путь: прочитать документ в Python, добавить пункт в список, записать документ обратно. Если два запроса сделают это одновременно, второй перезапишет изменения первого — <strong>потерянное обновление</strong> (lost update). Операторы <code>$push</code>, <code>$pull</code>, <code>$inc</code> выполняются <em>на сервере</em> атомарно над одним документом: два параллельных <code>$push</code> добавят оба пункта. Это главный выигрыш embedding: изменения вложенных данных атомарны без транзакций.</p>
+  </div></div>
+
+  <h3>Практика: чек-лист внутри задачи</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/todo_repo.py</span><span class="role">часть 2 · чек-лист</span></figcaption>
+    <pre><code class="language-python">    # ---------- CHECKLIST (вложенный массив) ----------
+    async def add_check_item(self, owner_id: int, todo_id: ObjectId, text: str) -&gt; Doc | None:
+        item = {"_id": ObjectId(), "text": text, "done": False}
+        return await self.todos.find_one_and_update(
+            {
+                "_id": todo_id,
+                "owner_id": owner_id,
+                # нет 50-го элемента (индекс 49) =&gt; пунктов меньше 50
+                f"checklist.{self.MAX_CHECKLIST - 1}": {"$exists": False},
+            },
+            {"$push": {"checklist": item}, "$set": {"updated_at": utcnow()}},
+            return_document=ReturnDocument.AFTER,
+        )
+
+    async def set_check_item(
+        self, owner_id: int, todo_id: ObjectId, item_id: ObjectId, done: bool,
+    ) -&gt; Doc | None:
+        return await self.todos.find_one_and_update(
+            {"_id": todo_id, "owner_id": owner_id, "checklist._id": item_id},
+            {"$set": {"checklist.$.done": done, "updated_at": utcnow()}},
+            return_document=ReturnDocument.AFTER,
+        )
+
+    async def remove_check_item(self, owner_id: int, todo_id: ObjectId, item_id: ObjectId) -&gt; Doc | None:
+        return await self.todos.find_one_and_update(
+            {"_id": todo_id, "owner_id": owner_id, "checklist._id": item_id},
+            {"$pull": {"checklist": {"_id": item_id}}, "$set": {"updated_at": utcnow()}},
+            return_document=ReturnDocument.AFTER,
+        )</code></pre>
+  </figure>
+
+  <h3>Разберём хитрые места</h3>
+  <ul>
+    <li><strong><code>"_id": ObjectId()</code> у пункта.</strong> Вложенные документы не получают <code>_id</code> автоматически. Мы даём его сами, чтобы адресовать конкретный пункт в URL: <code>/todos/{id}/checklist/{item_id}</code>. Номер в массиве не подходит: после удаления пункта номера сдвигаются.</li>
+    <li><strong><code>"checklist.49": {"$exists": False}</code></strong> — «у массива нет элемента с индексом 49», то есть пунктов меньше 50. Проверка лимита прямо в фильтре атомарна: в отличие от <code>if len(...) &lt; 50</code> в Python, параллельные запросы не проскочат лимит.</li>
+    <li><strong><code>"checklist._id": item_id</code> в фильтре</strong> — точечная нотация: ищем документ, у которого <em>какой-то</em> элемент массива имеет такой <code>_id</code>.</li>
+    <li><strong><code>"checklist.$.done"</code></strong> — <code>$</code> подставляет позицию того элемента, что совпал в фильтре. Обновляем один пункт, не трогая остальные.</li>
+    <li><strong><code>$pull</code></strong> удаляет из массива элементы под условие <code>{"_id": item_id}</code>.</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/todos.py</span><span class="role">дописываем · чек-лист</span></figcaption>
+    <pre><code class="language-python">from app.shemas.todo import ChecklistItemCreate, ChecklistItemUpdate
+
+
+def parse_item_id(item_id: str) -&gt; ObjectId:
+    if not ObjectId.is_valid(item_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Пункт не найден")
+    return ObjectId(item_id)
+
+
+ItemIdDep = Annotated[ObjectId, Depends(parse_item_id)]
+
+
+@router.post("/{todo_id}/checklist", response_model=TodoOut, status_code=status.HTTP_201_CREATED)
+async def add_check_item(todo_id: TodoIdDep, data: ChecklistItemCreate,
+                         user: CurrentUserDep, repo: TodoRepoDep):
+    todo = await repo.add_check_item(user.id, todo_id, data.text)
+    if todo is None:
+        # либо задачи нет, либо лимит пунктов — уточняем
+        if await repo.get(user.id, todo_id) is None:
+            raise NOT_FOUND
+        raise HTTPException(status.HTTP_409_CONFLICT, "Максимум 50 пунктов в чек-листе")
+    return todo
+
+
+@router.patch("/{todo_id}/checklist/{item_id}", response_model=TodoOut)
+async def set_check_item(todo_id: TodoIdDep, item_id: ItemIdDep, data: ChecklistItemUpdate,
+                         user: CurrentUserDep, repo: TodoRepoDep):
+    todo = await repo.set_check_item(user.id, todo_id, item_id, data.done)
+    if todo is None:
+        raise NOT_FOUND
+    return todo
+
+
+@router.delete("/{todo_id}/checklist/{item_id}", response_model=TodoOut)
+async def remove_check_item(todo_id: TodoIdDep, item_id: ItemIdDep,
+                            user: CurrentUserDep, repo: TodoRepoDep):
+    todo = await repo.remove_check_item(user.id, todo_id, item_id)
+    if todo is None:
+        raise NOT_FOUND
+    return todo</code></pre>
+  </figure>
+
+  <div class="expect"><b>Проверка:</b> добавляем к задаче три пункта, отмечаем второй как <code>done: true</code>, удаляем первый. В ответе каждый раз — актуальная задача с чек-листом, у пунктов свои строковые <code>id</code>. В mongosh видно, что всё это — <em>один</em> документ.</div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 3 · Скорость и надёжность</span><span class="bar"></span></div>
+
+<!-- 11 INDEXES -->
+<section id="indexes">
+  <div class="sec-head"><h2>11 · Индексы</h2><span class="tag practice">практика</span><span class="tag time">~12 мин</span></div>
+
+  <p>Без индекса MongoDB, чтобы выполнить <code>find({"owner_id": 1})</code>, перебирает <strong>каждый документ коллекции</strong> — это называется <strong>COLLSCAN</strong> (full collection scan). На 100 документах незаметно, на 10 миллионах — секунды на запрос и загруженный сервер. Индекс — отсортированная структура (B-дерево) «значение поля → где лежит документ», по которой поиск идёт за логарифмическое время — <strong>IXSCAN</strong>.</p>
+
+  <div class="diagram">
+<pre><span class="tn">COLLSCAN</span>: читаем всё                 <span class="tn">IXSCAN</span>: идём по индексу
+┌───┬───┬───┬───┬───┬───┬───┐       owner_id
+│ 7 │ 1 │ 3 │ 1 │ 9 │ 1 │ 2 │         ┌─ 1 ──▶ док, док, док   ← берём только их
+└───┴───┴───┴───┴───┴───┴───┘         ├─ 2 ──▶ док
+  проверили 7 из 7, нашли 3           ├─ 3 ──▶ док
+                                      └─ ...  проверили 3, нашли 3</pre>
+  </div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ЦЕНА ИНДЕКСА</span>
+    <p>Индекс не бесплатен: он занимает память (рабочий набор индексов должен помещаться в RAM) и <strong>замедляет запись</strong> — каждый insert/update обновляет все индексы коллекции. Поэтому индексы создают не «на всякий случай», а под конкретные запросы, которые реально выполняет приложение. MongoDB автоматически создаёт только один индекс — по <code>_id</code>.</p>
+  </div></div>
+
+  <h3>Какие запросы делает наше приложение</h3>
+  <table class="cmp">
+    <thead><tr><th>Запрос</th><th>Где</th><th>Индекс</th></tr></thead>
+    <tbody>
+      <tr><td>задачи пользователя, новые сверху</td><td><code>list_for_owner</code></td><td><code>(owner_id, created_at desc)</code></td></tr>
+      <tr><td>задачи пользователя по тегу</td><td><code>list_for_owner(tag=...)</code></td><td><code>(owner_id, tags, created_at desc)</code></td></tr>
+      <tr><td>уникальный заголовок у пользователя</td><td><code>create / update</code></td><td><code>(owner_id, title)</code> unique</td></tr>
+      <tr><td>лента событий пользователя</td><td>журнал activity</td><td><code>(user_id, created_at desc)</code></td></tr>
+      <tr><td>удалять события старше 90 дней</td><td>сама MongoDB</td><td><code>created_at</code> TTL</td></tr>
+    </tbody>
+  </table>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/db/mongo.py</span><span class="role">дописываем</span></figcaption>
+    <pre><code class="language-python">from pymongo import ASCENDING, DESCENDING
+
+
+async def ensure_indexes(db: AsyncDatabase) -&gt; None:
+    """Идемпотентно: при повторном вызове с тем же описанием ничего не происходит."""
+    todos = db["todos"]
+    await todos.create_index(
+        [("owner_id", ASCENDING), ("created_at", DESCENDING)],
+        name="owner_created",
+    )
+    await todos.create_index(
+        [("owner_id", ASCENDING), ("tags", ASCENDING), ("created_at", DESCENDING)],
+        name="owner_tags_created",
+    )
+    await todos.create_index(
+        [("owner_id", ASCENDING), ("title", ASCENDING)],
+        unique=True,
+        name="owner_title_unique",
+    )
+
+    activity = db["activity"]
+    await activity.create_index(
+        [("user_id", ASCENDING), ("created_at", DESCENDING)],
+        name="user_created",
+    )
+    await activity.create_index(
+        "created_at",
+        expireAfterSeconds=60 * 60 * 24 * 90,   # 90 дней
+        name="ttl_90d",
+    )</code></pre>
+  </figure>
+
+  <h3>Разберём каждый вид индекса</h3>
+
+  <h4>Составной индекс и правило ESR</h4>
+  <p>Индекс <code>(owner_id, created_at desc)</code> — составной: документы упорядочены сначала по <code>owner_id</code>, внутри — по дате. Запрос «задачи пользователя 1, новые сверху» читает готовый отсортированный кусок индекса — сортировка в памяти не нужна. Порядок полей в составном индексе выбирают по правилу <strong>ESR</strong>:</p>
+  <ol>
+    <li><strong>E</strong>quality — сначала поля, которые сравниваются на равенство (<code>owner_id = 1</code>, <code>tags = "work"</code>);</li>
+    <li><strong>S</strong>ort — затем поля сортировки (<code>created_at desc</code>);</li>
+    <li><strong>R</strong>ange — в конце поля с диапазонами (<code>$gte</code>, <code>$lt</code>, <code>$regex</code>).</li>
+  </ol>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ПОРЯДОК ВАЖЕН</span>
+    <p>Составной индекс похож на телефонный справочник, отсортированный по фамилии, потом по имени. Найти «Иванов Пётр» — мгновенно. Найти всех «Петров» без фамилии — придётся читать весь справочник. Поэтому индекс <code>(owner_id, created_at)</code> помогает запросу по <code>owner_id</code> (префикс индекса), но <strong>не</strong> помогает запросу только по <code>created_at</code>. И наш индекс <code>(owner_id, created_at)</code> делает отдельный индекс по одному <code>owner_id</code> лишним.</p>
+  </div></div>
+
+  <h4>Multikey-индекс</h4>
+  <p><code>tags</code> — массив. Индексируя такое поле, MongoDB создаёт запись в индексе <em>для каждого элемента</em> массива. Поэтому <code>find({"owner_id": 1, "tags": "work"})</code> идёт по индексу, хотя <code>"work"</code> — лишь один из элементов. Создаётся так же, как обычный индекс, MongoDB сама понимает, что поле — массив.</p>
+
+  <h4>Unique-индекс</h4>
+  <p><code>unique=True</code> на <code>(owner_id, title)</code> — бизнес-правило «у одного пользователя не может быть двух задач с одинаковым заголовком», которое гарантирует <strong>сама база</strong>. Проверка в Python (<code>find_one</code> перед <code>insert</code>) не спасает от гонки: два параллельных запроса оба увидят «дубля нет» и оба вставят. Уникальный индекс отклонит второй с <code>DuplicateKeyError</code> — мы превращаем его в 409.</p>
+  <div class="callout note"><div class="ic">i</div><div>
+    <p>Уникальность по умолчанию учитывает регистр: «Купить хлеб» и «купить хлеб» — разные значения. Если нужно без учёта регистра — индекс создают с параметром <code>collation={"locale": "ru", "strength": 2}</code>, и тот же collation указывают в запросах.</p>
+  </div></div>
+
+  <h4>TTL-индекс</h4>
+  <p><code>expireAfterSeconds</code> превращает обычный индекс по дате в «таймер самоуничтожения»: фоновый процесс MongoDB примерно раз в минуту удаляет документы, у которых <code>created_at</code> старше 90 дней. Журнал событий не растёт бесконечно, и нам не нужен cron-скрипт для очистки. Условие: поле должно быть типа <strong>Date</strong> (поэтому мы храним <code>datetime</code>, а не строку).</p>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p>В старых примерах (включая материалы про Motor) встречается <code>create_index(..., background=True)</code>. Начиная с MongoDB 4.2 этот параметр <strong>игнорируется</strong>: сервер всегда строит индекс оптимизированным способом, блокируя коллекцию лишь в начале и в конце. Ещё одна ловушка: если вызвать <code>create_index</code> с тем же набором полей, но <em>другими</em> опциями (например, добавить <code>unique</code>), получите ошибку <code>IndexOptionsConflict</code> — старый индекс надо сначала удалить (<code>drop_index</code>).</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> перезапускаем приложение, в mongosh <code>db.todos.getIndexes()</code> — видим <code>_id_</code> и три наших индекса. Создаём две задачи с одинаковым title → вторая получает 409. Индексы мы ещё увидим в работе через <code>explain</code> в блоке 13.</div>
+</section>
+
+<hr>
+
+<!-- 12 TRANSACTIONS -->
+<section id="transactions">
+  <div class="sec-head"><h2>12 · Транзакции</h2><span class="tag practice">практика</span><span class="tag time">~10 мин</span></div>
+
+  <p>Сценарий: пользователь отмечает задачу выполненной. Нужно сделать <strong>две</strong> записи в <strong>двух</strong> коллекциях: обновить задачу в <code>todos</code> и добавить событие в <code>activity</code>. Если первая прошла, а вторая упала (сеть, перезапуск сервера), журнал будет врать — задача выполнена, а события нет. Нужна атомарность: <em>либо обе записи, либо ни одной</em>.</p>
+
+  <h3>Атомарность в MongoDB: два уровня</h3>
+  <ul>
+    <li><strong>Один документ</strong> — любая операция атомарна <em>всегда</em>, даже если меняет десяток полей и вложенные массивы. Поэтому чек-листу (блок 10) транзакции не нужны.</li>
+    <li><strong>Несколько документов / коллекций</strong> — нужна <strong>мультидокументная ACID-транзакция</strong> (с MongoDB 4.0 для replica set, с 4.2 — и для шардированных кластеров).</li>
+  </ul>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ В MONGO ТРАНЗАКЦИИ — ИСКЛЮЧЕНИЕ, А НЕ ПРАВИЛО</span>
+    <p>Транзакции в MongoDB полноценные, но дороже, чем одиночные операции: сервер держит снимок данных и блокировки на всё время транзакции, а по умолчанию транзакция дольше 60 секунд принудительно отменяется. Хорошая документная схема старается уложить то, что должно меняться атомарно, в <em>один</em> документ. Транзакция — инструмент для случаев, когда данные по-честному живут в разных коллекциях, как наша задача и журнал.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/todo_repo.py</span><span class="role">часть 3 · транзакция</span></figcaption>
+    <pre><code class="language-python">    # ---------- COMPLETE (транзакция: todos + activity) ----------
+    async def complete(self, owner_id: int, todo_id: ObjectId) -&gt; Doc | None:
+        now = utcnow()
+
+        async def txn(session) -&gt; Doc | None:
+            todo = await self.todos.find_one_and_update(
+                {"_id": todo_id, "owner_id": owner_id, "is_completed": False},
+                {"$set": {"is_completed": True, "completed_at": now, "updated_at": now}},
+                return_document=ReturnDocument.AFTER,
+                session=session,                      # &lt;-- обязательно!
+            )
+            if todo is None:
+                return None                           # нечего выполнять — транзакция пустая
+            await self.activity.insert_one(
+                {
+                    "user_id": owner_id,
+                    "type": "todo.completed",
+                    "todo_id": todo_id,
+                    "title": todo["title"],
+                    "created_at": now,
+                },
+                session=session,                      # &lt;-- обязательно!
+            )
+            return todo
+
+        async with self.client.start_session() as session:
+            return await session.with_transaction(txn)</code></pre>
+  </figure>
+
+  <h3>Разбор построчно</h3>
+  <ul>
+    <li><strong><code>self.client.start_session()</code></strong> — сессия: «контекст», к которому сервер привязывает транзакцию. Для Motor здесь было бы <code>async with await client.start_session()</code>.</li>
+    <li><strong><code>session.with_transaction(txn)</code></strong> — запускает транзакцию, вызывает нашу функцию, коммитит при успехе и откатывает при исключении. Главное — он <strong>автоматически повторяет</strong> транзакцию при временных ошибках (<code>TransientTransactionError</code>, например при смене primary) и повторяет коммит при <code>UnknownTransactionCommitResult</code>. Писать эти повторы руками — источник багов.</li>
+    <li><strong><code>session=session</code> в каждой операции.</strong> Самая коварная ошибка: забыли передать сессию — операция выполнится <em>мимо</em> транзакции, сразу и навсегда, и не откатится при сбое. Никакой ошибки при этом не будет.</li>
+    <li><strong><code>"is_completed": False</code> в фильтре</strong> — условное обновление. Два параллельных «выполнить» не создадут два события: второй запрос не найдёт невыполненную задачу и вернёт <code>None</code>. Это идемпотентность на уровне базы.</li>
+    <li>Функция <code>txn</code> из-за повторов может выполниться <strong>несколько раз</strong>, поэтому внутри — только операции с БД, без отправки писем или вызовов внешних API.</li>
+  </ul>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <p>Второй, «ручной» стиль: <code>async with session.start_transaction(): ...</code> (в PyMongo Async — <code>async with await session.start_transaction():</code>). Он коммитит при выходе из блока и откатывает при исключении, но <em>не</em> повторяет при временных ошибках. Для прикладного кода предпочитайте <code>with_transaction</code>.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/todos.py</span><span class="role">дописываем</span></figcaption>
+    <pre><code class="language-python">@router.post("/{todo_id}/complete", response_model=TodoOut)
+async def complete_todo(todo_id: TodoIdDep, user: CurrentUserDep, repo: TodoRepoDep):
+    todo = await repo.complete(user.id, todo_id)
+    if todo is None:
+        if await repo.get(user.id, todo_id) is None:
+            raise NOT_FOUND
+        raise HTTPException(status.HTTP_409_CONFLICT, "Задача уже выполнена")
+    return todo</code></pre>
+  </figure>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p><strong>Ограничения транзакций, которые важно помнить:</strong> работают только на replica set (на standalone — ошибка <code>Transaction numbers are only allowed on a replica set member or mongos</code>); держите их короткими (лимит по умолчанию 60 с); не создавайте внутри коллекции «на лету» — поэтому мы создаём индексы (а с ними и коллекции) при старте. И главное: транзакция MongoDB <strong>не охватывает SQL-базу</strong>. Атомарно изменить задачу в Mongo и пользователя в SQLite одной транзакцией нельзя — это задача уже распределённых систем (паттерны Outbox / Saga).</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> <code>POST /todos/{id}/complete</code> → 200, <code>is_completed: true</code>, <code>completed_at</code> заполнен; в mongosh <code>db.activity.find()</code> — одно событие <code>todo.completed</code>. Повторный вызов → 409, второго события нет. <b>Эксперимент на откат:</b> временно добавьте <code>raise RuntimeError("boom")</code> сразу после <code>insert_one</code> в <code>txn</code> → 500, и при этом задача <em>осталась</em> невыполненной, а событие не записано. Уберите <code>raise</code>.</div>
+</section>
+
+<hr>
+
+<!-- 13 OPTIMIZE -->
+<section id="optimize">
+  <div class="sec-head"><h2>13 · Projection, explain, агрегации</h2><span class="tag practice">практика</span><span class="tag time">~6 мин</span></div>
+
+  <h3>Projection: берём только нужные поля</h3>
+  <p>Мы уже применили её в <code>list_for_owner</code>: <code>find(filt, {"description": 0, "checklist": 0})</code>. Второй аргумент <code>find</code> — проекция: <code>0</code> — исключить поле, <code>1</code> — включить только перечисленные (смешивать нельзя, кроме <code>_id</code>). В списке задач описание и чек-лист не показываются — незачем гонять их по сети и разбирать в Python. На документах с большими вложенными массивами это экономит в разы. Поэтому и схема ответа у списка своя — <code>TodoBrief</code>.</p>
+
+  <h3>explain: доказываем, что индекс работает</h3>
+  <p>Индекс, которым база не пользуется, бесполезен. Проверяем на объёме: зальём 50 000 тестовых задач в отдельную коллекцию.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">scripts/seed_bench.py</span><span class="role">python -m scripts.seed_bench</span></figcaption>
+    <pre><code class="language-python">import asyncio
+import random
+from datetime import datetime, timedelta, timezone
+
+from pymongo import AsyncMongoClient
+
+from app.core.config import settings
+
+TAGS = ["work", "home", "study", "sport", "shop"]
+
+
+async def main() -&gt; None:
+    client = AsyncMongoClient(settings.mongo_url)
+    coll = client[settings.mongo_db]["todos_bench"]
+    await coll.drop()
+    now = datetime.now(timezone.utc)
+    docs = [
+        {
+            "owner_id": random.randint(1, 500),
+            "title": f"Задача {i}",
+            "tags": random.sample(TAGS, k=2),
+            "priority": random.randint(1, 3),
+            "is_completed": random.random() &lt; 0.3,
+            "created_at": now - timedelta(minutes=i),
+        }
+        for i in range(50_000)
+    ]
+    await coll.insert_many(docs)          # одна пачка вместо 50 000 запросов
+    print("inserted:", await coll.count_documents({}))
+    await client.close()
+
+
+asyncio.run(main())</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">mongosh</span><span class="role">до и после индекса</span></figcaption>
+    <pre><code class="language-javascript">use auth_api
+const q = () =&gt; db.todos_bench.find({ owner_id: 42 }).sort({ created_at: -1 })
+
+q().explain("executionStats").executionStats
+// БЕЗ индекса:  stage COLLSCAN, totalDocsExamined: 50000, nReturned: ~100
+
+db.todos_bench.createIndex({ owner_id: 1, created_at: -1 })
+
+q().explain("executionStats").executionStats
+// С индексом:   IXSCAN, totalKeysExamined ≈ totalDocsExamined ≈ nReturned ≈ 100</code></pre>
+  </figure>
+
+  <ul>
+    <li><strong><code>COLLSCAN</code> / <code>IXSCAN</code></strong> — стадии плана: полный перебор или поиск по индексу. Ищите их в <code>winningPlan</code> (стадия IXSCAN бывает вложена во <code>FETCH</code>).</li>
+    <li><strong><code>totalDocsExamined</code> против <code>nReturned</code></strong> — главная метрика: сколько документов прочитали ради скольких вернули. Идеал — примерно равны. 50 000 прочитано ради 100 — запрос нужно индексировать.</li>
+    <li>Если в плане есть стадия <strong><code>SORT</code></strong> — сортировка идёт в памяти, индекс её не покрывает (вспоминаем ESR).</li>
+  </ul>
+  <p>То же из Python — например, в тесте, чтобы ловить регрессии:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">проверка плана из кода</span></figcaption>
+    <pre><code class="language-python">plan = await db.todos.find({"owner_id": 1}).sort("created_at", -1).explain()
+assert "COLLSCAN" not in str(plan), "запрос к todos идёт без индекса!"</code></pre>
+  </figure>
+
+  <h3>Агрегации: статистика по тегам</h3>
+  <p><strong>Aggregation pipeline</strong> — конвейер стадий, через который «протекают» документы; аналог <code>GROUP BY</code> и аналитики в SQL. Сделаем эндпоинт «сколько задач по каждому тегу и сколько из них выполнено»:</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/todo_repo.py</span><span class="role">часть 4 · агрегация</span></figcaption>
+    <pre><code class="language-python">    async def stats_by_tag(self, owner_id: int) -&gt; list[Doc]:
+        pipeline = [
+            {"$match": {"owner_id": owner_id}},            # 1. только свои (идёт по индексу)
+            {"$unwind": "$tags"},                          # 2. 1 задача с 2 тегами -&gt; 2 документа
+            {"$group": {                                   # 3. GROUP BY tag
+                "_id": "$tags",
+                "total": {"$sum": 1},
+                "done": {"$sum": {"$cond": ["$is_completed", 1, 0]}},
+            }},
+            {"$sort": {"total": -1}},                      # 4. ORDER BY total DESC
+            {"$project": {"_id": 0, "tag": "$_id", "total": 1, "done": 1}},  # 5. форма ответа
+        ]
+        cursor = await self.todos.aggregate(pipeline)      # в Motor — без await
+        return await cursor.to_list(length=None)</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/todos.py</span><span class="role">ОБЪЯВИТЬ ВЫШЕ /{todo_id}</span></figcaption>
+    <pre><code class="language-python">from pydantic import BaseModel
+
+
+class TagStat(BaseModel):
+    tag: str
+    total: int
+    done: int
+
+
+@router.get("/stats/tags", response_model=list[TagStat])
+async def todo_stats(user: CurrentUserDep, repo: TodoRepoDep):
+    return await repo.stats_by_tag(user.id)</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ $match ПЕРВЫМ И ПОЧЕМУ ПОРЯДОК РОУТОВ</span>
+    <p><code>$match</code> в начале конвейера может использовать индекс и сразу отсекает чужие задачи — все следующие стадии работают с малым объёмом. Поставьте его после <code>$unwind</code> — и база развернёт теги <em>всех</em> пользователей. Про роуты: FastAPI сверяет пути в порядке объявления. Если <code>/stats/tags</code> объявить после <code>/{todo_id}</code>, путь <code>/todos/stats</code> «съел» бы параметр. У нас путь из двух сегментов, но правило «конкретные пути — выше параметризованных» стоит соблюдать всегда. (<code>TagStat</code> по-хорошему переносим в <code>app/shemas/todo.py</code>.)</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> создаём несколько задач с тегами, часть выполняем, <code>GET /todos/stats/tags</code> → <code>[{"tag": "work", "total": 3, "done": 1}, ...]</code>. explain на <code>todos_bench</code> показывает переход COLLSCAN → IXSCAN. После эксперимента: <code>db.todos_bench.drop()</code>.</div>
+</section>
+
+<hr>
+
+<!-- 14 HOMEWORK -->
+<section id="homework">
+  <div class="sec-head"><h2>14 · Домашнее задание</h2><span class="tag time">до следующего урока</span></div>
+  <ol>
+    <li>Поднять MongoDB в Docker как replica set, подключить к <code>auth-api</code> через <code>lifespan</code>, перевести старт приложения с <code>on_event</code> на <code>lifespan</code>.</li>
+    <li>Реализовать модуль задач целиком: схемы, репозиторий, роутер, все эндпоинты урока (CRUD, чек-лист, complete, stats). Проверить каждый в Swagger двумя разными пользователями.</li>
+    <li>Добавить <code>POST /todos/{id}/tags</code> и <code>DELETE /todos/{id}/tags/{tag}</code> через <code>$addToSet</code> и <code>$pull</code>. Объяснить в комментарии, почему <code>$addToSet</code>, а не <code>$push</code>.</li>
+    <li>Писать в <code>activity</code> события <code>todo.created</code> и <code>todo.deleted</code>; сделать <code>GET /activity</code> — ленту событий текущего пользователя с пагинацией. Через <code>explain</code> убедиться, что запрос идёт по индексу <code>user_created</code>.</li>
+    <li>Добавить фильтр <code>GET /todos?priority=1&amp;priority=2</code> (через <code>$in</code>) и <code>due_date</code> с фильтром «просроченные» (<code>$lt</code>). Подумать по правилу ESR: нужен ли новый индекс и в каком порядке полей.</li>
+    <li>Тесты: фикстура, которая подменяет <code>get_mongo_db</code> на базу <code>auth_api_test</code> через <code>app.dependency_overrides</code> и удаляет её после тестов (<code>await client.drop_database(...)</code>). Тесты: создание, 409 на дубль, чужая задача → 404, complete дважды → 409.</li>
+    <li><em>Подумать и записать:</em> пользователь удаляется из SQL — что делать с его задачами и журналом в Mongo? В каком порядке удалять и что будет, если между двумя шагами сервер упадёт? Транзакции между SQL и Mongo нет — как обеспечить согласованность?</li>
+    <li><em>Подумать:</em> какие из сущностей урока 6 (posts, tags, profiles) вы бы перенесли в MongoDB, а какие — нет? Аргументируйте через «как читаются данные» и «нужна ли целостность».</li>
+  </ol>
+</section>
+
+<hr>
+
+<!-- 15 CHECKLIST -->
+<section id="checklist">
+  <div class="sec-head"><h2>15 · Чек-лист и что дальше</h2></div>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю, что такое NoSQL, четыре типа баз и разницу вертикального и горизонтального масштабирования.</li>
+    <li>☐ Могу аргументированно выбрать SQL или MongoDB под задачу и объяснить polyglot persistence в нашем проекте.</li>
+    <li>☐ Понимаю документ, коллекцию, BSON, устройство <code>ObjectId</code> и лимит 16 МБ.</li>
+    <li>☐ Знаю, когда вкладывать (embedding), а когда ссылаться (referencing), и цену денормализации.</li>
+    <li>☐ Подключаю MongoDB через один <code>AsyncMongoClient</code> в <code>lifespan</code>, отдаю базу через зависимость.</li>
+    <li>☐ Превращаю <code>_id: ObjectId</code> в <code>"id": str</code> через <code>validation_alias</code> + <code>BeforeValidator</code>.</li>
+    <li>☐ Пишу CRUD: <code>insert_one, find, find_one_and_update + $set, delete_one</code>, всегда фильтрую по <code>owner_id</code>.</li>
+    <li>☐ Использую атомарные операторы <code>$push / $pull / $addToSet / $inc / $</code> вместо «прочитал-изменил-записал».</li>
+    <li>☐ Создаю индексы под реальные запросы (ESR, unique, multikey, TTL) и проверяю их через <code>explain</code>.</li>
+    <li>☐ Применяю транзакции через <code>with_transaction</code>, передаю <code>session</code> в каждую операцию, понимаю, зачем replica set.</li>
+  </ul>
+
+  <h3>Куда двигаемся дальше</h3>
+  <ul>
+    <li><strong>Redis</strong>: второй тип NoSQL — кэширование ответов, rate-limit, хранение refresh-токенов.</li>
+    <li><strong>Docker Compose</strong>: app + PostgreSQL + MongoDB + Redis одной командой, миграции и индексы при старте.</li>
+    <li><strong>ODM</strong>: Beanie — модели MongoDB поверх Pydantic, по аналогии с SQLAlchemy ORM для SQL.</li>
+  </ul>
+
+  <p class="foot">Методичка · FastAPI, урок 7 · NoSQL и MongoDB: модель данных, embedding vs referencing, PyMongo Async, CRUD, индексы, транзакции, агрегации</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

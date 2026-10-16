@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import decode_token
 from app.db.database import get_async_session
 from app.db.models import User
+from app.repositories.post_repo import PostRepo
+from app.repositories.profile_repo import ProfileRepo
+from app.repositories.tag_repo import TagRepo
 from app.repositories.user_repo import UserRepo
 from app.shemas.token import TokenPayload
 
@@ -29,6 +32,27 @@ def get_user_repo(session: SessionDep) -> UserRepo:
 
 
 UserRepoDep = Annotated[UserRepo, Depends(get_user_repo)]
+
+
+def get_post_repo(session: SessionDep) -> PostRepo:
+    return PostRepo(session)
+
+
+PostRepoDep = Annotated[PostRepo, Depends(get_post_repo)]
+
+
+def get_tag_repo(session: SessionDep) -> TagRepo:
+    return TagRepo(session)
+
+
+TagRepoDep = Annotated[TagRepo, Depends(get_tag_repo)]
+
+
+def get_profile_repo(session: SessionDep) -> ProfileRepo:
+    return ProfileRepo(session)
+
+
+ProfileRepoDep = Annotated[ProfileRepo, Depends(get_profile_repo)]
 
 
 async def get_current_user(
