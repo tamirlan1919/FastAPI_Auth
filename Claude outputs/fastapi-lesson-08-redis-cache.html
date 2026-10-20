@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPI · Урок 8 — Кеширование и Redis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>FastAPI</div>
+  <p class="lead">Python · Кеш и Redis · Урок 8</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор урока</a>
+    <div class="grp">Часть 1 · Просто о кеше</div>
+    <a href="#cache"><span class="n theory-dot">01</span>Что такое кеш</a>
+    <a href="#redis"><span class="n theory-dot">02</span>Почему Redis, а не dict</a>
+    <a href="#cli"><span class="n practice-dot">03</span>Руками в redis-cli</a>
+    <div class="grp">Часть 2 · Redis в auth-api</div>
+    <a href="#connect"><span class="n practice-dot">04</span>Подключаем к FastAPI</a>
+    <a href="#counter"><span class="n practice-dot">05</span>Первый эндпоинт: счётчик</a>
+    <a href="#cache-aside"><span class="n practice-dot">06</span>Cache-Aside: список пользователей</a>
+    <a href="#keys"><span class="n practice-dot">07</span>Динамические ключи</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <a href="#invalidation"><span class="n practice-dot">08</span>Инвалидация кеша</a>
+    <div class="grp">Часть 3 · Как в продакшене</div>
+    <a href="#service"><span class="n practice-dot">09</span>CacheService: убираем копипасту</a>
+    <a href="#logout"><span class="n practice-dot">10</span>Logout для JWT</a>
+    <a href="#ratelimit"><span class="n practice-dot">11</span>Защита логина от перебора</a>
+    <a href="#memory"><span class="n theory-dot">12</span>Когда кончится память</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">13</span>Игра «HIT или MISS»</a>
+    <a href="#homework"><span class="n">14</span>Домашка и чек-лист</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">FastAPI · Урок 8 · 2 часа с перерывом · live-coding в auth-api</p>
+  <h1>Кеширование и Redis</h1>
+  <p class="lead-p">В <code>auth-api</code> уже есть пользователи в SQL, задачи в MongoDB и вход по JWT. Всё работает — но каждый запрос честно идёт в базу, даже если ответ не менялся час. Сегодня научим приложение <strong>запоминать</strong> ответы и подключим <strong>Redis</strong> — самый быстрый «блокнот» бэкенд-разработчика. Начнём с простого — что такое кеш, пара команд в консоли — и к концу урока дойдём до вещей, которые делают в настоящем продакшене: logout для JWT и защиты от перебора паролей.</p>
+
+  <div class="hero">
+    <h3>ЧТО ПОЯВИТСЯ В AUTH-API К КОНЦУ УРОКА</h3>
+    <ul>
+      <li><b>Redis подключён</b> через lifespan и зависимость <code>RedisDep</code>, как у нас сделаны SQL-сессии.</li>
+      <li><b>Счётчик визитов</b> <code>/stats/visits</code> — первый «привет» от Redis.</li>
+      <li><b>Кеш</b> для <code>GET /users/</code> и <code>GET /users/{username}</code>, заголовок <code>X-Cache: HIT/MISS</code>, сброс кеша при регистрации и смене email.</li>
+      <li><b>CacheService</b> — переиспользуемый Cache-Aside, который не роняет API, если Redis упал.</li>
+      <li><b><code>POST /auth/logout</code></b> — настоящий выход для JWT через чёрный список токенов.</li>
+      <li><b>Защита <code>/auth/token</code></b>: 5 неверных паролей за 15 минут → <code>429 Too Many Requests</code>.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Что такое кеш: холодильник, молоко и срок годности</td><td>теория</td></tr>
+      <tr><td class="t">0:08</td><td>Почему Redis, а не словарь в Python</td><td>теория</td></tr>
+      <tr><td class="t">0:15</td><td>Запускаем Redis, 10 команд руками в <code>redis-cli</code></td><td>практика</td></tr>
+      <tr><td class="t">0:25</td><td>Подключаем Redis к auth-api: config, lifespan, зависимость</td><td>live-coding</td></tr>
+      <tr><td class="t">0:35</td><td>Первый эндпоинт: счётчик визитов на <code>INCR</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:40</td><td>Cache-Aside: кешируем <code>GET /users/</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:52</td><td>Динамические ключи: <code>GET /users/{username}</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:00</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:10</td><td>Инвалидация: регистрация и <code>PATCH /users/me</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:20</td><td>CacheService: Cache-Aside без копипасты, fail-open</td><td>live-coding</td></tr>
+      <tr><td class="t">1:32</td><td>Logout для JWT: чёрный список токенов</td><td>live-coding</td></tr>
+      <tr><td class="t">1:43</td><td>Rate limiting логина</td><td>live-coding</td></tr>
+      <tr><td class="t">1:51</td><td>Память, вытеснение, мониторинг</td><td>теория</td></tr>
+      <tr><td class="t">1:57</td><td>Игра «HIT или MISS», домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">ОТ ЧЕГО ОТТАЛКИВАЕМСЯ</span>
+    <p>Код урока написан под текущее состояние <code>auth-api</code>: роутеры <code>users</code>, <code>auth</code>, <code>todos</code>; <code>UserRepoDep</code> и <code>CurrentUserDep</code> в <code>app/api/deps.py</code>; SQLAlchemy с <code>echo=True</code> (это нам очень пригодится — в консоли видно каждый SQL-запрос). Все шаги я прогнал на копии проекта с Redis 7 и <code>redis-py</code> 8: каждый ответ и каждая строчка вывода в уроке — настоящие.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Просто о кеше</span><span class="bar"></span></div>
+
+<!-- 01 CACHE -->
+<section id="cache">
+  <div class="sec-head"><h2>01 · Что такое кеш</h2><span class="tag theory">теория</span><span class="tag time">~8 мин</span></div>
+
+  <div class="oneliner">Кеш — это быстрая память для ответов, которые дорого получать заново.<small>Один раз посчитали — запомнили — дальше отдаём готовое.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ ПРО МОЛОКО</span>
+    <p>Вам захотелось молока. Можно каждый раз идти в магазин: одеться, спуститься, отстоять очередь — 20 минут. А можно держать пакет в холодильнике — 5 секунд. <strong>Магазин — это база данных</strong>: там есть всё и всегда свежее, но идти долго. <strong>Холодильник — это кеш</strong>: быстро, но места мало, и у молока есть <strong>срок годности</strong>. Запомните эту картинку — весь урок будет про неё:</p>
+    <ul>
+      <li>молоко есть в холодильнике → <strong>cache hit</strong> (попадание);</li>
+      <li>холодильник пуст → идём в магазин и кладём пакет в холодильник → <strong>cache miss</strong> (промах);</li>
+      <li>срок годности на пакете → <strong>TTL</strong> (time to live);</li>
+      <li>молоко скисло раньше срока, выкидываем → <strong>инвалидация</strong>;</li>
+      <li>холодильник забит, выкидываем то, что давно не трогали → <strong>вытеснение (eviction)</strong>.</li>
+    </ul>
+  </div></div>
+
+  <div class="diagram">
+<pre>   запрос GET /users/
+          │
+          ▼
+   ┌──────────────┐   есть    ┌──────────────────┐
+   │ <span class="tn">есть в кеше?</span> │──────────▶│ <span class="pk">отдать из кеша</span>   │──▶ ответ за ~1 мс   <span class="pk">HIT</span>
+   └──────┬───────┘           └──────────────────┘
+          │ нет
+          ▼
+   ┌──────────────┐           ┌──────────────────┐
+   │ <span class="fk">сходить в БД</span> │──────────▶│ положить в кеш   │──▶ ответ за ~50 мс  <span class="fk">MISS</span>
+   └──────────────┘           │ на 60 секунд     │
+                              └──────────────────┘</pre>
+  </div>
+
+  <h3>Насколько быстрее — порядок цифр</h3>
+  <p>Если растянуть время так, чтобы чтение из оперативной памяти (~100 наносекунд) длилось <strong>1 секунду</strong>, то:</p>
+  <table class="cmp">
+    <thead><tr><th>Операция</th><th>Реально (порядок)</th><th>«В человеческих секундах»</th></tr></thead>
+    <tbody>
+      <tr><td>чтение из RAM</td><td>~100 нс</td><td>1 секунда</td></tr>
+      <tr><td>чтение с SSD</td><td>~100 мкс</td><td>~17 минут</td></tr>
+      <tr><td>поход по сети внутри дата-центра</td><td>~0.5 мс</td><td>~1.5 часа</td></tr>
+      <tr><td>тяжёлый SQL-запрос с JOIN-ами</td><td>~50 мс</td><td>~6 дней</td></tr>
+      <tr><td>внешний API (погода, оплата)</td><td>~300 мс</td><td>~1 месяц</td></tr>
+    </tbody>
+  </table>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРИКОЛ</span>
+    <p>С кешем пользователь получает ответ «за секунду», без кеша он «ждёт посылку неделю». Похожая таблица — «Latency numbers every programmer should know» — гуляет по интернету больше 15 лет, её связывают с Джеффом Дином из Google. Цифры в ней со временем меняются, а пропорции нет.</p>
+  </div></div>
+
+  <h3>Что кешировать, а что нет</h3>
+  <div class="twocol">
+    <div class="box good"><h5>Кешируем</h5>
+      <ul style="margin:4px 0; padding-left:18px">
+        <li>читают часто, меняют редко (список пользователей, каталог, настройки);</li>
+        <li>дорого получать (тяжёлый SQL, внешний API, отчёт);</li>
+        <li>не страшно показать устаревшее на 30–60 секунд.</li>
+      </ul></div>
+    <div class="box bad"><h5>Не кешируем</h5>
+      <ul style="margin:4px 0; padding-left:18px">
+        <li>деньги и остатки на складе в момент покупки;</li>
+        <li>то, что меняется при каждом запросе;</li>
+        <li>то, что и так быстро достаётся (кеш тоже стоит денег и сложности).</li>
+      </ul></div>
+  </div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ГЛАВНЫЙ КОМПРОМИСС</span>
+    <p>Кеш — это всегда сделка: <strong>мы платим свежестью данных за скорость</strong>. Копия в кеше может отставать от базы. Вся сложность кеширования — в ответе на вопрос «насколько отставать допустимо и как вовремя выкинуть устаревшее».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 REDIS -->
+<section id="redis">
+  <div class="sec-head"><h2>02 · Почему Redis, а не dict в Python</h2><span class="tag theory">теория</span><span class="tag time">~7 мин</span></div>
+
+  <p>Первая мысль питониста: «Зачем отдельная база? Положу ответ в словарь!»</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">наивный кеш — так НЕ делаем</span></figcaption>
+    <pre><code class="language-python">_cache: dict[str, list] = {}
+
+@router.get('/')
+async def get_users(user_repo: UserRepoDep):
+    if "users" not in _cache:
+        _cache["users"] = await user_repo.get_users()
+    return _cache["users"]</code></pre>
+  </figure>
+  <p>Локально работает. А вот в продакшене всё разваливается:</p>
+  <ul>
+    <li><strong>Несколько процессов.</strong> В проде запускают <code>uvicorn --workers 4</code> или несколько контейнеров. У каждого процесса <strong>свой</strong> словарь. Сбросили кеш в одном — в остальных трёх живут старые данные, и пользователь видит то старый email, то новый, в зависимости от того, в какой воркер попал.</li>
+    <li><strong>Перезапуск = пустой кеш.</strong> Задеплоили — и все запросы разом ломятся в базу.</li>
+    <li><strong>Нет срока годности.</strong> Словарь сам ничего не удаляет и растёт, пока не съест всю память.</li>
+  </ul>
+
+  <div class="diagram">
+<pre>   dict в каждом процессе                      один Redis на всех
+ ┌──────────┐ ┌──────────┐ ┌──────────┐      ┌──────────┐ ┌──────────┐ ┌──────────┐
+ │ worker 1 │ │ worker 2 │ │ worker 3 │      │ worker 1 │ │ worker 2 │ │ worker 3 │
+ │ {старое} │ │ {новое}  │ │ {старое} │      └────┬─────┘ └────┬─────┘ └────┬─────┘
+ └──────────┘ └──────────┘ └──────────┘           └──────┬─────┴────────────┘
+   <span class="fk">три разные «правды»</span>                               ▼
+                                                    ┌──────────┐
+                                                    │  <span class="tn">Redis</span>   │  <span class="pk">одна общая правда</span>
+                                                    └──────────┘</pre>
+  </div>
+
+  <h3>Redis в двух словах</h3>
+  <p><strong>Redis</strong> (REmote DIctionary Server) — это, по сути, тот же словарь, но <strong>вынесенный в отдельный сервер</strong>, общий для всех процессов, со сроком годности у ключей. Данные лежат в оперативной памяти, поэтому операция занимает доли миллисекунды.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>2009 год, Сицилия. Сальваторе Санфилиппо (ник <em>antirez</em>) делает стартап с аналитикой посещений сайтов в реальном времени, и MySQL не успевает за потоком данных. Он пишет маленький сервер «словарь в памяти» для себя — так появился Redis. Через несколько лет его использовали Twitter, GitHub, Instagram и Stack Overflow, а потом, наверное, и каждый второй бэкенд.</p>
+    <p>Продолжение истории: в 2024 году компания Redis сменила открытую лицензию на более закрытую, и сообщество под крылом Linux Foundation сделало форк — <strong>Valkey</strong>. В 2025-м Redis 8 снова получил открытую лицензию (AGPL). Для нас разницы нет: команды и Python-клиент одинаковые.</p>
+  </div></div>
+
+  <h3>Чем Redis лучше словаря</h3>
+  <table class="cmp">
+    <thead><tr><th>Возможность</th><th>Зачем нам</th></tr></thead>
+    <tbody>
+      <tr><td>TTL у каждого ключа</td><td>ключ сам удалится через N секунд — «срок годности» молока</td></tr>
+      <tr><td>атомарные операции (<code>INCR</code>)</td><td>счётчики без гонок: Redis выполняет команды <strong>по одной</strong>, в один поток</td></tr>
+      <tr><td>структуры данных</td><td>строки, списки, множества, хеши, сортированные множества</td></tr>
+      <tr><td>общий для всех процессов</td><td>одна правда для 4 воркеров и 10 контейнеров</td></tr>
+      <tr><td>сохранение на диск (RDB/AOF)</td><td>может пережить перезапуск, если нужно</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПАРАДОКС</span>
+    <p>Redis выполняет команды в <strong>одном потоке</strong> — и при этом это одна из самых быстрых баз в мире. Секрет в том, что всё лежит в памяти, а каждая команда занимает микросекунды: очередь не успевает накопиться. Бонус однопоточности — <code>INCR</code> не может «потерять» прибавку, даже если 1000 запросов пришли одновременно.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 CLI -->
+<section id="cli">
+  <div class="sec-head"><h2>03 · Руками в redis-cli</h2><span class="tag practice">практика</span><span class="tag time">~10 мин</span></div>
+
+  <p>Прежде чем писать Python, потрогаем Redis руками — так понятнее, что потом будет делать код.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">bash</span></figcaption>
+    <pre><code class="language-bash"># запустить Redis в Docker (порт 6379 — стандартный)
+docker run -d --name auth-redis -p 6379:6379 redis:8
+
+# открыть консоль Redis внутри контейнера
+docker exec -it auth-redis redis-cli</code></pre>
+  </figure>
+  <p>Без Docker на Mac: <code>brew install redis</code> → <code>brew services start redis</code> → <code>redis-cli</code>. Если хочется посмотреть на ключи мышкой — есть бесплатный официальный GUI <strong>Redis Insight</strong>.</p>
+
+  <h3>Строки и срок годности</h3>
+  <p>Вводите только то, что после <code>&gt;</code>. Комментарии после <code>#</code> — подсказки для вас, в консоль их не пишем.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">redis-cli</span><span class="role">команды и ответы</span></figcaption>
+    <pre><code class="language-bash">127.0.0.1:6379&gt; PING
+PONG                                      # Redis жив
+
+127.0.0.1:6379&gt; SET milk "fresh"
+OK
+127.0.0.1:6379&gt; GET milk
+"fresh"
+
+127.0.0.1:6379&gt; SET milk "fresh" EX 10    # положить на 10 секунд
+OK
+127.0.0.1:6379&gt; TTL milk
+(integer) 7                               # осталось 7 секунд
+127.0.0.1:6379&gt; TTL milk                  # ...ждём 10 секунд
+(integer) -2                              # -2 = ключа больше нет
+127.0.0.1:6379&gt; GET milk
+(nil)                                     # nil — как None в Python
+
+127.0.0.1:6379&gt; SET forever "yes"
+127.0.0.1:6379&gt; TTL forever
+(integer) -1                              # -1 = ключ есть, но срока годности нет</code></pre>
+  </figure>
+
+  <h3>Счётчики, удаление, поиск</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">redis-cli</span></figcaption>
+    <pre><code class="language-bash">127.0.0.1:6379&gt; INCR stats:visits         # +1; ключа не было — Redis считает, что было 0
+(integer) 1
+127.0.0.1:6379&gt; INCR stats:visits
+(integer) 2
+
+127.0.0.1:6379&gt; EXISTS stats:visits
+(integer) 1                               # 1 = есть, 0 = нет
+127.0.0.1:6379&gt; DEL stats:visits milk forever
+(integer) 2                               # сколько ключей реально удалили
+
+127.0.0.1:6379&gt; SET user:alice "{...}"
+127.0.0.1:6379&gt; SET user:bob "{...}"
+127.0.0.1:6379&gt; SCAN 0 MATCH user:*       # найти ключи по шаблону
+1) "0"
+2) 1) "user:alice"
+   2) "user:bob"</code></pre>
+  </figure>
+
+  <h3>Ещё структуры — для общего кругозора</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">redis-cli</span><span class="role">хеш, список, множество</span></figcaption>
+    <pre><code class="language-bash">HSET user:1 username alice email a@test.com   # хеш — как dict внутри ключа
+HGET user:1 email                              # "a@test.com"
+LPUSH last_logins alice bob                    # список — очередь последних событий
+LRANGE last_logins 0 -1                        # 1) "bob" 2) "alice"
+SADD online alice bob alice                    # множество — без дублей
+SMEMBERS online                                # 1) "alice" 2) "bob"</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ДВОЕТОЧИЯ В КЛЮЧАХ</span>
+    <p>У Redis нет таблиц и папок — только плоский список ключей. Поэтому принято именовать их как пути: <code>сущность:id:что</code> — <code>user:alice</code>, <code>stats:visits</code>, <code>blacklist:abc123</code>. По префиксу легко найти ключи (<code>SCAN MATCH user:*</code>), а GUI вроде Redis Insight показывают их деревом, как папки.</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЗАПРЕЩЁННАЯ КОМАНДА</span>
+    <p>В интернете вы встретите <code>KEYS *</code> — «покажи все ключи». Локально можно. В продакшене — <strong>никогда</strong>: на миллионе ключей Redis займётся только этим и на секунды перестанет отвечать <em>всем</em> (помним — он однопоточный). В интернете полно историй, как сайт ложился от одной такой команды из консоли. Используйте <code>SCAN</code> — он перебирает ключи порциями.</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> у всех <code>PING</code> → <code>PONG</code>, ключ с <code>EX 10</code> исчез через 10 секунд. Консоль не закрываем — через 10 минут будем смотреть, что туда кладёт наше приложение.</div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Redis в auth-api</span><span class="bar"></span></div>
+
+<!-- 04 CONNECT -->
+<section id="connect">
+  <div class="sec-head"><h2>04 · Подключаем Redis к FastAPI</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <h3>Шаг 1. Библиотека</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">bash</span></figcaption>
+    <pre><code class="language-bash">pip install "redis[hiredis]"
+pip freeze &gt; requirements.txt</code></pre>
+  </figure>
+  <ul>
+    <li><code>redis</code> — официальный Python-клиент (он же <code>redis-py</code>). Асинхронная версия живёт внутри него: <code>redis.asyncio</code>.</li>
+    <li><code>[hiredis]</code> — дополнительный быстрый парсер ответов на C. Необязателен, но бесплатно ускоряет.</li>
+  </ul>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">НЕ СТАВЬТЕ AIOREDIS</span>
+    <p>В старых статьях и курсах пишут <code>pip install aioredis</code>. Это была отдельная библиотека, которую в 2022 году влили в <code>redis-py</code> (версия 4.2) — с тех пор старый пакет заброшен. Сегодня «aioredis» — это просто <code>import redis.asyncio</code>.</p>
+  </div></div>
+
+  <h3>Шаг 2. Настройки</h3>
+  <div class="fileinfo"><span class="k">меняем</span><code>app/core/config.py</code><span class="k">что</span><span>Добавляем адрес Redis и TTL кеша по умолчанию. Остальное как было.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/core/config.py</span></figcaption>
+    <pre><code class="language-python">from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+class Settings(BaseSettings):
+    secret_key: str
+    algorithm: str = 'HS256'
+    access_token_expire_minutes: int = 30
+
+    model_config = SettingsConfigDict(env_file=BASE_DIR / '.env', env_file_encoding='utf-8')
+
+    mongo_url: str = 'mongodb://localhost:27017'
+    mongo_db: str = 'test_db'
+
+    # --- Redis ---
+    redis_url: str = 'redis://localhost:6379/0'
+    cache_ttl: int = 60          # сколько секунд живёт кеш по умолчанию
+
+
+settings = Settings()</code></pre>
+  </figure>
+  <p><code>redis://localhost:6379/0</code> — протокол, хост, порт и <strong>номер базы</strong>. В одном Redis 16 независимых баз (0–15): например, приложение — в <code>/0</code>, тесты — в <code>/15</code>, и они не мешают друг другу. В проде адрес приходит из <code>.env</code>: <code>REDIS_URL=redis://:пароль@redis-host:6379/0</code>.</p>
+
+  <h3>Шаг 3. Модуль подключения</h3>
+  <div class="fileinfo"><span class="k">создаём</span><code>app/db/redis.py</code><span class="k">роль</span><span>Знает, как создать клиент Redis и как отдать его в эндпоинт. Рядом с <code>database.py</code> (SQL) и <code>mongo.py</code> — все подключения к хранилищам в одной папке.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/db/redis.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">from fastapi import Request
+from redis.asyncio import Redis
+
+from app.core.config import settings
+
+
+def create_redis() -&gt; Redis:
+    return Redis.from_url(
+        settings.redis_url,
+        decode_responses=True,       # получать str, а не bytes
+        socket_connect_timeout=1,    # не висеть, если Redis недоступен
+        socket_timeout=1,
+    )
+
+
+def get_redis(request: Request) -&gt; Redis:
+    """Зависимость FastAPI: отдаёт клиент, созданный при старте приложения."""
+    return request.app.state.redis</code></pre>
+  </figure>
+  <ul>
+    <li><strong><code>Redis.from_url(...)</code></strong> создаёт не одно соединение, а <strong>пул соединений</strong>: запросы берут из него свободное соединение и возвращают обратно. Поэтому клиент создаём <strong>один раз</strong> на приложение, а не на каждый запрос.</li>
+    <li><strong><code>decode_responses=True</code></strong> — Redis хранит байты. Без этого флага <code>await redis.get(...)</code> вернёт <code>b'{"id": 1}'</code>, с ним — обычную строку <code>'{"id": 1}'</code>.</li>
+    <li><strong>Таймауты по 1 секунде</strong> — если Redis «завис», мы быстро получим ошибку, а не повесим весь запрос пользователя. Кеш, который тормозит сильнее базы, хуже, чем никакого.</li>
+  </ul>
+
+  <h3>Шаг 4. Жизненный цикл — lifespan</h3>
+  <div class="fileinfo"><span class="k">заменяем</span><code>app/main.py</code><span class="k">что</span><span>Добавляем <code>lifespan</code>: создать клиент при старте, закрыть при остановке. Заодно убираем неиспользуемые импорты (<code>ensure_future</code>, <code>Depends</code>, старую <code>init_db</code> — схемой давно управляет Alembic) и подключаем роутер <code>stats</code>. Его файл создадим в следующем блоке — чтобы приложение запустилось уже сейчас, создайте пустой <code>app/api/routers/stats.py</code> с двумя строками: <code>from fastapi import APIRouter</code> и <code>router = APIRouter()</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/main.py</span></figcaption>
+    <pre><code class="language-python">from contextlib import asynccontextmanager
+
+import uvicorn
+from fastapi import FastAPI
+
+from app.api.routers import auth, stats, todos, users
+from app.db import models  # noqa: F401 — регистрирует модели в Base.metadata
+from app.db.redis import create_redis
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ---------- старт приложения ----------
+    app.state.redis = create_redis()
+    await app.state.redis.ping()      # Redis не запущен? Узнаем сразу, а не на первом запросе
+    yield
+    # ---------- остановка ----------
+    await app.state.redis.aclose()
+
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(users.router)
+app.include_router(auth.router)
+app.include_router(todos.router)
+app.include_router(stats.router)
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="0.0.0.0", port=8000)</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ LIFESPAN</span>
+    <p>Код до <code>yield</code> выполняется <strong>один раз при старте</strong>, после <code>yield</code> — <strong>при остановке</strong>. Клиент кладём в <code>app.state</code> — общий «рюкзак» приложения, доступный из любого запроса. <code>ping()</code> на старте — это fail fast: забыли запустить Redis — приложение не стартует с понятной ошибкой, а не «падает у пользователя через час». <code>aclose()</code> аккуратно закрывает пул (в старых примерах встречается <code>close()</code> — он устарел).</p>
+  </div></div>
+
+  <h3>Шаг 5. Зависимость</h3>
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/api/deps.py</code><span class="k">куда</span><span>Импорты — наверх, <code>RedisDep</code> — рядом с <code>SessionDep</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/deps.py</span><span class="role">+ 3 строки</span></figcaption>
+    <pre><code class="language-python">from redis.asyncio import Redis
+
+from app.db.redis import get_redis
+
+RedisDep = Annotated[Redis, Depends(get_redis)]</code></pre>
+  </figure>
+  <p>Тот же приём, что у нас с <code>SessionDep</code> и <code>UserRepoDep</code>: эндпоинт пишет <code>redis: RedisDep</code>, а FastAPI сам вызывает <code>get_redis</code> и подставляет клиент. В тестах эту зависимость легко подменить через <code>app.dependency_overrides</code>.</p>
+</section>
+
+<hr>
+
+<!-- 05 COUNTER -->
+<section id="counter">
+  <div class="sec-head"><h2>05 · Первый эндпоинт: счётчик визитов</h2><span class="tag practice">live-coding</span><span class="tag time">~5 мин</span></div>
+  <p>Начинаем с самого простого, что вообще можно сделать с Redis, — счётчика. Никакого кеша, никакой базы.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>app/api/routers/stats.py</code><span class="k">роль</span><span>Маленький роутер «пощупать Redis»: проверка связи и счётчик визитов.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/stats.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">from fastapi import APIRouter
+
+from app.api.deps import RedisDep
+
+router = APIRouter(prefix="/stats", tags=["Статистика (Redis)"])
+
+
+@router.get("/ping")
+async def ping_redis(redis: RedisDep):
+    return {"redis": await redis.ping()}          # True, если Redis отвечает
+
+
+@router.post("/visits")
+async def add_visit(redis: RedisDep):
+    total = await redis.incr("stats:visits")      # +1 атомарно, вернёт новое значение
+    return {"visits": total}
+
+
+@router.get("/visits")
+async def get_visits(redis: RedisDep):
+    value = await redis.get("stats:visits")       # None, если ключа ещё нет
+    return {"visits": int(value or 0)}</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">Swagger /docs</span><span class="role">ответы</span></figcaption>
+    <pre><code class="language-none">GET  /stats/ping     →  {"redis": true}
+POST /stats/visits   →  {"visits": 1}
+POST /stats/visits   →  {"visits": 2}
+GET  /stats/visits   →  {"visits": 2}</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ INCR, А НЕ GET + SET</span>
+    <p>Наивный вариант: <code>v = get()</code> → <code>set(v + 1)</code>. Если два запроса придут одновременно, оба прочитают 5 и оба запишут 6 — один визит потерялся. Это <strong>гонка (race condition)</strong>. <code>INCR</code> делает «прочитать + прибавить + записать» одной командой внутри Redis, а Redis выполняет команды строго по очереди. Потерять прибавку невозможно — даже при 4 воркерах и 10 000 запросов в секунду.</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> в консоли <code>redis-cli</code> из блока 03 наберите <code>GET stats:visits</code> — там то же число, что вернул API. Приложение и консоль смотрят в один и тот же Redis.</div>
+</section>
+
+<hr>
+
+<!-- 06 CACHE-ASIDE -->
+<section id="cache-aside">
+  <div class="sec-head"><h2>06 · Cache-Aside: кешируем GET /users/</h2><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <div class="oneliner">Cache-Aside — «кеш сбоку»: приложение само смотрит в кеш, а если пусто — само идёт в базу и само кладёт результат в кеш.<small>Самый популярный паттерн кеширования. База про кеш ничего не знает.</small></div>
+
+  <ol>
+    <li>Придумать <strong>ключ</strong> — «название полки в холодильнике»: <code>users:all</code>.</li>
+    <li><code>GET</code> по ключу. Есть значение → <strong>HIT</strong>, отдаём сразу.</li>
+    <li>Нет → <strong>MISS</strong>: запрос в базу → превратить результат в строку (JSON) → <code>SET</code> с TTL → отдать.</li>
+  </ol>
+
+  <h3>Было</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/users.py</span><span class="role">сейчас</span></figcaption>
+    <pre><code class="language-python">@router.get('/', response_model=list[UserOut])
+async def get_users(user_repo: UserRepoDep):
+    return await user_repo.get_users()</code></pre>
+  </figure>
+
+  <h3>Первая попытка — и первая ошибка</h3>
+  <p>Логичная мысль: «Redis хранит строки — сделаю <code>json.dumps</code> от того, что вернул репозиторий». Пробуем:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">так не сработает</span></figcaption>
+    <pre><code class="language-python">users = await user_repo.get_users()
+await redis.set("users:all", json.dumps(users), ex=60)
+# TypeError: Object of type User is not JSON serializable</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ</span>
+    <p>Репозиторий возвращает <strong>ORM-объекты</strong> SQLAlchemy — «живые» объекты, связанные с сессией базы, а не данные. <code>json</code> не знает, как их записать (и правильно делает: внутри лежит, например, <code>hashed_password</code>, которому не место в кеше ответа). Нам нужен путь <strong>ORM → Pydantic-схема → JSON</strong>. Схема <code>UserOut</code> у нас уже есть, и в ней <code>from_attributes=True</code> — она умеет читать ORM-объекты.</p>
+  </div></div>
+
+  <h3>Рабочая версия</h3>
+  <div class="fileinfo"><span class="k">заменяем</span><code>app/api/routers/users.py</code><span class="k">что</span><span>Эндпоинт <code>GET /users/</code> с кешем. Остальные эндпоинты не трогаем.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/users.py</span></figcaption>
+    <pre><code class="language-python">import json
+
+from fastapi import APIRouter, Response
+
+from app.api.deps import CurrentUserDep, RedisDep, UserRepoDep
+from app.db.mongo import database
+from app.shemas.user import UserOut
+
+
+router = APIRouter(
+    prefix="/users",
+    tags=["Профиль"],
+)
+
+users_collection = database.get_collection("users")
+
+USERS_ALL_KEY = "users:all"
+
+
+@router.get('/', response_model=list[UserOut])
+async def get_users(user_repo: UserRepoDep, redis: RedisDep, response: Response):
+    # 1. Смотрим в кеш
+    cached = await redis.get(USERS_ALL_KEY)
+    if cached is not None:
+        response.headers["X-Cache"] = "HIT"
+        return json.loads(cached)
+
+    # 2. В кеше пусто — идём в базу
+    users = await user_repo.get_users()
+
+    # 3. ORM-объекты → Pydantic → обычные dict → JSON-строка
+    data = [UserOut.model_validate(u).model_dump(mode="json") for u in users]
+    await redis.set(USERS_ALL_KEY, json.dumps(data), ex=60)   # ex=60 — живёт 60 секунд
+
+    response.headers["X-Cache"] = "MISS"
+    return data
+
+
+@router.get('/me', response_model=UserOut)
+async def me(current_user: CurrentUserDep):
+    return current_user
+
+
+@router.get('/mongo/me')
+async def mongo_users():
+    users = await users_collection.find().to_list()
+    for user in users:
+        user["_id"] = str(user["_id"])
+    return users</code></pre>
+  </figure>
+
+  <h4>Разберём каждую деталь</h4>
+  <ul>
+    <li><strong><code>USERS_ALL_KEY = "users:all"</code></strong> — ключ в константе. Его будут использовать и чтение, и (скоро) сброс кеша. Опечатка в одном месте = кеш, который никто никогда не сбросит.</li>
+    <li><strong><code>if cached is not None</code></strong>, а не <code>if cached</code> — пустой список <code>"[]"</code> — тоже валидный закешированный ответ, и он не должен считаться промахом.</li>
+    <li><strong><code>model_validate(u)</code></strong> — ORM-объект → схема <code>UserOut</code> (поле <code>hashed_password</code> отбрасывается). <strong><code>model_dump(mode="json")</code></strong> — схема → обычный dict, где всё уже JSON-совместимо (даты станут строками и т.д.).</li>
+    <li><strong><code>ex=60</code></strong> — TTL 60 секунд. Даже если мы забудем сбросить кеш, через минуту данные обновятся сами — страховка от вечно устаревших данных.</li>
+    <li><strong><code>response: Response</code></strong> — FastAPI подставит объект ответа, чтобы мы могли добавить свой заголовок. <strong><code>X-Cache: HIT/MISS</code></strong> — не стандарт, а удобная для отладки традиция: похожий заголовок ставят CDN и кеширующие прокси, например Fastly и Varnish.</li>
+  </ul>
+
+  <h3>Смотрим, как это работает</h3>
+  <p>Мы не зря держим <code>echo=True</code> в <code>database.py</code>: SQLAlchemy печатает каждый запрос в консоль. Вызываем <code>GET /users/</code> два раза подряд и смотрим консоль uvicorn:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">консоль uvicorn</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">--- 1-й запрос: X-Cache: MISS
+INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO sqlalchemy.engine.Engine SELECT users.id, users.username, users.email, users.hashed_password, ...
+FROM users
+INFO sqlalchemy.engine.Engine [generated in 0.00054s] ()
+INFO sqlalchemy.engine.Engine ROLLBACK
+
+--- 2-й запрос: X-Cache: HIT
+(тишина — в базу никто не ходил)</code></pre>
+  </figure>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПОДВОХ ДЛЯ ВНИМАТЕЛЬНЫХ</span>
+    <p>Если отключить наш кеш и вызвать эндпоинт ещё раз, SQLAlchemy напишет <code>[cached since 0.012s ago]</code>. «Так он и так кеширует?!» Нет: SQLAlchemy кеширует <strong>скомпилированный текст SQL</strong>, чтобы не собирать строку запроса заново. Данные он всё равно каждый раз берёт из базы. Хороший вопрос группе на внимательность.</p>
+  </div></div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ: ПОЧУВСТВОВАТЬ РАЗНИЦУ</span>
+    <p>SQLite с тремя пользователями отвечает за миллисекунду — разницу не заметить. Временно добавьте в начало <code>UserRepo.get_users</code> строку <code>await asyncio.sleep(2)</code> («представим, что это тяжёлый отчёт») и не забудьте <code>import asyncio</code>. Первый запрос — 2 секунды, следующие 60 секунд — мгновенно. После эксперимента строку уберите.</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> в Swagger первый <code>GET /users/</code> → заголовок <code>x-cache: MISS</code>, второй → <code>HIT</code>. В <code>redis-cli</code>: <code>GET users:all</code> — JSON со списком, <code>TTL users:all</code> — сколько секунд осталось жить.</div>
+</section>
+
+<hr>
+
+<!-- 07 KEYS -->
+<section id="keys">
+  <div class="sec-head"><h2>07 · Динамические ключи: GET /users/{username}</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <p>Список — это один ключ на всех. А профиль у каждого пользователя свой. Если кешировать профиль под ключом <code>"user"</code>, то первый, кто зайдёт, станет «профилем для всех».</p>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">КЛАССИЧЕСКИЙ БАГ</span>
+    <p>Типичная продакшен-история: страницу «Мой аккаунт» закешировали по URL <code>/account</code>, не учтя, кто её открывает. Пользователи видят чужие имена и адреса, пока кто-то не догадается сбросить кеш. Мораль: <strong>в ключе должно быть всё, от чего зависит ответ</strong>.</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/api/routers/users.py</code><span class="k">куда</span><span>В <strong>самый конец</strong> файла — ниже <code>/me</code> и <code>/mongo/me</code>. И добавляем <code>HTTPException</code> в импорт из <code>fastapi</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/users.py</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-python">@router.get('/{username}', response_model=UserOut)
+async def get_user(username: str, user_repo: UserRepoDep, redis: RedisDep, response: Response):
+    key = f"user:{username}"                       # у каждого пользователя свой ключ
+
+    cached = await redis.get(key)
+    if cached is not None:
+        response.headers["X-Cache"] = "HIT"
+        return UserOut.model_validate_json(cached)   # JSON-строка → объект UserOut
+
+    user = await user_repo.get_by_username(username)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    data = UserOut.model_validate(user)              # ORM → Pydantic
+    await redis.set(key, data.model_dump_json(), ex=60)
+    response.headers["X-Cache"] = "MISS"
+    return data</code></pre>
+  </figure>
+
+  <ul>
+    <li><strong><code>f"user:{username}"</code></strong> — ключ строится из параметра: <code>user:alice</code>, <code>user:bob</code>. Полок в холодильнике столько, сколько пользователей.</li>
+    <li><strong><code>model_dump_json()</code> / <code>model_validate_json()</code></strong> — короткий путь для одного объекта: Pydantic сам превращает схему в JSON-строку и обратно, без модуля <code>json</code>.</li>
+    <li><strong>404 не кешируем</strong> — если пользователя нет, мы просто выбрасываем ошибку и ничего не кладём в Redis. Иначе через секунду после регистрации человек всё ещё будет «не найден» из кеша.</li>
+  </ul>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОРЯДОК МАРШРУТОВ</span>
+    <p>FastAPI проверяет маршруты <strong>сверху вниз</strong>. Если поставить <code>/{username}</code> выше <code>/me</code>, запрос <code>GET /users/me</code> попадёт в <code>get_user(username="me")</code> и вернёт 404. Поэтому параметризованные пути — всегда в конце роутера.</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> <code>GET /users/&lt;ваш username&gt;</code> → MISS, повторно → HIT. В <code>redis-cli</code>: <code>SCAN 0 MATCH user:*</code> — по ключу на каждого запрошенного пользователя. <code>GET /users/nobody</code> → 404, и ключа <code>user:nobody</code> в Redis нет.</div>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>Вопрос на подумать за перерыв: что увидит пользователь, если сменит email, а кеш ещё жив 50 секунд?</span></div>
+
+<!-- 08 INVALIDATION -->
+<section id="invalidation">
+  <div class="sec-head"><h2>08 · Инвалидация кеша</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">САМАЯ ИЗВЕСТНАЯ ШУТКА ПРО КЕШ</span>
+    <p>«В информатике есть только две сложные вещи: инвалидация кеша и придумывание имён». — Фил Карлтон, инженер Netscape. Народная версия: «...две сложные вещи: инвалидация кеша, придумывание имён и ошибки на единицу».</p>
+  </div></div>
+
+  <p>Ответ на вопрос с перерыва: пользователь сменил email, а <code>GET /users/</code> ещё 50 секунд отдаёт старый. Молоко скисло раньше срока годности. Есть две стратегии:</p>
+  <table class="cmp">
+    <thead><tr><th>Стратегия</th><th>Как</th><th>Плюсы / минусы</th></tr></thead>
+    <tbody>
+      <tr><td>TTL</td><td>ждём, пока ключ истечёт сам</td><td>просто; но до N секунд показываем старое</td></tr>
+      <tr><td>Явная инвалидация</td><td>изменили данные → сами удаляем ключи</td><td>свежо сразу; но нужно помнить <em>все</em> места, где данные меняются</td></tr>
+    </tbody>
+  </table>
+  <p>На практике делают <strong>обе сразу</strong>: явно сбрасываем, а TTL оставляем страховкой на случай, если где-то забыли.</p>
+
+  <h3>Где в auth-api меняются пользователи</h3>
+  <ul>
+    <li><strong>Регистрация</strong> <code>POST /auth/register</code> — в списке появился новый пользователь → устарел <code>users:all</code>.</li>
+    <li><strong>Смена email</strong> — такого эндпоинта ещё нет, сделаем <code>PATCH /users/me</code> → устарели <code>users:all</code> и <code>user:{username}</code>.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/shemas/user.py</code><span class="k">что</span><span>Схема для смены email.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/shemas/user.py</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-python">class UserUpdate(BaseModel):
+    email: EmailStr</code></pre>
+  </figure>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/api/routers/users.py</code><span class="k">куда</span><span>Сразу после <code>GET /me</code>. В импорте схем: <code>from app.shemas.user import UserOut, UserUpdate</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/users.py</span><span class="role">+ после /me</span></figcaption>
+    <pre><code class="language-python">@router.patch('/me', response_model=UserOut)
+async def update_me(data: UserUpdate, current_user: CurrentUserDep,
+                    user_repo: UserRepoDep, redis: RedisDep):
+    # 1. Сначала меняем данные в БАЗЕ — она главный источник правды
+    user = await user_repo.update(current_user.username, str(data.email))
+
+    # 2. Потом выбрасываем устаревшие копии из кеша
+    await redis.delete(USERS_ALL_KEY, f"user:{current_user.username}")
+    return user</code></pre>
+  </figure>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>app/api/routers/auth.py</code><span class="k">что</span><span>Регистрация сбрасывает список. В импорт: <code>from app.api.deps import RedisDep, UserRepoDep</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py</span><span class="role">register</span></figcaption>
+    <pre><code class="language-python">@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def register(data: UserCreate, user_repo: UserRepoDep, redis: RedisDep):
+    try:
+        user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    await redis.delete("users:all")      # в списке пользователей появился новый — старый список устарел
+    return user</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ СНАЧАЛА БАЗА, ПОТОМ КЕШ</span>
+    <p>Если сначала удалить кеш, а потом обновить базу, то в промежутке (миллисекунды!) другой запрос может успеть: кеш пуст → читает из базы <em>ещё старый</em> email → кладёт его в кеш на 60 секунд. Наша инвалидация пропала зря. Порядок «база → удалить кеш» сужает это окно почти до нуля. И именно <strong>удаляем</strong>, а не записываем новое значение: следующий запрос сам аккуратно загрузит свежие данные.</p>
+  </div></div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <p><code>redis.delete(key1, key2)</code> принимает сколько угодно ключей и удаляет их за один запрос. Если ключа нет — не ошибка, Redis просто вернёт, сколько ключей реально удалил.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">сценарий в Swagger</span><span class="role">настоящие ответы</span></figcaption>
+    <pre><code class="language-none">GET   /users/            → x-cache: MISS, 1 пользователь
+GET   /users/            → x-cache: HIT
+POST  /auth/register     → 201
+GET   /users/            → x-cache: MISS, 2 пользователя     ← регистрация сбросила список
+GET   /users/u56f0e8     → MISS,  потом HIT
+PATCH /users/me          → {"email": "new@t.com", ...}
+GET   /users/u56f0e8     → x-cache: MISS, новый email       ← смена email сбросила профиль</code></pre>
+  </figure>
+
+  <div class="expect"><b>Проверка:</b> после <code>PATCH /users/me</code> и в списке, и в профиле — новый email, и первый запрос после изменения — <code>MISS</code>.</div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 3 · Как в продакшене</span><span class="bar"></span></div>
+
+<!-- 09 SERVICE -->
+<section id="service">
+  <div class="sec-head"><h2>09 · CacheService: убираем копипасту</h2><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <p>Посмотрите на два наших эндпоинта: в каждом одни и те же 8 строк «get → если есть, вернуть → загрузить → set». Добавим кеш для задач из Mongo — будет третья копия. И у всех трёх копий одни и те же проблемы:</p>
+  <ol>
+    <li><strong>Redis упал — API упал.</strong> Остановите контейнер (<code>docker stop auth-redis</code>) и вызовите <code>GET /users/</code> → <code>500 Internal Server Error</code>. Кеш должен <em>ускорять</em>, а он стал точкой отказа. База-то жива!</li>
+    <li><strong>Сменили схему — сломали кеш.</strong> Добавили в <code>UserOut</code> обязательное поле — старые JSON в Redis больше не проходят валидацию → ошибка у пользователя.</li>
+    <li><strong>Ключи разбросаны</strong> строками по разным файлам: <code>"users:all"</code> в <code>users.py</code>, ещё раз в <code>auth.py</code>…</li>
+  </ol>
+  <p>Решаем всё сразу: выносим Cache-Aside в один класс.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>app/core/cache_keys.py</code><span class="k">роль</span><span>Единственное место, где придумываются имена ключей. Все остальные файлы вызывают эти функции.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/core/cache_keys.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python"># Все ключи кеша — в одном месте. Опечатка в ключе = кеш, который никто никогда не сбросит.
+
+CACHE_VERSION = "v1"     # поменяли схему UserOut? Поднимите до v2 — старые записи просто перестанут читаться
+
+
+def users_all() -&gt; str:
+    return f"{CACHE_VERSION}:users:all"
+
+
+def user(username: str) -&gt; str:
+    return f"{CACHE_VERSION}:user:{username}"</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ЗАЧЕМ ВЕРСИЯ В КЛЮЧЕ</span>
+    <p>Поменяли формат <code>UserOut</code> — поднимаем <code>CACHE_VERSION</code> до <code>"v2"</code>. Новый код читает ключи <code>v2:...</code>, которых ещё нет, — честный MISS и загрузка из базы. Старые <code>v1:...</code> никто не читает, и через 60 секунд они истекут сами. Ни одной ошибки валидации и ни одного ручного <code>FLUSHALL</code> при деплое.</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>app/services/cache.py</code><span class="k">роль</span><span>Весь Cache-Aside в одном методе <code>get_or_set</code> плюс <code>invalidate</code>. Ничего не знает про пользователей: работает с любыми данными, для которых есть Pydantic-тип.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/services/cache.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">import logging
+import random
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
+
+from pydantic import TypeAdapter, ValidationError
+from redis.asyncio import Redis
+from redis.exceptions import RedisError
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+
+class CacheService:
+    """Паттерн Cache-Aside в одном месте: «посмотри в кеш → нет? загрузи → положи в кеш»."""
+
+    def __init__(self, redis: Redis, default_ttl: int = 60) -&gt; None:
+        self.redis = redis
+        self.default_ttl = default_ttl
+
+    async def get_or_set(
+        self,
+        key: str,
+        loader: Callable[[], Awaitable[T | None]],
+        adapter: TypeAdapter[T],
+        ttl: int | None = None,
+    ) -&gt; tuple[T | None, bool]:
+        """Вернёт (данные, был_ли_hit)."""
+        # 1. Пробуем кеш. Redis упал — не беда, просто идём в базу (fail-open)
+        try:
+            cached = await self.redis.get(key)
+        except RedisError as exc:
+            logger.warning("Redis недоступен, читаем из БД: %s", exc)
+            cached = None
+
+        if cached is not None:
+            try:
+                return adapter.validate_json(cached), True        # HIT
+            except ValidationError:
+                logger.warning("В кеше устаревший формат, ключ %s", key)  # схема поменялась
+
+        # 2. MISS — загружаем из источника
+        value = await loader()
+        if value is None:
+            return None, False                 # «ничего не нашли» не кешируем
+
+        # 3. Кладём в кеш. TTL с небольшим разбросом, чтобы ключи не истекали все разом
+        ttl = ttl or self.default_ttl
+        try:
+            await self.redis.set(key, adapter.dump_json(value), ex=ttl + random.randint(0, ttl // 10))
+        except RedisError as exc:
+            logger.warning("Не удалось записать в кеш %s: %s", key, exc)
+        return value, False
+
+    async def invalidate(self, *keys: str) -&gt; None:
+        try:
+            await self.redis.delete(*keys)
+        except RedisError as exc:
+            logger.warning("Не удалось сбросить кеш %s: %s", keys, exc)</code></pre>
+  </figure>
+
+  <h4>Разбор по шагам — от простого к хитрому</h4>
+  <ul>
+    <li><strong><code>loader</code></strong> — функция «как достать данные, если в кеше пусто». Сервис не знает, откуда данные — из SQL, Mongo или внешнего API. Это и делает его переиспользуемым.</li>
+    <li><strong><code>TypeAdapter</code></strong> — способ Pydantic превращать в JSON и обратно <em>любой</em> тип, а не только модель: <code>TypeAdapter(list[UserOut])</code> умеет <code>dump_json(список)</code> и <code>validate_json(строка)</code>.</li>
+    <li><strong><code>T = TypeVar("T")</code></strong> — «какой тип вернёт loader, такой вернёт и <code>get_or_set</code>». IDE и mypy будут знать, что из кеша пришёл именно <code>list[UserOut]</code>.</li>
+    <li><strong><code>except RedisError</code> → идём в базу.</strong> Это стратегия <strong>fail-open</strong>: кеш сломался — работаем медленнее, но работаем. Пользователь не заметит, а в логах будет предупреждение.</li>
+    <li><strong><code>except ValidationError</code></strong> — в кеше лежит что-то неожиданное (старая схема, руками записанный мусор) — считаем, что это MISS.</li>
+    <li><strong><code>if value is None: return None, False</code></strong> — «не нашли» не кешируем (наш 404 из блока 07 переехал сюда).</li>
+    <li><strong><code>ttl + random.randint(0, ttl // 10)</code></strong> — разброс TTL на 0–10%. Зачем — в истории ниже.</li>
+  </ul>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: «ТАБУН» (CACHE STAMPEDE)</span>
+    <p>Представьте: в 12:00:00 после деплоя прогрели кеш для тысячи страниц, все с TTL ровно 60 секунд. В 12:01:00 <strong>все ключи истекают одновременно</strong>, и тысячи запросов разом ломятся в базу — она падает. Это называют <em>cache stampede</em> или «эффектом табуна». Случайный разброс TTL «размазывает» истечение по времени. Для самых горячих ключей добавляют ещё и блокировку: в базу идёт только первый запрос, остальные ждут (это в домашке).</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/api/deps.py</code><span class="k">что</span><span>Зависимость <code>CacheDep</code> — сразу под <code>RedisDep</code>. Импорты наверх: <code>from app.core.config import settings</code> и <code>from app.services.cache import CacheService</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/deps.py</span><span class="role">+ CacheDep</span></figcaption>
+    <pre><code class="language-python">def get_cache(redis: RedisDep) -&gt; CacheService:
+    return CacheService(redis, default_ttl=settings.cache_ttl)
+
+
+CacheDep = Annotated[CacheService, Depends(get_cache)]</code></pre>
+  </figure>
+
+  <div class="fileinfo"><span class="k">заменяем целиком</span><code>app/api/routers/users.py</code><span class="k">что</span><span>Эндпоинты стали короткими: «как загрузить» + один вызов сервиса. Ручной <code>json</code> и <code>redis.get/set</code> исчезли.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/users.py</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-python">from fastapi import APIRouter, HTTPException, Response
+from pydantic import TypeAdapter
+
+from app.api.deps import CacheDep, CurrentUserDep, UserRepoDep
+from app.core import cache_keys
+from app.db.mongo import database
+from app.shemas.user import UserOut, UserUpdate
+
+
+router = APIRouter(
+    prefix="/users",
+    tags=["Профиль"],
+)
+
+users_collection = database.get_collection("users")
+
+USER_LIST = TypeAdapter(list[UserOut])     # «как превратить list[UserOut] в JSON и обратно»
+USER_ONE = TypeAdapter(UserOut)
+
+
+@router.get('/', response_model=list[UserOut])
+async def get_users(user_repo: UserRepoDep, cache: CacheDep, response: Response):
+    async def load() -&gt; list[UserOut]:
+        users = await user_repo.get_users()
+        return [UserOut.model_validate(u) for u in users]
+
+    data, hit = await cache.get_or_set(cache_keys.users_all(), load, USER_LIST)
+    response.headers["X-Cache"] = "HIT" if hit else "MISS"
+    return data
+
+
+@router.get('/me', response_model=UserOut)
+async def me(current_user: CurrentUserDep):
+    return current_user
+
+
+@router.patch('/me', response_model=UserOut)
+async def update_me(data: UserUpdate, current_user: CurrentUserDep,
+                    user_repo: UserRepoDep, cache: CacheDep):
+    user = await user_repo.update(current_user.username, str(data.email))
+    await cache.invalidate(cache_keys.users_all(), cache_keys.user(current_user.username))
+    return user
+
+
+@router.get('/mongo/me')
+async def mongo_users():
+    users = await users_collection.find().to_list()
+    for user in users:
+        user["_id"] = str(user["_id"])
+    return users
+
+
+@router.get('/{username}', response_model=UserOut)
+async def get_user(username: str, user_repo: UserRepoDep, cache: CacheDep, response: Response):
+    async def load() -&gt; UserOut | None:
+        user = await user_repo.get_by_username(username)
+        return UserOut.model_validate(user) if user else None
+
+    data, hit = await cache.get_or_set(cache_keys.user(username), load, USER_ONE)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    response.headers["X-Cache"] = "HIT" if hit else "MISS"
+    return data</code></pre>
+  </figure>
+  <p><strong><code>async def load()</code> внутри эндпоинта</strong> — вложенная функция. Она «видит» <code>user_repo</code> и <code>username</code> из внешней функции (замыкание), поэтому её можно передать в сервис без аргументов.</p>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>app/api/routers/auth.py</code><span class="k">что</span><span>В регистрации — тоже через сервис и ключ из <code>cache_keys</code>. Полную версию файла покажем в блоке 11.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py</span><span class="role">register</span></figcaption>
+    <pre><code class="language-python">@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def register(data: UserCreate, user_repo: UserRepoDep, cache: CacheDep):
+    try:
+        user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    await cache.invalidate(cache_keys.users_all())
+    return user</code></pre>
+  </figure>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ: УБИВАЕМ REDIS</span>
+    <p>Работающее приложение, <code>docker stop auth-redis</code>, вызываем <code>GET /users/</code>. Результат (проверено): <code>200</code>, <code>x-cache: MISS</code>, данные из базы, а в логе: <code>Redis недоступен, читаем из БД: Connection closed by server.</code> Запускаем обратно — <code>docker start auth-redis</code> — кеш снова работает, перезапускать приложение не нужно.</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ИСКЛЮЧЕНИЕ ИЗ ПРАВИЛА</span>
+    <p>fail-open — правильная стратегия <strong>для кеша</strong>. Но в блоке 10 Redis будет хранить чёрный список токенов, и там мы поступим наоборот — <strong>fail-closed</strong>: нет связи с Redis → не пускаем. Лучше пользователь перелогинится, чем вор с украденным токеном пройдёт, потому что «проверка временно недоступна».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 10 LOGOUT -->
+<section id="logout">
+  <div class="sec-head"><h2>10 · Logout для JWT: чёрный список</h2><span class="tag practice">live-coding</span><span class="tag time">~11 мин</span></div>
+
+  <p>В учебном материале по Redis обычно показывают «сессии в Redis»: при логине генерируется <code>session_id</code>, в Redis кладётся <code>session:{id} → user</code>, и при каждом запросе мы ищем его там. У нас же вход по <strong>JWT</strong> (урок 4) — и у JWT есть знаменитая проблема, которую Redis решает идеально.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: БИЛЕТ В КИНО</span>
+    <p>JWT — как бумажный билет с печатью: контролёр смотрит на печать (подпись) и время сеанса (<code>exp</code>) и пропускает — в базу он не звонит. Быстро! Но если вы потеряли билет, «отменить» его нельзя: кто нашёл, тот и пройдёт. В нашем <code>auth-api</code> то же самое: «Выйти» на фронте просто удаляет токен из браузера, а сам токен ещё 30 минут валиден. Украли — пользуйся.</p>
+    <p>Решение: дать контролёру <strong>стоп-лист</strong> — список номеров отменённых билетов. Нужен быстрый (проверка на <em>каждом</em> запросе) и со сроком годности (через 30 минут билет истечёт сам, хранить его в стоп-листе дольше незачем). Это ровно Redis.</p>
+  </div></div>
+
+  <div class="diagram">
+<pre> POST /auth/logout  (с токеном, jti = 7f3a...)
+        │
+        ▼
+ Redis: SET blacklist:7f3a "1" EX <span class="fk">&lt;сколько токену осталось жить&gt;</span>
+
+ GET /users/me  (тот же токен)
+        │
+        ▼
+ подпись ок → exp ок → <span class="tn">EXISTS blacklist:7f3a?</span> ── да ──▶ <span class="fk">401</span>
+                                              └── нет ──▶ <span class="pk">200</span></pre>
+  </div>
+
+  <h3>Шаг 1. У каждого токена — свой номер</h3>
+  <p>Чтобы внести токен в стоп-лист, его надо как-то назвать. В стандарте JWT для этого есть поле <code>jti</code> (JWT ID).</p>
+  <div class="fileinfo"><span class="k">меняем</span><code>app/core/security.py</code><span class="k">что</span><span>Функция <code>create_access_token</code> добавляет <code>jti</code>. Импорт наверх: <code>from uuid import uuid4</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/core/security.py</span><span class="role">create_access_token</span></figcaption>
+    <pre><code class="language-python">def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    to_encode.update({"exp": expire, "jti": uuid4().hex})   # jti — уникальный номер токена
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)</code></pre>
+  </figure>
+
+  <h3>Шаг 2. Сервис чёрного списка</h3>
+  <div class="fileinfo"><span class="k">создаём</span><code>app/services/token_blacklist.py</code><span class="k">роль</span><span>Две операции: «отозвать токен» и «отозван ли токен».</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/services/token_blacklist.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">import time
+
+from redis.asyncio import Redis
+
+
+def _key(jti: str) -&gt; str:
+    return f"blacklist:{jti}"
+
+
+async def revoke_token(redis: Redis, payload: dict) -&gt; None:
+    """Положить токен в чёрный список ровно на столько, сколько ему осталось жить."""
+    jti, exp = payload.get("jti"), payload.get("exp")
+    if not jti or not exp:
+        return
+    seconds_left = int(exp - time.time())
+    if seconds_left &gt; 0:
+        await redis.set(_key(jti), "1", ex=seconds_left)
+
+
+async def is_token_revoked(redis: Redis, payload: dict) -&gt; bool:
+    jti = payload.get("jti")
+    if not jti:
+        return False                       # старые токены без jti считаем действующими
+    return await redis.exists(_key(jti)) == 1</code></pre>
+  </figure>
+  <ul>
+    <li><strong><code>exp</code></strong> в расшифрованном токене — Unix-время (секунды с 1970 года). <code>exp - time.time()</code> — сколько токену осталось жить.</li>
+    <li><strong><code>ex=seconds_left</code></strong> — запись в стоп-листе исчезнет ровно тогда, когда токен истёк бы сам. Чёрный список никогда не разрастается: в нём только «живые» отозванные токены.</li>
+    <li><strong><code>EXISTS</code></strong> — самая дешёвая проверка: значение нам не нужно, только факт наличия.</li>
+  </ul>
+
+  <h3>Шаг 3. Проверяем на каждом запросе</h3>
+  <div class="fileinfo"><span class="k">меняем</span><code>app/api/deps.py</code><span class="k">что</span><span>В <code>get_current_user</code> добавляем параметр <code>redis: RedisDep</code> и одну проверку. Импорт: <code>from app.services.token_blacklist import is_token_revoked</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/deps.py</span><span class="role">get_current_user</span></figcaption>
+    <pre><code class="language-python">async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    user_repo: UserRepoDep,
+    redis: RedisDep,
+) -&gt; User:
+    payload = decode_token(token)
+    if payload is None:
+        raise credentials_exception
+
+    if await is_token_revoked(redis, payload):     # пользователь нажал «Выйти»
+        raise credentials_exception
+
+    data = TokenPayload(**payload)
+    if data.sub is None:
+        raise credentials_exception
+    user = await user_repo.get_by_username(data.sub)
+    if user is None:
+        raise credentials_exception
+    return user</code></pre>
+  </figure>
+  <p>Все эндпоинты с <code>CurrentUserDep</code> (<code>/users/me</code>, <code>PATCH /users/me</code>…) получили проверку автоматически — мы поменяли одну зависимость, а не десять эндпоинтов. Вот за что мы любим <code>Depends</code>.</p>
+
+  <h3>Шаг 4. Эндпоинт выхода</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py</span><span class="role">+ logout</span></figcaption>
+    <pre><code class="language-python">@router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    current_user: CurrentUserDep,                          # токен валиден и ещё не отозван
+    token: Annotated[str, Depends(oauth2_scheme)],
+    redis: RedisDep,
+):
+    payload = decode_token(token)
+    await revoke_token(redis, payload)</code></pre>
+  </figure>
+  <ul>
+    <li><strong><code>current_user: CurrentUserDep</code></strong> — мы его не используем, но он гарантирует, что выйти может только тот, у кого валидный и ещё не отозванный токен.</li>
+    <li><strong><code>oauth2_scheme</code></strong> вызывается дважды (тут и внутри <code>CurrentUserDep</code>)? Нет: FastAPI кеширует зависимости в рамках одного запроса и вызовет её один раз.</li>
+    <li><strong>204 No Content</strong> — «готово, сказать нечего». Тела ответа нет.</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">проверка</span><span class="role">настоящие ответы</span></figcaption>
+    <pre><code class="language-none">POST /auth/token     → access_token
+GET  /users/me       → 200
+POST /auth/logout    → 204
+GET  /users/me       → 401 {"detail": "Не удалось подтвердить учетные данные"}
+POST /auth/logout    → 401   ← второй раз выйти тем же токеном нельзя
+
+redis-cli&gt; SCAN 0 MATCH blacklist:*   → "blacklist:c359226897e24f39b568532629d237db"
+redis-cli&gt; TTL blacklist:c3592...      → (integer) 1796   ← удалится вместе с истечением токена</code></pre>
+  </figure>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">А КАК ЖЕ «СЕССИИ В REDIS»?</span>
+    <p>Классические серверные сессии — та же идея, вывернутая наоборот: в Redis хранится <strong>белый список</strong> (<code>session:{id} → user_id</code> с TTL), а клиент получает только случайный id в cookie. Выход — <code>DEL session:{id}</code>. Плюс: полный контроль (выкинуть пользователя со всех устройств). Минус: поход в Redis на каждый запрос — как и у нашего чёрного списка. JWT + blacklist — популярный компромисс: проверяем только отозванные, а их мало.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 11 RATE LIMIT -->
+<section id="ratelimit">
+  <div class="sec-head"><h2>11 · Защита логина от перебора</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>Сейчас наш <code>/auth/token</code> можно долбить скриптом бесконечно: перебор по словарю популярных паролей — тысячи попыток в минуту. В 2014 году на GitHub выложили утилиту iBrute: она перебирала пароли через API «Найти iPhone», где не было ограничения на число попыток. Apple закрыла дыру за пару дней. Мораль: любой эндпоинт входа без лимита — открытая дверь для перебора. Защита — <strong>rate limiting</strong>: «не больше 5 попыток за 15 минут». Для счётчика с таймером Redis подходит идеально — вспоминаем <code>INCR</code> из блока 05.</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>app/services/rate_limit.py</code><span class="k">роль</span><span>Считает попытки входа по имени пользователя в «окне» 15 минут. Шестая попытка → 429.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/services/rate_limit.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">from fastapi import HTTPException, status
+from redis.asyncio import Redis
+
+MAX_ATTEMPTS = 5
+WINDOW_SECONDS = 15 * 60       # 15 минут
+
+
+def _key(username: str) -&gt; str:
+    return f"login_attempts:{username.lower()}"
+
+
+async def check_login_attempts(redis: Redis, username: str) -&gt; None:
+    key = _key(username)
+    async with redis.pipeline(transaction=True) as pipe:      # две команды — одним пакетом, атомарно
+        pipe.incr(key)                                        # +1 попытка
+        pipe.expire(key, WINDOW_SECONDS, nx=True)             # таймер ставим только на первой попытке
+        attempts, _ = await pipe.execute()
+
+    if attempts &gt; MAX_ATTEMPTS:
+        retry_after = await redis.ttl(key)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Слишком много попыток входа. Попробуйте через {retry_after} с",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+
+async def reset_login_attempts(redis: Redis, username: str) -&gt; None:
+    await redis.delete(_key(username))</code></pre>
+  </figure>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong>Алгоритм «фиксированного окна»</strong>: ключ <code>login_attempts:alice</code> = число попыток; ключ живёт 15 минут с <em>первой</em> попытки, потом исчезает — и счёт начинается заново.</li>
+    <li><strong><code>pipeline(transaction=True)</code></strong> — несколько команд отправляются одним пакетом и выполняются подряд, без вклинивания чужих команд (<code>MULTI/EXEC</code> в терминах Redis). Без этого: сделали <code>INCR</code>, а сервер упал до <code>EXPIRE</code> — ключ остался без срока годности, и пользователь заблокирован навсегда.</li>
+    <li><strong><code>expire(..., nx=True)</code></strong> — «поставь таймер, только если его ещё нет». Иначе каждая новая попытка продлевала бы блокировку. (Опция <code>NX</code> у <code>EXPIRE</code> есть с Redis 7.)</li>
+    <li><strong><code>await pipe.execute()</code></strong> возвращает результаты всех команд списком: <code>[новое_число_попыток, True]</code>.</li>
+    <li><strong>429 + <code>Retry-After</code></strong> — стандартный HTTP-ответ «слишком много запросов, повторите через N секунд». Фронтенд может показать таймер.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">итоговая версия</span><code>app/api/routers/auth.py</code><span class="k">что</span><span>Регистрация с инвалидацией (блок 09), логин с ограничением попыток и logout (блок 10) — полностью.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-python">from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+
+from app.api.deps import CacheDep, CurrentUserDep, RedisDep, UserRepoDep, oauth2_scheme
+from app.core import cache_keys
+from app.core.security import create_access_token, decode_token
+from app.services import auth_service
+from app.services.rate_limit import check_login_attempts, reset_login_attempts
+from app.services.token_blacklist import revoke_token
+from app.shemas.token import Token
+from app.shemas.user import UserCreate, UserOut
+
+router = APIRouter(
+    prefix="/auth",
+    tags=["Аутентификация"],
+)
+
+
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def register(data: UserCreate, user_repo: UserRepoDep, cache: CacheDep):
+    try:
+        user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    await cache.invalidate(cache_keys.users_all())
+    return user
+
+
+@router.post('/token', response_model=Token)
+async def login(user_repo: UserRepoDep, redis: RedisDep,
+                form_data: OAuth2PasswordRequestForm = Depends()):
+    await check_login_attempts(redis, form_data.username)        # 6-я попытка за 15 минут → 429
+
+    user = await auth_service.authenticate_user(user_repo, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect username or password",
+                            headers={"WWW-Authenticate": "Bearer"})
+
+    await reset_login_attempts(redis, form_data.username)        # вошёл — счётчик обнуляем
+    access_token = create_access_token(data={"sub": user.username})
+    return Token(access_token=access_token)
+
+
+@router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    current_user: CurrentUserDep,                          # токен валиден и ещё не отозван
+    token: Annotated[str, Depends(oauth2_scheme)],
+    redis: RedisDep,
+):
+    payload = decode_token(token)
+    await revoke_token(redis, payload)</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">7 попыток с неверным паролем</span><span class="role">настоящие ответы</span></figcaption>
+    <pre><code class="language-none">попытка 1..5 → 401 Incorrect username or password
+попытка 6    → 429 Слишком много попыток входа. Попробуйте через 898 с   (Retry-After: 898)
+попытка 7    → 429 ...</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ПО ИМЕНИ, А НЕ ПО IP</span>
+    <p>Ограничение по имени защищает конкретный аккаунт от перебора, и наоборот — злоумышленник может «заблокировать» чужой аккаунт, специально вводя неверный пароль. Ограничение по IP (<code>request.client.host</code>) защищает от одного бота, но «бьёт» по целому офису за одним IP. В бою ставят оба. Для остальных эндпоинтов обычно берут готовую библиотеку — например, <code>slowapi</code> или <code>fastapi-limiter</code>, оба работают поверх Redis.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 12 MEMORY -->
+<section id="memory">
+  <div class="sec-head"><h2>12 · Когда кончится память</h2><span class="tag theory">теория</span><span class="tag time">~6 мин</span></div>
+
+  <p>Redis хранит всё в оперативной памяти, а она не бесконечна. Что будет, когда холодильник забит? Это решает настройка <strong><code>maxmemory-policy</code></strong>:</p>
+  <table class="cmp">
+    <thead><tr><th>Политика</th><th>Что выкидывает</th><th>Когда</th></tr></thead>
+    <tbody>
+      <tr><td><code>noeviction</code></td><td>ничего; новые записи получают ошибку</td><td>по умолчанию. Хорошо, если Redis — хранилище, а не кеш</td></tr>
+      <tr><td><code>allkeys-lru</code></td><td>давно не использованные ключи — из всех</td><td><strong>классика для чистого кеша</strong></td></tr>
+      <tr><td><code>volatile-lru</code></td><td>давно не использованные — только среди ключей с TTL</td><td>кеш и «вечные» данные в одном Redis</td></tr>
+      <tr><td><code>allkeys-lfu</code></td><td>редко используемые (по частоте)</td><td>есть явные «горячие» ключи</td></tr>
+      <tr><td><code>volatile-ttl</code></td><td>ключи, которым меньше всего осталось жить</td><td>редко</td></tr>
+    </tbody>
+  </table>
+  <p>LRU = Least Recently Used, «давно не трогали». Холодильник: выкидываем банку, которую никто не открывал с прошлого года.</p>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ВАЖНО ДЛЯ НАШЕГО ПРОЕКТА</span>
+    <p>У нас в одном Redis лежат и кеш, и чёрный список токенов, и счётчики попыток. С <code>allkeys-lru</code> Redis при нехватке памяти может выкинуть запись <code>blacklist:...</code> — и отозванный токен «оживёт». Варианты: <code>volatile-lru</code> не поможет (у blacklist тоже есть TTL) — правильнее держать <strong>кеш и «важные» данные в разных экземплярах Redis</strong>, или хотя бы следить, чтобы память под кеш не кончалась.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">настройка и мониторинг</span><span class="role">redis-cli</span></figcaption>
+    <pre><code class="language-bash"># ограничить память и выбрать политику (для Docker: docker run ... redis:8 --maxmemory 256mb --maxmemory-policy allkeys-lru)
+CONFIG SET maxmemory 256mb
+CONFIG SET maxmemory-policy allkeys-lru
+
+INFO memory          # used_memory_human — сколько занято
+INFO stats           # keyspace_hits / keyspace_misses — сколько попаданий и промахов
+DBSIZE               # сколько ключей в базе
+MONITOR              # все команды в реальном времени (только для отладки — замедляет Redis!)
+SLOWLOG GET 10       # 10 самых медленных команд</code></pre>
+  </figure>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ГЛАВНАЯ МЕТРИКА КЕША</span>
+    <p><strong>Hit ratio = hits / (hits + misses)</strong>. Если 95% — кеш работает отлично. Если 20% — он почти бесполезен: ключи слишком быстро истекают, сбрасываются слишком часто или кешируется не то. В продакшене эти цифры собирают Prometheus (через <code>redis_exporter</code>) и показывают в Grafana. Откройте <code>MONITOR</code> во втором терминале и подёргайте наши эндпоинты — группа увидит каждый <code>GET</code>, <code>SET</code>, <code>INCR</code> и <code>EXISTS</code>, который делает API.</p>
+  </div></div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <p><strong>А данные переживут перезапуск?</strong> Зависит от настроек: RDB — снимок памяти на диск раз в N минут; AOF — журнал всех команд. Для кеша это не важно (пустой кеш просто заново заполнится), для чёрного списка — желательно. В Docker-образе по умолчанию включены периодические снимки RDB.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 13 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>13 · Игра «HIT или MISS»</h2><span class="tag practice">интерактив</span><span class="tag time">~3 мин</span></div>
+  <p>Читаем ситуацию — группа угадывает, что произойдёт в нашем auth-api. Открываем ответ.</p>
+
+  <details class="quiz"><summary>Вызвали <code>GET /users/</code>, через 10 секунд — ещё раз. Что в заголовке второго ответа?</summary><div class="ans"><b>HIT.</b> Ключ <code>v1:users:all</code> живёт ~60–66 секунд.</div></details>
+  <details class="quiz"><summary>Вызвали <code>GET /users/</code>, потом кто-то зарегистрировался, потом снова <code>GET /users/</code>.</summary><div class="ans"><b>MISS.</b> Регистрация сделала <code>cache.invalidate(users_all())</code>, и новый пользователь сразу в списке.</div></details>
+  <details class="quiz"><summary><code>GET /users/alice</code> → MISS. Затем <code>GET /users/bob</code>. HIT или MISS?</summary><div class="ans"><b>MISS.</b> У bob свой ключ <code>v1:user:bob</code> — динамические ключи.</div></details>
+  <details class="quiz"><summary><code>GET /users/nobody</code> (такого нет) два раза подряд. Что во втором ответе?</summary><div class="ans"><b>Снова 404 из базы.</b> «Не найдено» мы не кешируем — <code>loader</code> вернул <code>None</code>.</div></details>
+  <details class="quiz"><summary>Остановили контейнер Redis и вызвали <code>GET /users/</code>.</summary><div class="ans"><b>200 и MISS.</b> Fail-open: данные из базы, в логе предупреждение. А вот <code>GET /users/me</code> упадёт с ошибкой — проверка чёрного списка fail-closed.</div></details>
+  <details class="quiz"><summary>Поменяли <code>CACHE_VERSION</code> на <code>"v2"</code> и перезапустили приложение. Первый <code>GET /users/</code>?</summary><div class="ans"><b>MISS.</b> Ключей <code>v2:...</code> ещё нет; старые <code>v1:...</code> истекут сами.</div></details>
+</section>
+
+<hr>
+
+<!-- 14 HOMEWORK -->
+<section id="homework">
+  <div class="sec-head"><h2>14 · Домашка и чек-лист</h2><span class="tag time">до следующего урока</span></div>
+
+  <h3>Карта: что Redis делает в auth-api</h3>
+  <table class="cmp">
+    <thead><tr><th>Ключ</th><th>Тип</th><th>TTL</th><th>Зачем</th><th>Файл</th></tr></thead>
+    <tbody>
+      <tr><td><code>stats:visits</code></td><td>счётчик</td><td>нет</td><td>визиты</td><td><code>routers/stats.py</code></td></tr>
+      <tr><td><code>v1:users:all</code></td><td>JSON</td><td>60–66 с</td><td>кеш списка</td><td><code>services/cache.py</code></td></tr>
+      <tr><td><code>v1:user:{username}</code></td><td>JSON</td><td>60–66 с</td><td>кеш профиля</td><td><code>services/cache.py</code></td></tr>
+      <tr><td><code>blacklist:{jti}</code></td><td>флаг</td><td>до истечения токена</td><td>logout</td><td><code>services/token_blacklist.py</code></td></tr>
+      <tr><td><code>login_attempts:{username}</code></td><td>счётчик</td><td>15 мин</td><td>защита от перебора</td><td><code>services/rate_limit.py</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание</h3>
+  <ol>
+    <li><strong>Кеш для задач из MongoDB.</strong> Закешируйте <code>GET /todos/</code> и <code>GET /todos/{todo_id}</code> через <code>CacheService</code> (ключи добавьте в <code>cache_keys.py</code>, схему возьмите из <code>app/shemas/todo.py</code>). При <code>POST /todos/</code> сбрасывайте кеш списка. Подсказка: перед кешированием <code>_id</code> надо превратить в строку — как вы уже делаете в роутере.</li>
+    <li><strong>Внешний API.</strong> Закешируйте <code>get_weather_data(city)</code> из <code>app/clients/weather.py</code> на 10 минут с ключом <code>v1:weather:{city}</code>. Объясните в комментарии, почему для погоды не нужна явная инвалидация.</li>
+    <li><strong>Защита от табуна.</strong> Добавьте в <code>get_or_set</code> блокировку: при MISS сделайте <code>SET lock:{key} 1 NX EX 5</code>; кто взял блокировку — грузит из базы, остальные ждут 50 мс и снова смотрят в кеш.</li>
+    <li><strong>Rate limit по IP.</strong> Добавьте второй счётчик в <code>check_login_attempts</code> по <code>request.client.host</code>: не больше 20 попыток за 15 минут с одного IP.</li>
+    <li><strong>Logout со всех устройств.</strong> Подумайте и опишите (можно реализовать): как сделать «выйти везде», если у пользователя 5 токенов на разных устройствах? Подсказка: храните в Redis <code>tokens_valid_after:{username}</code> и сравнивайте с <code>iat</code> токена.</li>
+    <li><strong>Тесты.</strong> В <code>tests/conftest.py</code> сломан импорт (<code>user_repo</code> из <code>user_repo.py</code> больше не существует) — почините. Добавьте тесты: второй <code>GET /users/</code> возвращает <code>X-Cache: HIT</code>; после <code>logout</code> токен даёт 401; шестая неверная попытка входа — 429. Для тестов используйте отдельную базу Redis: <code>REDIS_URL=redis://localhost:6379/15</code> и <code>FLUSHDB</code> перед каждым тестом.</li>
+  </ol>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю hit, miss, TTL, инвалидацию и вытеснение на примере холодильника.</li>
+    <li>☐ Понимаю, почему dict в Python не подходит для кеша в проде.</li>
+    <li>☐ Знаю базовые команды: <code>SET … EX</code>, <code>GET</code>, <code>TTL</code>, <code>INCR</code>, <code>DEL</code>, <code>EXISTS</code>, <code>SCAN</code> — и почему нельзя <code>KEYS *</code>.</li>
+    <li>☐ Подключаю <code>redis.asyncio</code> через lifespan и зависимость, закрываю через <code>aclose()</code>.</li>
+    <li>☐ Пишу Cache-Aside: ORM → Pydantic → JSON → Redis и обратно.</li>
+    <li>☐ Строю ключи из всего, от чего зависит ответ, и держу их в одном месте с версией.</li>
+    <li>☐ Инвалидирую после записи в базу, а не до неё, и оставляю TTL страховкой.</li>
+    <li>☐ Понимаю fail-open для кеша и fail-closed для безопасности.</li>
+    <li>☐ Умею отзывать JWT через чёрный список с TTL до истечения токена.</li>
+    <li>☐ Делаю rate limiting на <code>INCR</code> + <code>EXPIRE NX</code> в pipeline.</li>
+    <li>☐ Знаю политики вытеснения и метрику hit ratio.</li>
+  </ul>
+
+  <h3>Что дальше</h3>
+  <ul>
+    <li><strong>Docker Compose</strong>: поднимаем одной командой FastAPI + PostgreSQL + MongoDB + Redis.</li>
+    <li><strong>Фоновые задачи</strong>: Redis как брокер очередей (Celery, ARQ) — отправка писем после регистрации, не задерживая ответ.</li>
+    <li><strong>Pub/Sub и WebSocket</strong>: уведомления в реальном времени через Redis.</li>
+  </ul>
+
+  <p class="foot">Методичка · FastAPI, урок 8 · Кеширование и Redis: Cache-Aside, динамические ключи, инвалидация, CacheService, logout для JWT, rate limiting, политики вытеснения</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

@@ -3,10 +3,12 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 
 from app.core.security import decode_token
 from app.db.database import get_async_session
 from app.db.models import User
+from app.db.redis_db import get_redis
 from app.repositories.post_repo import PostRepo
 from app.repositories.profile_repo import ProfileRepo
 from app.repositories.tag_repo import TagRepo
@@ -73,6 +75,9 @@ async def get_current_user(
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+RedisDep = Annotated[Redis, Depends(get_redis)]
 
 
 

@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Паттерны · Урок 1 — Порождающие и структурные</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>Patterns</div>
+  <p class="lead">Модуль Backend · Урок 1 · live-coding</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и тайминг</a>
+    <div class="grp">Разминка</div>
+    <a href="#why"><span class="n theory-dot">01</span>Что такое паттерн</a>
+    <a href="#uml"><span class="n theory-dot">02</span>UML за 5 минут</a>
+    <a href="#setup"><span class="n practice-dot">03</span>Шаг 0: создаём PizzaHub</a>
+    <div class="grp">Порождающие</div>
+    <a href="#singleton"><span class="n practice-dot">04</span>Singleton — корзина</a>
+    <a href="#factory"><span class="n practice-dot">05</span>Factory — уведомления</a>
+    <a href="#builder"><span class="n practice-dot">06</span>Builder — заказ</a>
+    <a href="#prototype"><span class="n practice-dot">07</span>Prototype — повтор заказа</a>
+    <a href="#blitz1"><span class="n theory-dot">08</span>Блиц: Abstract Factory, Lazy, Pool</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Структурные</div>
+    <a href="#adapter"><span class="n practice-dot">09</span>Adapter — ответ сервера</a>
+    <a href="#decorator"><span class="n practice-dot">10</span>Decorator — retry и кеш</a>
+    <a href="#proxy"><span class="n practice-dot">11</span>Proxy — форма заказа</a>
+    <a href="#facade"><span class="n practice-dot">12</span>Facade — оформить заказ</a>
+    <a href="#blitz2"><span class="n theory-dot">13</span>Блиц: Bridge и 4 обёртки</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">14</span>Игра «Угадай паттерн»</a>
+    <a href="#homework"><span class="n">15</span>Домашка и шпаргалка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · Урок 1 · 2 часа с перерывом · для фронтенд-разработчиков</p>
+  <h1>Паттерны проектирования: порождающие и структурные</h1>
+  <p class="lead-p">Вы уже пишете на TypeScript, собираете компоненты, ходите в API. Сегодня начинаем модуль по бэкенду — и начинаем с <strong>общего языка</strong>, на котором разговаривают разработчики по обе стороны API. Этот язык — паттерны проектирования. Хорошая новость: половиной из них вы пользуетесь каждый день, просто не знаете, как они называются.</p>
+
+  <div class="hero">
+    <h3>КАК УСТРОЕН УРОК</h3>
+    <ul>
+      <li>С нуля создаём маленький проект <b>PizzaHub</b> на TypeScript + Node и <b>каждый паттерн пишем в нём руками</b> — в своём файле, с понятной ролью.</li>
+      <li>8 паттернов — <b>live-coding</b>: Singleton, Factory, Builder, Prototype, Adapter, Decorator, Proxy, Facade.</li>
+      <li>4 паттерна — <b>блиц</b>, только идея и пример: Abstract Factory, Lazy Init, Object Pool, Bridge.</li>
+      <li>Для каждого: <b>история → боль → файл и его роль → код → запуск → где вы это уже видели → что на бэкенде</b>.</li>
+      <li>Финал: функция «Оформить заказ», в которой работают сразу 4 паттерна.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Что такое паттерн, история</td><td>теория</td></tr>
+      <tr><td class="t">0:07</td><td>UML за 5 минут</td><td>теория</td></tr>
+      <tr><td class="t">0:12</td><td>Шаг 0: создаём проект PizzaHub</td><td>live-coding</td></tr>
+      <tr><td class="t">0:20</td><td>Singleton → <code>cart.store.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:30</td><td>Factory Method → <code>toast.factory.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:39</td><td>Builder → <code>order.builder.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:49</td><td>Prototype → <code>repeat-order.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:56</td><td>Блиц: Abstract Factory, Lazy Init, Object Pool</td><td>теория</td></tr>
+      <tr><td class="t">1:02</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:12</td><td>Adapter → <code>pizza.adapter.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:21</td><td>Decorator → <code>decorators.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:32</td><td>Proxy → <code>order-form.proxy.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:40</td><td>Facade → <code>checkout.facade.ts</code>, собираем всё</td><td>live-coding</td></tr>
+      <tr><td class="t">1:49</td><td>Блиц: Bridge + как не путать 4 обёртки</td><td>теория</td></tr>
+      <tr><td class="t">1:54</td><td>Игра «Угадай паттерн»</td><td>интерактив</td></tr>
+      <tr><td class="t">1:59</td><td>Домашка (читают дома)</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">ПОДГОТОВКА ПРЕПОДАВАТЕЛЯ</span>
+    <p>Перед уроком поставьте Node.js 20+ и прогоните готовый проект (<code>pizzahub-final.zip</code>): <code>npm i</code> → <code>npm run dev</code>. Если live-coding идёт медленнее плана, берите файлы целиком из <code>pizzahub-final</code> и объясняйте их, а не набирайте. Время не теряется, смысл тот же. Студентам заранее отправьте <code>pizzahub-start.zip</code>: тогда шаг 0 займёт 3 минуты вместо 8.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Разминка</span><span class="bar"></span></div>
+
+<!-- 01 WHY -->
+<section id="why">
+  <div class="sec-head"><h2>01 · Что такое паттерн</h2><span class="tag theory">теория</span><span class="tag time">~7 мин</span></div>
+
+  <div class="oneliner">Паттерн — это проверенное решение типичной проблемы, у которого есть имя.<small>Не библиотека и не код для копипаста. Скорее рецепт: «если болит вот так — лечат обычно вот так».</small></div>
+
+  <p>Строитель не изобретает дверь заново. Вы говорите ему «тут дверь» — и он понимает всё без чертежа. Паттерн в программировании — та же «дверь»: говорите коллеге «давай тут адаптер», и ему сразу понятно, что вы напишете, где это будет лежать и зачем.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p><strong>1977.</strong> Архитектор Кристофер Александер — тот, что строил дома, а не программы, — выпускает книгу «A Pattern Language» с 253 паттернами для зданий. Например: «в каждой комнате должен быть свет с двух сторон». Проблема, решение, имя.</p>
+    <p><strong>1987.</strong> Кент Бек и Уорд Каннингем (позже изобретатель вики) применяют эту идею к программам.</p>
+    <p><strong>1994.</strong> Гамма, Хелм, Джонсон и Влиссидес выпускают книгу «Design Patterns» с 23 паттернами — авторов прозвали <strong>Gang of Four (GoF)</strong>, «Банда четырёх». Книга стала библией на 30 лет.</p>
+  </div></div>
+
+  <table class="cmp">
+    <thead><tr><th>Группа GoF</th><th>Отвечает на вопрос</th><th>Сегодня</th></tr></thead>
+    <tbody>
+      <tr><td>Порождающие (5)</td><td><em>Как создавать объекты?</em></td><td>да</td></tr>
+      <tr><td>Структурные (7)</td><td><em>Как собирать объекты в конструкции?</em></td><td>да</td></tr>
+      <tr><td>Поведенческие (11)</td><td><em>Как объекты общаются?</em></td><td>следующий урок</td></tr>
+    </tbody>
+  </table>
+
+  <p>Книга писалась под C++, где нет функций-значений, модулей и замыканий, поэтому многие паттерны там — это 5 классов и интерфейс. В 1996 году Питер Норвиг показал, что в динамических языках <strong>16 из 23 паттернов становятся заметно проще</strong>. JavaScript — как раз такой язык, поэтому сегодня мы пишем паттерны так, как это делают в TypeScript на практике. «Книжная» версия с классами спрятана под спойлер «Как в книжке» — её полезно знать, чтобы понимать бэкендеров на Java, C# и Python.</p>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРИКОЛ</span>
+    <p>В Java-фреймворке Spring есть настоящий класс <code>AbstractSingletonProxyFactoryBean</code> — четыре паттерна в одном названии. А на GitHub живёт пародия <strong>FizzBuzz Enterprise Edition</strong>: задачка на 10 строк, решённая через десятки фабрик и интерфейсов. Это главная болезнь новичков — <strong>«паттернит»</strong>. Правило урока: <strong>нет боли — не нужен паттерн</strong>. Поэтому каждый паттерн мы начинаем с боли.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 UML -->
+<section id="uml">
+  <div class="sec-head"><h2>02 · UML за 5 минут</h2><span class="tag theory">теория</span><span class="tag time">~5 мин</span></div>
+
+  <p>В книгах и статьях паттерны рисуют в <strong>UML</strong>. Целиком учить его не нужно — хватит прямоугольника и пяти стрелок.</p>
+
+  <table class="cmp">
+    <thead><tr><th>Стрелка</th><th>Название</th><th>Читается как</th><th>В TypeScript</th></tr></thead>
+    <tbody>
+      <tr><td><code>A ──▷ B</code></td><td>Наследование</td><td>A <em>является</em> B</td><td><code>class A extends B</code></td></tr>
+      <tr><td><code>A ┄┄▷ B</code></td><td>Реализация</td><td>A <em>умеет</em> всё, что обещает B</td><td><code>class A implements B</code></td></tr>
+      <tr><td><code>A ──&gt; B</code></td><td>Ассоциация</td><td>A <em>пользуется</em> B</td><td>параметр или поле типа B</td></tr>
+      <tr><td><code>A ◇── B</code></td><td>Агрегация</td><td>A <em>содержит</em> B, но B живёт сам</td><td>B передали снаружи</td></tr>
+      <tr><td><code>A ◆── B</code></td><td>Композиция</td><td>A <em>состоит из</em> B, B умирает с A</td><td>A сам создал B внутри</td></tr>
+    </tbody>
+  </table>
+
+  <div class="diagram">
+<pre><span class="tn">Композиция</span> ◆ — «намертво»                <span class="tn">Агрегация</span> ◇ — «в гостях»
+┌───────┐ ◆──── ┌──────┐                ┌─────────┐ ◇──── ┌───────┐
+│ House │       │ Wall │                │ Airport │       │ Plane │
+└───────┘       └──────┘                └─────────┘       └───────┘
+ снесли дом — стен тоже нет              закрыли аэропорт — самолёты
+                                         улетели в другой</pre>
+  </div>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ТЕСТ «ПОЖАРА»</span>
+    <p>Сгорел контейнер — что стало с частью? Сгорела вместе с ним → композиция (закрашенный ромб, «впиталось как чернила»). Выжила и пошла жить дальше → агрегация (пустой ромб). В коде видно по тому, <strong>кто создал</strong> часть: создал сам внутри — композиция, получил снаружи в конструктор — агрегация. На собеседованиях это спрашивают постоянно.</p>
+  </div></div>
+
+  <h3>Где показать UML вживую — бесплатно</h3>
+  <div class="links">
+    <a href="https://mermaid.live" target="_blank" rel="noopener"><b>mermaid.live ★</b>Mermaid Live Editor. Без регистрации: пишете текст — справа сразу схема. Экспорт в PNG/SVG и ссылка, чтобы отправить группе.</a>
+    <a href="https://app.diagrams.net" target="_blank" rel="noopener"><b>app.diagrams.net</b>draw.io. Рисовать мышкой: слева библиотека фигур «UML». Сохраняет в браузер, на диск или в Google Drive.</a>
+    <a href="https://www.plantuml.com/plantuml" target="_blank" rel="noopener"><b>plantuml.com</b>PlantUML online. Тоже текст → схема, стандарт в Java-мире и во многих бэкенд-командах.</a>
+  </div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">КАК ПРОВЕСТИ НА УРОКЕ (2 МИНУТЫ)</span>
+    <p>Откройте <strong>mermaid.live</strong>, сотрите пример слева и вставьте код ниже — справа появятся все пять стрелок. Затем прямо при группе замените <code>*--</code> у House/Wall на <code>o--</code>: ромб из закрашенного станет пустым. Это запоминается лучше любой таблицы. В Mermaid стрелки пишутся так: <code>&lt;|--</code> наследование, <code>&lt;|..</code> реализация, <code>--&gt;</code> ассоциация, <code>o--</code> агрегация, <code>*--</code> композиция, <code>..&gt;</code> зависимость («использует»).</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вставить в mermaid.live</span><span class="role">все стрелки UML</span></figcaption>
+    <pre><code class="language-none">classDiagram
+    direction LR
+
+    class Toast {
+        &lt;&lt;interface&gt;&gt;
+        +show() void
+    }
+    class SuccessToast {
+        -message: string
+        +show() void
+    }
+    Toast &lt;|.. SuccessToast : реализация
+
+    class Notification
+    class OrderConfirmed
+    Notification &lt;|-- OrderConfirmed : наследование
+
+    class Checkout
+    class PaymentService
+    Checkout --&gt; PaymentService : ассоциация
+
+    class Airport
+    class Plane
+    Airport o-- Plane : агрегация
+
+    class House
+    class Wall
+    House *-- Wall : композиция</code></pre>
+  </figure>
+  <p>В <code>class Toast { ... }</code>: <code>+</code> — public, <code>-</code> — private, <code>&lt;&lt;interface&gt;&gt;</code> — пометка «это интерфейс». Подпись после двоеточия (<code>: композиция</code>) — текст на стрелке. В конце урока по этой же ссылке покажем UML-карту всего PizzaHub (код — в блоке Facade).</p>
+</section>
+
+<hr>
+
+<!-- 03 SETUP -->
+<section id="setup">
+  <div class="sec-head"><h2>03 · Шаг 0: создаём PizzaHub</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <p>Нам нужен проект, где будут жить все паттерны. Под каждым куском кода дальше идёт зелёный блок <strong>«Синтаксис: TS → Python»</strong>: что значит каждая конструкция и как то же самое пишется на Python.</p>
+  <p> Делаем <strong>консольное приложение на Node.js + TypeScript</strong> — без React и браузера.</p>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ NODE, А НЕ БРАУЗЕР</span>
+    <p>Во-первых, мы начинаем модуль по бэкенду — а бэкенд на TS живёт именно в Node. Во-вторых, паттерны не зависят от фреймворка: корзина, фабрика, адаптер одинаковы в React, Vue и на сервере. Без JSX и стилей видно только суть. Наш «интерфейс» — это <code>console.log</code>: шапка сайта печатает бейдж корзины, уведомления печатают ✅ и ❌.</p>
+  </div></div>
+
+  <h3>1. Создаём проект и ставим инструменты</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">Node.js 20+</span></figcaption>
+    <pre><code class="language-bash">mkdir pizzahub
+cd pizzahub
+npm init -y
+npm i -D typescript tsx @types/node</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>npm init -y</code></td><td>создаёт package.json — паспорт проекта</td><td>как pyproject.toml / requirements.txt</td></tr><tr><td><code>npm i -D пакет</code></td><td>ставит пакет в папку node_modules проекта; -D = нужен только для разработки</td><td><code>pip install пакет  (в .venv)</code></td></tr><tr><td><code>node_modules/</code></td><td>все зависимости проекта лежат прямо в нём, глобально ничего не ставится</td><td>как .venv, только всегда своя на каждый проект</td></tr><tr><td><code>npx tsc</code></td><td>запустить программу из node_modules/.bin</td><td><code>python -m mypy</code></td></tr></tbody></table></div>
+  <ul>
+    <li><code>typescript</code> — компилятор <code>tsc</code>. Мы используем его только как <strong>проверщик типов</strong>.</li>
+    <li><code>tsx</code> — запускает <code>.ts</code>-файлы в Node напрямую, без сборки. Как Vite для фронта: сохранил — запустил.</li>
+    <li><code>@types/node</code> — типы для встроенных модулей Node (<code>fs</code>, <code>crypto</code>).</li>
+  </ul>
+
+  <h3>2. Правим <code>package.json</code></h3>
+  <p>Добавляем две вещи: <code>"type": "module"</code> и два скрипта. Блок <code>devDependencies</code> npm уже заполнил сам — версии у вас могут быть новее, это нормально.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">package.json</span><span class="role">что добавить</span></figcaption>
+    <pre><code class="language-json">{
+  "name": "pizzahub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>"type": "module"</code></td><td>файлы — ES-модули: работают import/export</td><td>в Python так всегда</td></tr><tr><td><code>"scripts": { "dev": ... }</code></td><td>короткие команды: npm run dev выполнит tsx src/main.ts</td><td>как цели в Makefile или [tool.poetry.scripts]</td></tr><tr><td><code>"^4.23.15"</code></td><td>любая 4.x.x не ниже 4.23.15 — мажорную версию не меняем</td><td><code>tsx~=4.23</code></td></tr></tbody></table></div>
+  <ul>
+    <li><code>"type": "module"</code> — используем современные <code>import/export</code> (ES-модули), как во фронтенде. Это важно для паттерна Singleton.</li>
+    <li><code>npm run dev</code> — запустить приложение.</li>
+    <li><code>npm run typecheck</code> — проверить типы во всём проекте, не запуская его.</li>
+  </ul>
+
+  <h3>3. Создаём <code>tsconfig.json</code> в корне</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">tsconfig.json</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-json">{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>tsconfig.json</code></td><td>настройки проверки типов</td><td>как [tool.mypy] в pyproject.toml</td></tr><tr><td><code>"strict": true</code></td><td>максимально строгая проверка типов</td><td><code>mypy --strict</code></td></tr><tr><td><code>"target": "ES2022"</code></td><td>под какую версию JavaScript писать</td><td>как requires-python = "&gt;=3.11"</td></tr><tr><td><code>"include": ["src"]</code></td><td>какие папки проверять</td><td>files = src в настройках mypy</td></tr></tbody></table></div>
+  <p><code>strict: true</code> — максимум проверок (как в любом серьёзном проекте); <code>moduleResolution: "Bundler"</code> — разрешает писать импорты без <code>.js</code> в конце, как в Vite; <code>noEmit</code> — <code>tsc</code> только проверяет и не создаёт файлы.</p>
+
+  <h3>4. Карта проекта</h3>
+  <p>Вот к чему придём к концу урока. Каждый файл отвечает за <strong>одну</strong> вещь. Файлы с пометкой «шаг 0» создаём прямо сейчас, остальные появятся по ходу урока.</p>
+  <div class="diagram">
+<pre>pizzahub/
+├── package.json
+├── tsconfig.json
+├── <span class="tn">data/pizzas.json</span>              «ответ бэкенда» — сырые данные                шаг 0
+└── src/
+    ├── <span class="tn">main.ts</span>                   точка входа: СЦЕНАРИЙ, что делает пользователь  шаг 0
+    ├── <span class="tn">types.ts</span>                  общие типы: Pizza, CartItem, Order              шаг 0
+    ├── <span class="tn">pricing.ts</span>                правила цен: размер, промокод                   шаг 0
+    ├── <span class="tn">demo-pizzas.ts</span>            временные пиццы, пока нет «бэкенда»             шаг 0
+    ├── api/
+    │   ├── <span class="tn">fake-backend.ts</span>       имитация сервера (задержка, ошибки)             шаг 0
+    │   ├── <span class="pk">pizza.adapter.ts</span>      <span class="pk">Adapter</span>    — формат сервера → наш формат
+    │   └── pizza.api.ts          загрузка меню
+    ├── store/<span class="pk">cart.store.ts</span>      <span class="pk">Singleton</span>  — одна корзина на всё приложение
+    ├── ui/header.ts, cart-page.ts «компоненты» — печатают в консоль
+    ├── notifications/<span class="pk">toast.factory.ts</span>  <span class="pk">Factory</span> — какое уведомление создать
+    ├── orders/
+    │   ├── <span class="pk">order.builder.ts</span>      <span class="pk">Builder</span>    — пошаговая сборка заказа
+    │   └── <span class="pk">repeat-order.ts</span>       <span class="pk">Prototype</span>  — «повторить заказ»
+    ├── lib/<span class="pk">decorators.ts</span>        <span class="pk">Decorator</span>  — retry, кеш, логи
+    ├── forms/<span class="pk">order-form.proxy.ts</span> <span class="pk">Proxy</span>      — охранник формы
+    └── checkout/
+        ├── payment.ts            имитация оплаты
+        └── <span class="pk">checkout.facade.ts</span>    <span class="pk">Facade</span>     — одна кнопка «Оформить заказ»</pre>
+  </div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ГЛАВНАЯ ИДЕЯ СТРУКТУРЫ</span>
+    <p><code>main.ts</code> — это «страница»: в ней только сценарий — «загрузи меню, положи в корзину, оформи заказ». Никакой логики. Логика живёт в модулях, по одному паттерну на файл. Ровно так же устроены бэкенд-проекты: <code>routes → services → repositories</code>, и в каждом файле одна ответственность.</p>
+  </div></div>
+
+  <h3>5. Стартовые файлы</h3>
+  <p>Эти файлы — «подготовленная площадка», паттернов в них нет. Если студенты скачали <code>pizzahub-start.zip</code>, они уже на месте — просто пролистываем и объясняем роль каждого.</p>
+
+  <div class="fileinfo"><span class="k">файл</span><code>data/pizzas.json</code><span class="k">роль</span><span>Так отдаёт меню «наш бэкенд на Python»: <code>snake_case</code>, цены в копейках, <code>0/1</code> вместо <code>true/false</code>. Неудобно? Специально — починим адаптером.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">data/pizzas.json</span></figcaption>
+    <pre><code class="language-json">[
+  { "pizza_id": 1, "pizza_name": "Маргарита",   "price_kopecks": 49900, "is_vegan": 1, "created_at": "2026-09-01T10:00:00Z" },
+  { "pizza_id": 2, "pizza_name": "Пепперони",   "price_kopecks": 59900, "is_vegan": 0, "created_at": "2026-09-05T10:00:00Z" },
+  { "pizza_id": 3, "pizza_name": "Четыре сыра", "price_kopecks": 64900, "is_vegan": 0, "created_at": "2026-09-10T10:00:00Z" },
+  { "pizza_id": 4, "pizza_name": "Овощная",     "price_kopecks": 45900, "is_vegan": 1, "created_at": "2026-09-12T10:00:00Z" }
+]</code></pre>
+  </figure>
+
+  <div class="fileinfo"><span class="k">файл</span><code>src/types.ts</code><span class="k">роль</span><span>«Словарь» приложения: как выглядят пицца, позиция корзины и заказ. Только типы, никакой логики. Все остальные файлы импортируют их отсюда.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/types.ts</span></figcaption>
+    <pre><code class="language-typescript">// Общие типы приложения — «словарь» PizzaHub. Только описания, никакой логики.
+
+export interface Pizza {
+  id: number;
+  name: string;
+  price: number;      // рубли, для размера M
+  isVegan: boolean;
+  createdAt: Date;
+}
+
+export type Size = 'S' | 'M' | 'L';
+
+export interface CartItem {
+  pizza: Pizza;
+  size: Size;
+  qty: number;
+}
+
+export interface Order {
+  id: string;
+  items: CartItem[];
+  address: string;
+  phone: string;
+  comment: string;
+  contactless: boolean;
+  promoCode: string | null;
+  total: number;
+  createdAt: Date;
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>// комментарий</code></td><td>однострочный комментарий</td><td><code># комментарий</code></td></tr><tr><td><code>export interface Pizza { ... }</code></td><td>описание формы объекта: какие поля и каких типов. Существует только при проверке типов, в рантайме исчезает</td><td><code>class Pizza(TypedDict): ...</code></td></tr><tr><td><code>id: number;</code></td><td>поле и его тип. В JS одно число на всё — и целые, и дробные</td><td><code>id: int  /  price: float</code></td></tr><tr><td><code>string · boolean · Date</code></td><td>строка · логический тип · дата-время</td><td><code>str · bool · datetime</code></td></tr><tr><td><code>type Size = 'S' | 'M' | 'L';</code></td><td>тип-псевдоним: допустимы только эти три строки</td><td><code>Size = Literal['S', 'M', 'L']</code></td></tr><tr><td><code>CartItem[]</code></td><td>массив (список) элементов CartItem</td><td><code>list[CartItem]</code></td></tr><tr><td><code>string | null</code></td><td>строка или «ничего»</td><td><code>str | None</code></td></tr><tr><td><code>export</code></td><td>делает имя доступным для import в других файлах. Без export имя видно только внутри файла</td><td>в Python импортировать можно всё; приватность — только соглашение _name</td></tr></tbody></table></div>
+
+  <div class="fileinfo"><span class="k">файл</span><code>src/pricing.ts</code><span class="k">роль</span><span>Правила цен в одном месте: множитель размера (S дешевле, L дороже) и промокоды. И корзина, и заказ считают деньги через эти функции, а не каждый по-своему.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/pricing.ts</span></figcaption>
+    <pre><code class="language-typescript">// Правила цен. Отвечает за ОДНО: посчитать, сколько стоит позиция и заказ.
+import type { CartItem, Size } from './types';
+
+const SIZE_MULTIPLIER: Record&lt;Size, number&gt; = { S: 0.8, M: 1, L: 1.3 };
+const PROMO_CODES: Record&lt;string, number&gt; = { PIZZA10: 0.1, HAPPY20: 0.2 };
+
+export const itemPrice = (item: CartItem): number =&gt;
+  Math.round(item.pizza.price * SIZE_MULTIPLIER[item.size]) * item.qty;
+
+export const calcTotal = (items: CartItem[], promoCode: string | null = null): number =&gt; {
+  const subtotal = items.reduce((sum, item) =&gt; sum + itemPrice(item), 0);
+  const discount = promoCode ? (PROMO_CODES[promoCode] ?? 0) : 0;
+  return Math.round(subtotal * (1 - discount));
+};</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>import type { CartItem } from './types';</code></td><td>импорт только типов (в рантайме его не будет). Путь относительный, без .ts</td><td><code>from .types import CartItem</code></td></tr><tr><td><code>const X = ...</code></td><td>переменная, которую нельзя переприсвоить</td><td><code>X: Final = ...</code></td></tr><tr><td><code>Record&lt;Size, number&gt;</code></td><td>словарь, где ключи — ВСЕ значения Size, значения — числа. Забыли ключ — ошибка типов</td><td><code>dict[Size, float]  (но со всеми ключами)</code></td></tr><tr><td><code>{ S: 0.8, M: 1, L: 1.3 }</code></td><td>объект-литерал; ключи без кавычек</td><td><code>{'S': 0.8, 'M': 1, 'L': 1.3}</code></td></tr><tr><td><code>(item: CartItem): number =&gt; ...</code></td><td>стрелочная функция: аргументы → тип результата → тело</td><td><code>def f(item: CartItem) -&gt; float: ...</code></td></tr><tr><td><code>items.reduce((sum, item) =&gt; sum + itemPrice(item), 0)</code></td><td>свернуть список в одно значение, начиная с 0</td><td><code>sum(item_price(i) for i in items)</code></td></tr><tr><td><code>promoCode = null</code></td><td>значение аргумента по умолчанию</td><td><code>promo_code: str | None = None</code></td></tr><tr><td><code>cond ? a : b</code></td><td>тернарный оператор</td><td><code>a if cond else b</code></td></tr><tr><td><code>x ?? 0</code></td><td>x, а если x равен null/undefined — то 0</td><td><code>x if x is not None else 0</code></td></tr><tr><td><code>PROMO_CODES[promoCode]</code></td><td>доступ по ключу; нет ключа — undefined, а не ошибка</td><td><code>PROMO_CODES.get(promo_code)</code></td></tr></tbody></table><p class="note">В JS нет KeyError: обращение к несуществующему ключу тихо вернёт undefined. Поэтому рядом стоит <code>?? 0</code>.</p></div>
+
+  <div class="fileinfo"><span class="k">файл</span><code>src/demo-pizzas.ts</code><span class="k">роль</span><span>Две захардкоженные пиццы, чтобы первую половину урока не зависеть от сервера. Удалим на шаге Adapter.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/demo-pizzas.ts</span></figcaption>
+    <pre><code class="language-typescript">// Временные данные, пока у нас нет «бэкенда». На шаге Adapter заменим на настоящую загрузку.
+import type { Pizza } from './types';
+
+export const DEMO_PIZZAS: Pizza[] = [
+  { id: 1, name: 'Маргарита', price: 499, isVegan: true, createdAt: new Date() },
+  { id: 2, name: 'Пепперони', price: 599, isVegan: false, createdAt: new Date() },
+];</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const DEMO_PIZZAS: Pizza[] = [ ... ]</code></td><td>типизированный список объектов</td><td><code>DEMO_PIZZAS: list[Pizza] = [...]</code></td></tr><tr><td><code>true / false</code></td><td>логические значения с маленькой буквы</td><td><code>True / False</code></td></tr><tr><td><code>new Date()</code></td><td>текущие дата и время. Объекты классов создаются через new</td><td><code>datetime.now()</code></td></tr></tbody></table></div>
+
+  <div class="fileinfo"><span class="k">файл</span><code>src/api/fake-backend.ts</code><span class="k">роль</span><span>Притворяется сервером: читает <code>pizzas.json</code> с задержкой 300 мс и в 30% случаев падает с ошибкой 503, как мобильный интернет в метро. Это нужно, чтобы на шаге Decorator боль была настоящей.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/api/fake-backend.ts</span></figcaption>
+    <pre><code class="language-typescript">// Имитация сервера. Отвечает за: отдать «сырые» данные так, как их отдал бы настоящий бэкенд —
+// в своём формате (snake_case, копейки), с задержкой сети и иногда с ошибкой.
+import { readFile } from 'node:fs/promises';
+
+export interface ApiPizza {
+  pizza_id: number;
+  pizza_name: string;
+  price_kopecks: number;
+  is_vegan: 0 | 1;
+  created_at: string;
+}
+
+const FAIL_RATE = 0.3;            // 30% запросов падают — как мобильный интернет в метро
+let requestCount = 0;
+
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export async function getPizzasFromServer(): Promise&lt;ApiPizza[]&gt; {
+  requestCount++;
+  await sleep(300);
+  if (Math.random() &lt; FAIL_RATE) {
+    throw new Error('503 Service Unavailable');
+  }
+  const file = new URL('../../data/pizzas.json', import.meta.url);
+  return JSON.parse(await readFile(file, 'utf-8'));
+}
+
+export const getRequestCount = () =&gt; requestCount;</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>import { readFile } from 'node:fs/promises';</code></td><td>асинхронное чтение файла из стандартной библиотеки Node</td><td><code>aiofiles.open(...) / Path.read_text()</code></td></tr><tr><td><code>is_vegan: 0 | 1;</code></td><td>литеральный тип: только 0 или 1</td><td><code>Literal[0, 1]</code></td></tr><tr><td><code>let requestCount = 0;</code></td><td>переменная, которую можно менять (в отличие от const)</td><td><code>request_count = 0</code></td></tr><tr><td><code>requestCount++</code></td><td>увеличить на 1</td><td><code>request_count += 1</code></td></tr><tr><td><code>new Promise((resolve) =&gt; setTimeout(resolve, ms))</code></td><td>«промис», который выполнится через ms миллисекунд</td><td><code>await asyncio.sleep(ms / 1000)</code></td></tr><tr><td><code>async function f(): Promise&lt;ApiPizza[]&gt;</code></td><td>асинхронная функция; Promise&lt;T&gt; — «будущее значение типа T»</td><td><code>async def f() -&gt; list[ApiPizza]:</code></td></tr><tr><td><code>await</code></td><td>дождаться результата промиса</td><td><code>await</code></td></tr><tr><td><code>Math.random()</code></td><td>случайное число от 0 до 1</td><td><code>random.random()</code></td></tr><tr><td><code>throw new Error('...')</code></td><td>выбросить исключение</td><td><code>raise Exception('...')</code></td></tr><tr><td><code>new URL('../../data/pizzas.json', import.meta.url)</code></td><td>путь к файлу относительно текущего модуля</td><td><code>Path(__file__).parent / '../../data/pizzas.json'</code></td></tr><tr><td><code>JSON.parse(text)</code></td><td>строку JSON → объект</td><td><code>json.loads(text)</code></td></tr><tr><td><code>export const getRequestCount = () =&gt; requestCount;</code></td><td>функция без аргументов в одну строку</td><td><code>def get_request_count(): return request_count</code></td></tr></tbody></table></div>
+
+  <div class="fileinfo"><span class="k">файл</span><code>src/main.ts</code><span class="k">роль</span><span>Точка входа. Пока одна строка — проверить, что всё запускается.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span></figcaption>
+    <pre><code class="language-typescript">// Точка входа. Здесь только СЦЕНАРИЙ — что делает пользователь. Вся логика живёт в модулях.
+console.log('🍕 PizzaHub запущен');</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>console.log('...')</code></td><td>вывести в консоль</td><td><code>print('...')</code></td></tr><tr><td><code>; в конце строки</code></td><td>разделитель инструкций. Обычно ставят, хотя чаще всего он необязателен</td><td>в Python не нужен</td></tr></tbody></table></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">npm run dev
+# 🍕 PizzaHub запущен</code></pre>
+  </figure>
+  <div class="expect"><b>Контрольная точка:</b> у всех в группе печатается «🍕 PizzaHub запущен». Если у кого-то ошибка — скорее всего, забыли <code>"type": "module"</code> или старая версия Node (<code>node -v</code> должен быть 20+). Дальше не идём, пока не заработало у всех.</div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Порождающие паттерны · как создавать объекты</span><span class="bar"></span></div>
+
+<!-- 04 SINGLETON -->
+<section id="singleton">
+  <div class="sec-head"><h2>04 · Singleton — корзина</h2><span class="tag creat">порождающий</span><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <div class="oneliner">У класса ровно один экземпляр, и все берут именно его.<small>Плюс глобальная точка доступа к этому экземпляру.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>В стране один президент: второго «создать» нельзя, и все министерства обращаются к одному и тому же человеку. В фильме «Горец» это звучало как <em>«Должен остаться только один»</em> — неофициальный девиз паттерна.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Шапка сайта показывает «в корзине 3 пиццы», страница корзины — «0». Почему? Каждый компонент сделал себе <code>new CartStore()</code>, и у каждого оказалась своя корзина. Покупатель в шоке, поддержка завалена жалобами.</p>
+
+  <h3>Пишем код</h3>
+  <div class="fileinfo"><span class="k">создаём</span><code>src/store/cart.store.ts</code><span class="k">роль</span><span>Хранит позиции корзины и отвечает на вопросы «сколько штук?» и «на какую сумму?». Одна корзина на всё приложение.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/store/cart.store.ts</span><span class="role">Singleton</span></figcaption>
+    <pre><code class="language-typescript">// SINGLETON. Корзина покупателя — одна на всё приложение.
+// Отвечает за: хранить позиции корзины и отвечать «сколько штук» и «на какую сумму».
+import { calcTotal } from '../pricing';
+import type { CartItem, Pizza, Size } from '../types';
+
+class CartStore {
+  private items: CartItem[] = [];
+
+  add(pizza: Pizza, size: Size = 'M', qty = 1): void {
+    const same = this.items.find((i) =&gt; i.pizza.id === pizza.id &amp;&amp; i.size === size);
+    if (same) same.qty += qty;
+    else this.items.push({ pizza, size, qty });
+  }
+
+  getItems(): CartItem[] {
+    return structuredClone(this.items);   // отдаём копию, а не свой массив (почему — в шаге Prototype)
+  }
+
+  count(): number {
+    return this.items.reduce((sum, i) =&gt; sum + i.qty, 0);
+  }
+
+  total(): number {
+    return calcTotal(this.items);
+  }
+
+  clear(): void {
+    this.items = [];
+  }
+}
+
+// Экспортируем ЭКЗЕМПЛЯР, а не класс: модуль выполнится один раз,
+// и все, кто сделает import { cartStore }, получат один и тот же объект.
+export const cartStore = new CartStore();</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>import { calcTotal } from '../pricing';</code></td><td>именованный импорт из файла уровнем выше</td><td><code>from ..pricing import calc_total</code></td></tr><tr><td><code>class CartStore { ... }</code></td><td>объявление класса. Тело в фигурных скобках вместо отступов</td><td><code>class CartStore: ...</code></td></tr><tr><td><code>private items: CartItem[] = [];</code></td><td>поле экземпляра с начальным значением; private — доступ снаружи запрещён компилятором</td><td><code>def __init__(self): self._items: list[CartItem] = []</code></td></tr><tr><td><code>add(pizza: Pizza, size: Size = 'M', qty = 1): void { ... }</code></td><td>метод. self не пишется, вместо него внутри this. void = ничего не возвращает</td><td><code>def add(self, pizza: Pizza, size: Size = 'M', qty: int = 1) -&gt; None:</code></td></tr><tr><td><code>this.items</code></td><td>обращение к полю текущего объекта</td><td><code>self._items</code></td></tr><tr><td><code>this.items.find((i) =&gt; cond)</code></td><td>первый элемент, подходящий под условие, или undefined</td><td><code>next((i for i in self._items if cond), None)</code></td></tr><tr><td><code>a === b  ·  &amp;&amp;  ·  ||  ·  !</code></td><td>строгое равенство · и · или · не</td><td><code>a == b  ·  and  ·  or  ·  not</code></td></tr><tr><td><code>if (same) same.qty += qty;
+else this.items.push(...);</code></td><td>if/else; условие в скобках, для одной строки фигурные скобки можно опустить</td><td><code>if same: ...
+else: self._items.append(...)</code></td></tr><tr><td><code>{ pizza, size, qty }</code></td><td>сокращённая запись объекта: ключ = имя переменной</td><td><code>{'pizza': pizza, 'size': size, 'qty': qty}</code></td></tr><tr><td><code>structuredClone(x)</code></td><td>глубокая копия</td><td><code>copy.deepcopy(x)</code></td></tr><tr><td><code>new CartStore()</code></td><td>создать экземпляр — обязательно со словом new</td><td><code>CartStore()</code></td></tr><tr><td><code>export const cartStore = new CartStore();</code></td><td>экземпляр на уровне модуля</td><td><code>cart_store = CartStore()  # в конце модуля</code></td></tr></tbody></table><p class="note"><b>Для питониста:</b> это ровно тот же приём, что в Python. Модули Python тоже кешируются в <code>sys.modules</code>, поэтому <code>cart_store = CartStore()</code> в модуле — готовый Singleton. Так сделан, например, <code>logging.getLogger()</code>.</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>class CartStore</code> без <code>export</code></strong> — класс спрятан внутри файла. Снаружи его не видно, значит второй <code>new CartStore()</code> никто не сделает.</li>
+    <li><strong><code>export const cartStore = new CartStore()</code></strong> — экспортируем готовый экземпляр. ES-модуль выполняется <em>один раз</em>: первый <code>import</code> запускает файл, результат кешируется, все следующие <code>import</code> получают тот же объект. Это и есть Singleton — бесплатно, средствами языка.</li>
+    <li><strong><code>private items</code></strong> — менять корзину можно только через методы (<code>add</code>, <code>clear</code>), а не напрямую.</li>
+    <li><strong><code>getItems()</code> возвращает копию</strong> — чтобы никто снаружи случайно не испортил содержимое корзины. Зачем именно <code>structuredClone</code>, станет понятно на шаге Prototype.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">создаём</span><span><code>src/ui/header.ts</code> и <code>src/ui/cart-page.ts</code></span><span class="k">роль</span><span>Два «компонента» в разных файлах. Оба импортируют <code>cartStore</code> — проверим, что они видят одну корзину.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/ui/header.ts</span></figcaption>
+    <pre><code class="language-typescript">// «Компонент» шапки сайта. Отвечает за: показать бейдж корзины.
+import { cartStore } from '../store/cart.store';
+
+export function renderHeader(): void {
+  console.log(`🛒 Шапка: в корзине ${cartStore.count()} шт.`);
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>`в корзине ${cartStore.count()} шт.`</code></td><td>шаблонная строка в обратных кавычках; ${...} — вставка выражения</td><td><code>f'в корзине {cart_store.count()} шт.'</code></td></tr><tr><td><code>export function renderHeader(): void { ... }</code></td><td>обычная (не стрелочная) функция</td><td><code>def render_header() -&gt; None: ...</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/ui/cart-page.ts</span></figcaption>
+    <pre><code class="language-typescript">// «Компонент» страницы корзины. Отвечает за: показать позиции и итог.
+import { itemPrice } from '../pricing';
+import { cartStore } from '../store/cart.store';
+
+export function renderCartPage(): void {
+  console.log('📄 Страница корзины:');
+  for (const item of cartStore.getItems()) {
+    console.log(`   ${item.pizza.name} (${item.size}) × ${item.qty} = ${itemPrice(item)} ₽`);
+  }
+  console.log(`   Итого: ${cartStore.total()} ₽`);
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>for (const item of list) { ... }</code></td><td>перебор элементов списка</td><td><code>for item in items: ...</code></td></tr></tbody></table><p class="note"><b>Ловушка:</b> в JS есть и <code>for (... in ...)</code>, но он перебирает <b>ключи/индексы</b>, а не элементы. Для списков всегда <code>of</code>.</p></div>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>src/main.ts</code><span class="k">что</span><span>Стираем строку из шага 0. Импорты — вверх файла, код — под ними.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">импорты</span></figcaption>
+    <pre><code class="language-typescript">import { DEMO_PIZZAS } from './demo-pizzas';
+import { cartStore } from './store/cart.store';
+import { renderCartPage } from './ui/cart-page';
+import { renderHeader } from './ui/header';</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>import { a, b } from './file';</code></td><td>импорт нескольких имён; ./ — та же папка, расширение .ts не пишем</td><td><code>from .file import a, b</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">код</span></figcaption>
+    <pre><code class="language-typescript">// --- Singleton: корзина ---
+const [margherita, pepperoni] = DEMO_PIZZAS;
+cartStore.add(margherita, 'L', 2);
+cartStore.add(pepperoni);
+renderHeader();
+renderCartPage();</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const [margherita, pepperoni] = DEMO_PIZZAS;</code></td><td>деструктуризация: первые два элемента списка в две переменные</td><td><code>margherita, pepperoni, *_ = DEMO_PIZZAS</code></td></tr><tr><td><code>cartStore.add(margherita, 'L', 2);</code></td><td>вызов метода с позиционными аргументами (именованных аргументов в JS нет)</td><td><code>cart_store.add(margherita, 'L', 2)</code></td></tr></tbody></table></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">вывод</span></figcaption>
+    <pre><code class="language-none">🛒 Шапка: в корзине 3 шт.
+📄 Страница корзины:
+   Маргарита (L) × 2 = 1298 ₽
+   Пепперони (M) × 1 = 599 ₽
+   Итого: 1897 ₽</code></pre>
+  </figure>
+  <div class="expect"><b>Работает:</b> добавляли в корзину в <code>main.ts</code>, а шапка и страница в других файлах видят одни и те же 3 пиццы.</div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ НА 1 МИНУТУ: ЛОМАЕМ</span>
+    <p>Временно допишите <code>export</code> перед <code>class CartStore</code>, а в <code>header.ts</code> вместо импорта <code>cartStore</code> сделайте <code>const cartStore = new CartStore()</code>. Запустите — шапка покажет «0 шт.». Вот она, боль из начала шага. Верните как было.</p>
+  </div></div>
+
+  <details class="classic"><summary>📕 Как в книжке (Java/C#-стиль): приватный конструктор</summary>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">classic singleton</span></figcaption>
+  <pre><code class="language-typescript">class CartStore {
+  private static instance: CartStore | null = null;
+  private constructor() {}                 // снаружи new CartStore() не скомпилируется
+
+  static getInstance(): CartStore {
+    if (!CartStore.instance) CartStore.instance = new CartStore();   // создаём только в первый раз
+    return CartStore.instance;
+  }
+}
+
+CartStore.getInstance() === CartStore.getInstance();   // true</code></pre></figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>private static instance: CartStore | null = null;</code></td><td>static — поле класса, а не экземпляра</td><td><code>_instance: ClassVar['CartStore | None'] = None</code></td></tr><tr><td><code>private constructor() {}</code></td><td>конструктор; private — снаружи вызвать new нельзя</td><td>аналога нет; в Python переопределяют __new__</td></tr><tr><td><code>static getInstance(): CartStore</code></td><td>статический метод: вызывается у класса</td><td><code>@classmethod def get_instance(cls) -&gt; 'CartStore':</code></td></tr><tr><td><code>if (!CartStore.instance)</code></td><td>«если пусто» (null, undefined, 0, '' считаются ложью)</td><td><code>if cls._instance is None:</code></td></tr></tbody></table></div>
+  <p>Делает то же самое. В языках без модулей иначе нельзя; в TS модуль проще.</p>
+  </details>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p>Redux / Zustand / Pinia store, созданный один раз на приложение. <code>export const queryClient = new QueryClient()</code>. Экземпляр <code>axios</code> с базовым URL. <code>window</code> и <code>document</code>.</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">НА БЭКЕНДЕ — ОСТОРОЖНО</span>
+    <p>На сервере одиночкой делают подключение к БД, конфиг, логгер. Но модуль на сервере загружается <strong>один раз для всех пользователей</strong>. Положите в module-level стор данные текущего пользователя (это частая ошибка при SSR в Next.js) — и соседний запрос другого человека их увидит. Правило: на сервере одиночкой может быть только то, что <strong>общее для всех</strong>. Наша корзина — одиночка только потому, что это «браузер одного покупателя».</p>
+  </div></div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">КОГДА НЕ НАДО</span>
+    <p>Singleton — это <strong>глобальная переменная в красивом костюме</strong>: её меняют откуда угодно, а в тестах состояние «протекает» из теста в тест. Используйте, когда ресурс действительно один.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 05 FACTORY -->
+<section id="factory">
+  <div class="sec-head"><h2>05 · Factory Method — уведомления</h2><span class="tag creat">порождающий</span><span class="tag practice">live-coding</span><span class="tag time">~9 мин</span></div>
+
+  <div class="oneliner">Создание объекта прячут за функцией, которая сама решает, что именно создать.<small>Код говорит «покажи ошибку», а не «new ErrorToast()».</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>Вы в пиццерии говорите «одну Маргариту». Вы не идёте на кухню выбирать печь и замешивать тесто. Кухня — фабрика: вы называете <em>что</em>, она знает <em>как</em>. Повар сменит печь — ваш заказ от этого не изменится.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Уведомления «добавлено», «ошибка», «курьер в пути» нужны в десятке мест. Если в каждом месте писать <code>if (type === 'error') new ErrorToast(...) else if ...</code>, то при добавлении нового типа придётся искать и править все десять. Одно место забыли — баг.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/notifications/toast.factory.ts</code><span class="k">роль</span><span>Единственное место, которое знает про классы уведомлений и решает, какой из них создать. Всё приложение пользуется только функцией <code>notify(type, message)</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/notifications/toast.factory.ts</span><span class="role">Factory</span></figcaption>
+    <pre><code class="language-typescript">// FACTORY METHOD. Отвечает за: решить, КАКОЕ уведомление создать, в одном месте.
+// Остальной код говорит «покажи ошибку» и не знает про классы ErrorToast и т.п.
+
+export interface Toast {
+  show(): void;
+}
+
+class SuccessToast implements Toast {
+  constructor(private message: string) {}
+  show() { console.log(`✅ ${this.message}`); }
+}
+
+class ErrorToast implements Toast {
+  constructor(private message: string) {}
+  show() { console.error(`❌ ${this.message}`); }   // ошибки — в stderr
+}
+
+class InfoToast implements Toast {
+  constructor(private message: string) {}
+  show() { console.log(`ℹ️  ${this.message}`); }
+}
+
+export type ToastType = 'success' | 'error' | 'info';
+
+// Реестр «тип → как создать». Новый тип = одна строка здесь.
+// Record&lt;ToastType, ...&gt; заставит TypeScript проверить, что ни один тип не забыт.
+const registry: Record&lt;ToastType, (message: string) =&gt; Toast&gt; = {
+  success: (m) =&gt; new SuccessToast(m),
+  error: (m) =&gt; new ErrorToast(m),
+  info: (m) =&gt; new InfoToast(m),
+};
+
+export const createToast = (type: ToastType, message: string): Toast =&gt; registry[type](message);
+
+// Удобный шорткат: создать и сразу показать
+export const notify = (type: ToastType, message: string): void =&gt; createToast(type, message).show();</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>interface Toast { show(): void; }</code></td><td>контракт: у объекта должен быть метод show()</td><td><code>class Toast(Protocol): def show(self) -&gt; None: ...</code></td></tr><tr><td><code>class SuccessToast implements Toast</code></td><td>класс явно обещает выполнить контракт; компилятор проверит</td><td><code>class SuccessToast(Toast): ...  # явное наследование от Protocol</code></td></tr><tr><td><code>constructor(private message: string) {}</code></td><td>конструктор + автоматически созданное приватное поле message</td><td><code>def __init__(self, message: str): self._message = message</code></td></tr><tr><td><code>show() { console.log(...); }</code></td><td>метод без аргументов</td><td><code>def show(self): print(...)</code></td></tr><tr><td><code>console.error(...)</code></td><td>печать в поток ошибок</td><td><code>print(..., file=sys.stderr)</code></td></tr><tr><td><code>(message: string) =&gt; Toast</code></td><td>тип «функция, принимающая строку и возвращающая Toast»</td><td><code>Callable[[str], Toast]</code></td></tr><tr><td><code>(m) =&gt; new SuccessToast(m)</code></td><td>короткая стрелочная функция</td><td><code>lambda m: SuccessToast(m)</code></td></tr><tr><td><code>registry[type](message)</code></td><td>достать функцию из словаря по ключу и сразу вызвать</td><td><code>registry[type_](message)</code></td></tr><tr><td><code>export const notify = (type: ToastType, message: string): void =&gt; ...</code></td><td>экспортируемая функция в одну строку</td><td><code>def notify(type_: ToastType, message: str) -&gt; None: ...</code></td></tr></tbody></table><p class="note"><code>type</code> в TS — обычное имя для аргумента. В Python лучше <code>type_</code>, чтобы не перекрыть встроенную функцию.</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>interface Toast</code></strong> — контракт: любое уведомление умеет <code>show()</code>. Код, который пользуется фабрикой, зависит от контракта, а не от конкретных классов.</li>
+    <li><strong>Классы не экспортируются</strong> — снаружи их не видно, создавать их можно только через фабрику.</li>
+    <li><strong>Реестр <code>registry</code> вместо if/else</strong> — новый тип добавляется одной строкой и ничего не ломает. Это принцип открытости/закрытости (буква O в SOLID).</li>
+    <li><strong><code>Record&lt;ToastType, ...&gt;</code></strong> — TypeScript проверяет, что для <em>каждого</em> типа есть создатель.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>src/main.ts</code><span class="k">куда</span><span>Импорт — к остальным импортам вверху, код — в конец файла.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорт</span></figcaption>
+    <pre><code class="language-typescript">import { notify } from './notifications/toast.factory';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-typescript">// --- Factory: уведомления ---
+notify('success', 'Пицца добавлена в корзину');
+notify('info', 'Доставка займёт ~35 минут');
+notify('error', 'Курьер застрял в пробке');</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки вывода</span></figcaption>
+    <pre><code class="language-none">✅ Пицца добавлена в корзину
+ℹ️  Доставка займёт ~35 минут
+❌ Курьер застрял в пробке</code></pre>
+  </figure>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ: TYPESCRIPT ЛОВИТ ЗАБЫВЧИВОСТЬ</span>
+    <p>Добавьте <code>| 'warning'</code> в <code>ToastType</code> и запустите <code>npm run typecheck</code>:</p>
+    <p><code>error TS2741: Property 'warning' is missing in type ... but required in type 'Record&lt;ToastType, ...&gt;'</code></p>
+    <p>Забыть обработать новый тип теперь невозможно — проект не пройдёт проверку. Допишите <code>WarningToast</code> с иконкой ⚠️ и строку в реестре — это мини-задание на 2 минуты прямо на уроке.</p>
+  </div></div>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p><code>document.createElement('div')</code>: вы называете тег, браузер создаёт нужный класс (<code>HTMLDivElement</code>, <code>HTMLInputElement</code>…). <code>React.createElement</code>, <code>axios.create()</code>, <code>toast.success()</code> в библиотеках уведомлений.</p>
+  </div></div>
+
+  <p><strong>На бэкенде:</strong> платёжка по стране — <code>createPaymentGateway('RU')</code> вернёт ЮKassa, <code>'US'</code> — Stripe. Сервис заказов вызывает <code>gateway.charge()</code> и не знает, кто внутри. <strong>Когда не надо:</strong> если вариант всего один и создаётся в одном месте, обычный <code>new</code> прекрасно работает.</p>
+</section>
+
+<hr>
+
+<!-- 06 BUILDER -->
+<section id="builder">
+  <div class="sec-head"><h2>06 · Builder — заказ</h2><span class="tag creat">порождающий</span><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <div class="oneliner">Сложный объект собирают по шагам, а не одним гигантским конструктором.<small>Особенно когда параметров много, часть необязательна, а в конце нужна проверка.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>Сабвей. Вы не кричите кассиру «белый-30-курица-да-нет-сыр-да-огурцы-нет-чесночный». Вы идёте вдоль прилавка: <em>хлеб → начинка → сыр → овощи → соус</em>. На каждом шаге понятно, что выбираете, а пропущенное получает значение по умолчанию.</p>
+  </div></div>
+
+  <h3>Боль: «телескопический конструктор»</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">как НЕ надо</span></figcaption>
+    <pre><code class="language-typescript">const order = createOrder(items, 'ул. Ленина, 1', '+79001234567', '', true, 'PIZZA10');
+// что значит true? а пустая строка? через месяц не ответит даже автор</code></pre>
+  </figure>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРИКОЛ</span>
+    <p>Ряды <code>true, false, true</code> в аргументах называют <em>boolean trap</em>. Если вам приходится считать запятые пальцем — нужен Строитель.</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/orders/order.builder.ts</code><span class="k">роль</span><span>Собирает заказ по шагам и проверяет его в <code>build()</code>. Невалидный заказ создать невозможно: <code>build()</code> выбросит понятную ошибку.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/orders/order.builder.ts</span><span class="role">Builder</span></figcaption>
+    <pre><code class="language-typescript">// BUILDER. Отвечает за: пошагово собрать заказ и проверить его перед созданием.
+import { randomUUID } from 'node:crypto';
+import { calcTotal } from '../pricing';
+import type { CartItem, Order } from '../types';
+
+export const newOrderId = (): string =&gt; randomUUID().slice(0, 8);
+
+export class OrderBuilder {
+  private items: CartItem[] = [];
+  private address = '';
+  private phone = '';
+  private comment = '';
+  private contactless = false;
+  private promoCode: string | null = null;
+
+  // каждый шаг возвращает this — поэтому можно писать цепочкой
+  fromCart(items: CartItem[]) { this.items = items; return this; }
+  to(address: string) { this.address = address.trim(); return this; }
+  withPhone(phone: string) { this.phone = phone.replace(/[\s()-]/g, ''); return this; }
+  withComment(comment: string) { this.comment = comment; return this; }
+  contactlessDelivery() { this.contactless = true; return this; }
+  withPromo(code: string | null) { this.promoCode = code; return this; }
+
+  // build() — единственное место, где заказ может появиться. И только валидным.
+  build(): Order {
+    if (this.items.length === 0) throw new Error('Корзина пуста');
+    if (this.address.length &lt; 5) throw new Error('Не указан адрес доставки');
+    if (!/^\+7\d{10}$/.test(this.phone)) throw new Error('Телефон в формате +7XXXXXXXXXX');
+
+    return {
+      id: newOrderId(),
+      items: this.items,
+      address: this.address,
+      phone: this.phone,
+      comment: this.comment,
+      contactless: this.contactless,
+      promoCode: this.promoCode,
+      total: calcTotal(this.items, this.promoCode),
+      createdAt: new Date(),
+    };
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>import { randomUUID } from 'node:crypto';</code></td><td>генератор UUID из стандартной библиотеки Node</td><td><code>from uuid import uuid4</code></td></tr><tr><td><code>randomUUID().slice(0, 8)</code></td><td>первые 8 символов строки</td><td><code>str(uuid4())[:8]</code></td></tr><tr><td><code>private address = '';</code></td><td>поле без явного типа: TS выводит string из значения</td><td><code>self._address = ''</code></td></tr><tr><td><code>fromCart(items: CartItem[]) { ...; return this; }</code></td><td>метод возвращает сам объект — для цепочки вызовов</td><td><code>def from_cart(self, items): ...; return self</code></td></tr><tr><td><code>address.trim()</code></td><td>убрать пробелы по краям</td><td><code>address.strip()</code></td></tr><tr><td><code>phone.replace(/[\s()-]/g, '')</code></td><td>заменить по регулярке; /.../ — литерал регулярки, флаг g — заменить ВСЕ совпадения</td><td><code>re.sub(r'[\s()-]', '', phone)</code></td></tr><tr><td><code>this.address.length</code></td><td>длина строки или массива</td><td><code>len(self._address)</code></td></tr><tr><td><code>/^\+7\d{10}$/.test(this.phone)</code></td><td>проверить строку регуляркой → true/false</td><td><code>re.fullmatch(r'\+7\d{10}', phone) is not None</code></td></tr><tr><td><code>return { id: ..., items: this.items, ... };</code></td><td>вернуть объект-литерал; TS проверит, что он подходит под Order</td><td><code>return Order(id=..., items=self._items, ...)</code></td></tr></tbody></table><p class="note"><b>Ловушка:</b> без флага <code>g</code> метод <code>replace</code> заменит только <b>первое</b> совпадение. В Python <code>re.sub</code> по умолчанию заменяет все.</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>return this</code></strong> в каждом шаге — поэтому можно писать цепочкой <code>.to(...).withPhone(...)</code>.</li>
+    <li><strong>Шаги чистят данные</strong>: <code>to()</code> убирает лишние пробелы, <code>withPhone()</code> — пробелы, скобки и дефисы. Пользователь вводит <code>+7 900 123-45-67</code>, а в заказ попадает <code>+79001234567</code>.</li>
+    <li><strong><code>build()</code> — единственная дверь</strong>, через которую появляется заказ, и в ней стоит проверка. Пустая корзина или кривой телефон не доедут до оплаты.</li>
+    <li><strong>Цену считает <code>calcTotal</code> из <code>pricing.ts</code></strong> — строитель не придумывает свои правила цен.</li>
+    <li><strong><code>newOrderId</code></strong> экспортируем отдельно — он пригодится на шаге Prototype.</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорт</span></figcaption>
+    <pre><code class="language-typescript">import { OrderBuilder } from './orders/order.builder';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-typescript">// --- Builder: заказ ---
+const order = new OrderBuilder()
+  .fromCart(cartStore.getItems())
+  .to('ул. Ленина, 1')
+  .withPhone('+7 900 123-45-67')
+  .withPromo('PIZZA10')
+  .contactlessDelivery()
+  .build();
+console.log(`📦 Заказ №${order.id}: ${order.total} ₽, бесконтактно: ${order.contactless}`);
+
+try {
+  new OrderBuilder().to('ул. Ленина, 1').build();   // забыли корзину и телефон
+} catch (error) {
+  notify('error', (error as Error).message);
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>new OrderBuilder()
+  .fromCart(...)
+  .to(...)</code></td><td>цепочка вызовов; перенос строки перед точкой разрешён</td><td><code>(OrderBuilder()
+  .from_cart(...)
+  .to(...))  # в Python нужны скобки</code></td></tr><tr><td><code>try { ... } catch (error) { ... }</code></td><td>перехват исключения</td><td><code>try: ...
+except Exception as error: ...</code></td></tr><tr><td><code>(error as Error).message</code></td><td>as — приведение типа (только для компилятора); .message — текст ошибки</td><td><code>str(cast(Exception, error))</code></td></tr></tbody></table><p class="note">В TS в <code>catch</code> нельзя указать тип исключения, как <code>except ValueError</code>: ловится всё, а в переменной лежит значение типа <code>unknown</code>.</p></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки</span></figcaption>
+    <pre><code class="language-none">📦 Заказ №287d848d: 1707 ₽, бесконтактно: true
+❌ Корзина пуста</code></pre>
+  </figure>
+  <div class="expect"><b>Проверка:</b> 1897 ₽ минус 10% по промокоду = 1707 ₽. Номер заказа у каждого свой — он случайный. Второй строитель «забыл» корзину — и <code>build()</code> не дал создать заказ.</div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">WEB-WAY: А МОЖНО ПРОЩЕ?</span>
+    <p>Часто да. В JS есть именованные параметры «бесплатно» — объект-конфиг с деструктуризацией: <code>createOrder({ address, phone, promoCode })</code>. Если все данные известны сразу — так проще. Настоящий Builder нужен, когда объект собирается <strong>постепенно, в разных местах кода</strong> (например, фасад на шаге 12 собирает заказ из корзины, формы и промокода) или когда нужна <strong>валидация и нормализация</strong> на шагах.</p>
+  </div></div>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p>Zod: <code>z.string().min(3).max(50).email()</code>. jQuery: <code>$('.btn').addClass('x').show()</code>. <code>URLSearchParams</code> с <code>.append()</code>.</p>
+  </div></div>
+
+  <p><strong>На бэкенде — тизер к уроку про БД:</strong> самый важный строитель вашей бэкенд-жизни — <strong>query builder</strong> (Knex, Drizzle): <code>db('pizzas').where('is_vegan', true).orderBy('price')</code>. Он собирает SQL по шагам и, главное, передаёт значения отдельно от текста запроса — это защита от SQL-инъекций.</p>
+</section>
+
+<hr>
+
+<!-- 07 PROTOTYPE -->
+<section id="prototype">
+  <div class="sec-head"><h2>07 · Prototype — повтор заказа</h2><span class="tag creat">порождающий</span><span class="tag practice">live-coding</span><span class="tag time">~7 мин</span></div>
+
+  <div class="oneliner">Новый объект получают копированием готового, а не сборкой с нуля.<small>«Сделай мне такой же, только на другой адрес».</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>1996 год, овечка Долли — первое млекопитающее, клонированное из взрослой клетки. Овцу не собирали по частям, а скопировали существующую. Долли — идеальный маскот паттерна.</p>
+  </div></div>
+
+  <h3>Боль: кнопка «Повторить заказ»</h3>
+  <p>Сначала пишем «очевидное» решение прямо в конец <code>main.ts</code>, чтобы увидеть баг своими глазами:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ в конец · ВРЕМЕННО</span></figcaption>
+    <pre><code class="language-typescript">// --- Prototype: СНАЧАЛА наивно (это баг!) ---
+const naive = { ...order, address: 'ул. Пушкина, 10' };
+naive.items[0].qty = 10;
+console.log(`оригинал после наивной копии: ${order.items[0].qty} шт.`);</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>{ ...order, address: 'ул. Пушкина, 10' }</code></td><td>spread: скопировать все поля order и переопределить address</td><td><code>{**order, 'address': 'ул. Пушкина, 10'}</code></td></tr><tr><td><code>naive.items[0].qty = 10;</code></td><td>изменить поле первого элемента вложенного массива</td><td><code>naive['items'][0]['qty'] = 10</code></td></tr></tbody></table><p class="note">В Python будет ровно тот же баг: <code>{**order}</code> и <code>copy.copy()</code> — тоже поверхностные копии.</p></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span></figcaption>
+    <pre><code class="language-none">оригинал после наивной копии: 10 шт.</code></pre>
+  </figure>
+  <p>Мы меняли <em>копию</em>, а изменился <em>оригинал</em>: в нём было 2 Маргариты, стало 10. В реальном приложении это значит, что в истории заказов пользователя внезапно поменялся старый заказ.</p>
+
+  <div class="diagram">
+<pre>   <span class="tn">order</span>                              <span class="tn">naive</span>
+ ┌──────────────────┐            ┌──────────────────┐
+ │ address: Ленина  │            │ address: Пушкина │   ← скопировалось значение
+ │ items: ──────────┼──┐   ┌─────┼── items          │   ← скопировалась только ССЫЛКА
+ └──────────────────┘  ▼   ▼     └──────────────────┘
+                   ┌──────────────────┐
+                   │ [{Маргарита, 10}] │   ← один и тот же массив на двоих
+                   └──────────────────┘</pre>
+  </div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ТАК</span>
+    <p>Spread <code>{...obj}</code> делает <strong>поверхностную</strong> копию: копирует только верхний уровень. Вложенные массивы и объекты — это ссылки, и копируется ссылка, а не содержимое. Нужна <strong>глубокая</strong> копия. Кстати, именно поэтому <code>cartStore.getItems()</code> на шаге Singleton отдаёт <code>structuredClone</code>, а не свой массив.</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/orders/repeat-order.ts</code><span class="k">роль</span><span>Делает новый заказ как глубокую копию старого: свой номер, своё время, при желании другой адрес. Оригинал не трогает.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/orders/repeat-order.ts</span><span class="role">Prototype</span></figcaption>
+    <pre><code class="language-typescript">// PROTOTYPE. Отвечает за: сделать новый заказ как КОПИЮ старого («Повторить заказ»).
+import type { Order } from '../types';
+import { newOrderId } from './order.builder';
+
+type OrderChanges = Partial&lt;Pick&lt;Order, 'address' | 'comment' | 'contactless'&gt;&gt;;
+
+export function repeatOrder(original: Order, changes: OrderChanges = {}): Order {
+  const copy = structuredClone(original);   // ГЛУБОКАЯ копия: вложенные items тоже новые
+  return {
+    ...copy,
+    ...changes,
+    id: newOrderId(),          // у копии свой номер
+    createdAt: new Date(),     // и своё время
+  };
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>Pick&lt;Order, 'address' | 'comment'&gt;</code></td><td>тип с только этими полями из Order</td><td>TypedDict с выбранными полями</td></tr><tr><td><code>Partial&lt;T&gt;</code></td><td>все поля T становятся необязательными</td><td><code>class OrderChanges(TypedDict, total=False): ...</code></td></tr><tr><td><code>changes: OrderChanges = {}</code></td><td>аргумент по умолчанию — пустой объект</td><td><code>changes: OrderChanges | None = None</code></td></tr><tr><td><code>{ ...copy, ...changes, id: newOrderId() }</code></td><td>слияние объектов: правые ключи перезаписывают левые</td><td><code>{**copy, **changes, 'id': new_order_id()}</code></td></tr></tbody></table><p class="note"><b>Приятный сюрприз для питониста:</b> в JS значение по умолчанию <code>= {}</code> создаётся <b>заново при каждом вызове</b>. Знаменитой ловушки Python с <code>def f(x=[])</code> здесь нет.</p></div>
+  <ul>
+    <li><strong><code>structuredClone</code></strong> — глубокая копия, встроенная в браузеры и Node 17+. Копирует и вложенные массивы, и <code>Date</code>.</li>
+    <li><strong><code>Partial&lt;Pick&lt;Order, ...&gt;&gt;</code></strong> — менять в копии можно только адрес, комментарий и бесконтактность. Цену или состав через этот параметр не подменишь.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>src/main.ts</code><span class="k">что</span><span>Удаляем временный блок «наивно» и пишем правильный вариант.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорт</span></figcaption>
+    <pre><code class="language-typescript">import { repeatOrder } from './orders/repeat-order';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">вместо блока «наивно»</span></figcaption>
+    <pre><code class="language-typescript">// --- Prototype: правильно ---
+const again = repeatOrder(order, { address: 'ул. Пушкина, 10' });
+again.items[0].qty = 5;
+console.log(`🔁 копия №${again.id}: ${again.items[0].qty} шт., оригинал №${order.id}: ${order.items[0].qty} шт.`);</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span></figcaption>
+    <pre><code class="language-none">🔁 копия №3a399618: 5 шт., оригинал №287d848d: 2 шт.</code></pre>
+  </figure>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p>JavaScript — <strong>прототипный язык</strong>: у массива нет своего метода <code>map</code>, он берёт его по цепочке <code>arr → Array.prototype → Object.prototype</code>. А иммутабельные обновления стейта в React <code>{ ...state, count: 5 }</code> — тоже «скопируй и поменяй». И тот же баг поверхностной копии вы наверняка ловили в <code>setState</code> с вложенными объектами.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 BLITZ 1 -->
+<section id="blitz1">
+  <div class="sec-head"><h2>08 · Блиц: Abstract Factory, Lazy Init, Object Pool</h2><span class="tag blitz">блиц · без кода в проекте</span><span class="tag time">~6 мин</span></div>
+  <p>Три паттерна, которые важно узнавать в лицо. В проект не пишем — по 2 минуты на каждый.</p>
+
+  <h3>Abstract Factory — фабрика «комплектов»</h3>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <p>Кухня в IKEA из одной коллекции: шкафы, ручки, столешница гарантированно сочетаются. Вы выбираете <em>коллекцию</em> один раз, а не каждую ручку.</p>
+  </div></div>
+  <p>Если Factory Method создаёт <strong>один</strong> продукт, то Abstract Factory — <strong>семейство</strong> согласованных продуктов. Боль: появилась тёмная тема, и тестировщик присылает скриншот тёмной кнопки на светлом поле ввода, потому что кто-то забыл <code>if (dark)</code> в одном из 40 компонентов.</p>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">идея</span></figcaption>
+  <pre><code class="language-typescript">interface UIKit { button(label: string): string; input(placeholder: string): string; }
+
+const lightKit: UIKit = { button: (l) =&gt; `[ ${l} ]`, input: (p) =&gt; `|${p}|` };
+const darkKit: UIKit  = { button: (l) =&gt; `[█ ${l} █]`, input: (p) =&gt; `|▓${p}▓|` };
+
+export const ui: UIKit = prefersDark ? darkKit : lightKit;   // выбор — ОДИН раз
+// компоненты: ui.button('Заказать') — смешать темы физически негде</code></pre></figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>interface UIKit { button(label: string): string; }</code></td><td>контракт из сигнатур методов</td><td><code>class UIKit(Protocol): def button(self, label: str) -&gt; str: ...</code></td></tr><tr><td><code>const lightKit: UIKit = { button: (l) =&gt; ... }</code></td><td>объект из функций вместо класса — так в TS часто реализуют интерфейс</td><td>SimpleNamespace(button=lambda l: ...) или модуль с функциями</td></tr></tbody></table></div>
+  <p><strong>Видели:</strong> <code>ThemeProvider</code> в MUI / styled-components. <strong>Бэкенд:</strong> хранилище файлов — локальный диск в dev и облако S3 в проде; фабрика выдаёт согласованный комплект «загрузить + подписать ссылку + удалить».</p>
+
+  <h3>Lazy Initialization — «не делай, пока не попросили»</h3>
+  <p>Ресторан не готовит все 50 блюд к открытию «на всякий случай». А приложение почему-то на странице входа грузит 5 МБ JS вместе с картой и админкой. Создаём объект или грузим код только в момент первой надобности.</p>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">идея</span></figcaption>
+  <pre><code class="language-typescript">const DeliveryMap = React.lazy(() =&gt; import('./DeliveryMap'));   // код карты — только когда её покажут
+
+let analytics: Analytics | null = null;
+export const getAnalytics = () =&gt; (analytics ??= new Analytics()); // создаём при первом обращении</code></pre></figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>() =&gt; import('./DeliveryMap')</code></td><td>динамический импорт: модуль загружается в момент вызова</td><td><code>importlib.import_module('delivery_map')</code></td></tr><tr><td><code>analytics ??= new Analytics()</code></td><td>присвоить, только если сейчас null/undefined</td><td><code>if analytics is None: analytics = Analytics()</code></td></tr></tbody></table></div>
+  <p><strong>Видели:</strong> <code>React.lazy</code>, динамический <code>import()</code>, <code>&lt;img loading="lazy"&gt;</code>.</p>
+
+  <h3>Object Pool — «не выбрасывай, верни в бассейн»</h3>
+  <p>Прокат самокатов: город не производит новый самокат на каждую поездку и не выбрасывает его после. Взял свободный — покатался — вернул. Все заняты — ждёшь.</p>
+  <p><strong>На бэкенде это самый важный пул в вашей жизни — пул соединений с БД.</strong> Открыть соединение с PostgreSQL дорого (сеть, пароль, память на сервере), поэтому бэкенд держит, скажем, 10 открытых соединений и раздаёт их запросам: <code>const db = new Pool({ max: 10 })</code> — Singleton и Object Pool в одной строке. Подробно — на уроке про базы данных.</p>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ИСТОРИЯ ИЗ ПРОДА</span>
+    <p>Разработчик открывает новое соединение с БД на каждый запрос. Локально всё летает. В «чёрную пятницу» приходят 500 покупателей, и PostgreSQL отвечает знаменитым <code>sorry, too many clients already</code>. Сайт лежит, пицца остывает.</p>
+  </div></div>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — структурные паттерны: как собирать объекты в конструкции. Проверьте, что <code>npm run dev</code> работает у всех.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Структурные паттерны · как собирать объекты</span><span class="bar"></span></div>
+
+<!-- 09 ADAPTER -->
+<section id="adapter">
+  <div class="sec-head"><h2>09 · Adapter — ответ сервера</h2><span class="tag struct">структурный</span><span class="tag practice">live-coding</span><span class="tag time">~9 мин</span></div>
+
+  <div class="oneliner">Переходник между двумя несовместимыми интерфейсами.<small>Ничего нового не добавляет — только переводит с одного «языка» на другой.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>Вы прилетели в Лондон, а там розетки с тремя квадратными штырями. Ноутбук рабочий, розетка рабочая — они просто «не понимают» друг друга. Вы не перепаиваете вилку, а покупаете переходник за 5 фунтов.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Пора убрать захардкоженные пиццы и брать меню с «сервера». Но сервер отдаёт данные в своём стиле:</p>
+  <div class="twocol">
+    <div class="box bad"><h5>Отдаёт бэкенд</h5><code>pizza_id</code>, <code>pizza_name</code>, <code>price_kopecks: 49900</code>, <code>is_vegan: 1</code>, <code>created_at: "2026-09-01T..."</code></div>
+    <div class="box good"><h5>Ждёт наш код (types.ts)</h5><code>id</code>, <code>name</code>, <code>price: 499</code>, <code>isVegan: true</code>, <code>createdAt: Date</code></div>
+  </div>
+  <p>Если переводить прямо в компонентах, <code>pizza.pizza_name</code> и <code>/ 100</code> расползутся по всему проекту. А потом бэкендер переименует <code>pizza_name</code> в <code>title</code>…</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/api/pizza.adapter.ts</code><span class="k">роль</span><span>Единственное место в проекте, которое знает оба формата и переводит один в другой.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/api/pizza.adapter.ts</span><span class="role">Adapter</span></figcaption>
+    <pre><code class="language-typescript">// ADAPTER. Отвечает за: перевести пиццу из формата бэкенда в формат приложения.
+// Это ЕДИНСТВЕННОЕ место в проекте, которое знает про pizza_name и копейки.
+import type { Pizza } from '../types';
+import type { ApiPizza } from './fake-backend';
+
+export const toPizza = (raw: ApiPizza): Pizza =&gt; ({
+  id: raw.pizza_id,
+  name: raw.pizza_name,
+  price: raw.price_kopecks / 100,
+  isVegan: raw.is_vegan === 1,
+  createdAt: new Date(raw.created_at),
+});</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>(raw: ApiPizza): Pizza =&gt; ({ ... })</code></td><td>стрелочная функция, которая сразу возвращает объект. Круглые скобки вокруг { } обязательны</td><td><code>def to_pizza(raw: ApiPizza) -&gt; Pizza: return {...}</code></td></tr><tr><td><code>raw.is_vegan === 1</code></td><td>сравнение даёт true/false</td><td><code>raw['is_vegan'] == 1</code></td></tr><tr><td><code>new Date(raw.created_at)</code></td><td>строка ISO → дата</td><td><code>datetime.fromisoformat(raw['created_at'])</code></td></tr></tbody></table><p class="note"><b>Ловушка:</b> без круглых скобок <code>=&gt; { id: ... }</code> JS решит, что фигурные скобки — это тело функции, а не объект. Функция молча вернёт <code>undefined</code>.</p></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/api/pizza.api.ts</code><span class="k">роль</span><span>Слой API: сходить на сервер и вернуть приложению уже «наши» пиццы. Компоненты зовут только эту функцию — про сервер и его формат они не знают.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/api/pizza.api.ts</span><span class="role">версия для этого шага</span></figcaption>
+    <pre><code class="language-typescript">// Слой API. Отвечает за: получить пиццы с «сервера» и отдать приложению в НАШЕМ формате.
+import type { Pizza } from '../types';
+import { getPizzasFromServer } from './fake-backend';
+import { toPizza } from './pizza.adapter';
+
+export async function fetchPizzas(): Promise&lt;Pizza[]&gt; {
+  const raw = await getPizzasFromServer();   // сырые данные бэкенда
+  return raw.map(toPizza);                   // наружу — только «наши» Pizza
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>async function fetchPizzas(): Promise&lt;Pizza[]&gt;</code></td><td>асинхронная функция, вернёт список пицц</td><td><code>async def fetch_pizzas() -&gt; list[Pizza]:</code></td></tr><tr><td><code>raw.map(toPizza)</code></td><td>применить функцию к каждому элементу → новый список</td><td><code>[to_pizza(r) for r in raw]</code></td></tr></tbody></table></div>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>src/main.ts</code><span class="k">что</span><span>1) Удаляем импорт <code>DEMO_PIZZAS</code> и строку <code>const [margherita, pepperoni] = DEMO_PIZZAS;</code>. 2) Добавляем импорт <code>fetchPizzas</code>. 3) <strong>В самое начало</strong> кода (над корзиной) вставляем загрузку меню. 4) Удаляем файл <code>src/demo-pizzas.ts</code> — он больше не нужен.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорт</span></figcaption>
+    <pre><code class="language-typescript">import { fetchPizzas } from './api/pizza.api';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">в начало, над блоком Singleton</span></figcaption>
+    <pre><code class="language-typescript">// --- Adapter: меню с «сервера» вместо DEMO_PIZZAS ---
+const menu = await fetchPizzas();
+menu.forEach((p) =&gt; console.log(`   ${p.id}. ${p.name} — ${p.price} ₽${p.isVegan ? ' 🌱' : ''}`));
+
+const [margherita, pepperoni] = menu;    // эта строка заменяет старую с DEMO_PIZZAS</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const menu = await fetchPizzas();</code></td><td>await прямо в теле модуля, без async-функции (top-level await в ES-модулях)</td><td>в Python так нельзя: нужен asyncio.run(main())</td></tr><tr><td><code>menu.forEach((p) =&gt; console.log(...))</code></td><td>выполнить функцию для каждого элемента</td><td><code>for p in menu: print(...)</code></td></tr><tr><td><code>${p.isVegan ? ' 🌱' : ''}</code></td><td>тернарный оператор внутри шаблонной строки</td><td><code>f"{' 🌱' if p.is_vegan else ''}"</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">первые строки</span></figcaption>
+    <pre><code class="language-none">   1. Маргарита — 499 ₽ 🌱
+   2. Пепперони — 599 ₽
+   3. Четыре сыра — 649 ₽
+   4. Овощная — 459 ₽ 🌱
+🛒 Шапка: в корзине 3 шт.
+...</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ЭТО ВАЖНО</span>
+    <p>Посмотрите: корзина, шапка, строитель заказа и цены <strong>не изменились ни на строчку</strong>, хотя источник данных поменялся полностью. Адаптер — граница между «чужим» миром и нашим кодом. Бэкенд переименовал поле — правим одну строку в <code>toPizza</code>. Бэкендеры называют такой слой <em>anti-corruption layer</em> — «слой защиты от порчи».</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЗАПУСТИТЕ НЕСКОЛЬКО РАЗ</span>
+    <p>Примерно каждый третий запуск падает с <code>Error: 503 Service Unavailable</code> — так задумано, наш «сервер» нестабилен, как мобильный интернет. Спросите группу: «Что делать? Обернуть в try/catch и повторить? А если загрузок в проекте 20?» Это мостик к следующему паттерну.</p>
+  </div></div>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p>Функции-мапперы ответа API, <code>select</code> в React Query. Axios сам — адаптер: в браузере он работает через <code>XMLHttpRequest</code>, в Node — через модуль <code>http</code>, а API для вас одинаковый. <strong>На бэкенде</strong> то же в обратную сторону: строки из БД (<code>snake_case</code>) → DTO для API. А ORM — гигантский адаптер между объектами и таблицами.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 10 DECORATOR -->
+<section id="decorator">
+  <div class="sec-head"><h2>10 · Decorator — retry, кеш, логи</h2><span class="tag struct">структурный</span><span class="tag practice">live-coding</span><span class="tag time">~11 мин</span></div>
+
+  <div class="oneliner">Обёртка, которая добавляет поведение, не меняя оригинал.<small>Интерфейс тот же, возможностей больше. Обёртки можно вкладывать друг в друга, как матрёшки.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>Кофейня. Эспрессо — базовый напиток. Добавили молоко — латте. Добавили сироп — карамельный латте. Кофейня не заводит отдельную позицию на каждую комбинацию (это были бы сотни позиций) — она <strong>оборачивает</strong> базовый напиток добавками. А пьётся он так же, как эспрессо.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Загрузка меню падает в 30% случаев — нужен повтор. Меню редко меняется — хочется кешировать на минуту. И неплохо бы видеть, сколько длится запрос. Если вписать всё это в <code>fetchPizzas</code>, она вырастет до 50 строк, а для загрузки заказов придётся копировать ту же логику.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/lib/decorators.ts</code><span class="k">роль</span><span>Набор универсальных обёрток для любых async-функций. Ничего не знают про пиццы — их можно навесить на загрузку меню, заказов, профиля.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/lib/decorators.ts</span><span class="role">Decorator</span></figcaption>
+    <pre><code class="language-typescript">// DECORATOR. Отвечает за: добавлять функциям поведение (лог, повтор, кеш), не меняя их код.
+// Каждая обёртка принимает функцию и возвращает функцию С ТЕМ ЖЕ интерфейсом.
+
+type AsyncFn&lt;A extends unknown[], R&gt; = (...args: A) =&gt; Promise&lt;R&gt;;
+
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export const withLogging = &lt;A extends unknown[], R&gt;(fn: AsyncFn&lt;A, R&gt;, name: string): AsyncFn&lt;A, R&gt; =&gt;
+  async (...args) =&gt; {
+    const start = performance.now();
+    try {
+      return await fn(...args);
+    } finally {
+      console.log(`⏱  ${name}: ${Math.round(performance.now() - start)} мс`);
+    }
+  };
+
+export const withRetry = &lt;A extends unknown[], R&gt;(fn: AsyncFn&lt;A, R&gt;, attempts = 3): AsyncFn&lt;A, R&gt; =&gt;
+  async (...args) =&gt; {
+    let lastError: unknown;
+    for (let attempt = 1; attempt &lt;= attempts; attempt++) {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        lastError = error;
+        console.log(`↻  попытка ${attempt} не удалась: ${(error as Error).message}`);
+        if (attempt &lt; attempts) await sleep(200 * attempt);
+      }
+    }
+    throw lastError;
+  };
+
+export const withCache = &lt;A extends unknown[], R&gt;(fn: AsyncFn&lt;A, R&gt;, ttlMs: number): AsyncFn&lt;A, R&gt; =&gt; {
+  const cache = new Map&lt;string, { value: R; expiresAt: number }&gt;();
+  return async (...args) =&gt; {
+    const key = JSON.stringify(args);
+    const hit = cache.get(key);
+    if (hit &amp;&amp; hit.expiresAt &gt; Date.now()) return hit.value;
+    const value = await fn(...args);
+    cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+    return value;
+  };
+};</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>type AsyncFn&lt;A extends unknown[], R&gt; = (...args: A) =&gt; Promise&lt;R&gt;;</code></td><td>обобщённый тип «async-функция с аргументами A и результатом R»</td><td><code>Callable[P, Awaitable[R]]  # P = ParamSpec, R = TypeVar</code></td></tr><tr><td><code>&lt;A extends unknown[], R&gt;(fn: AsyncFn&lt;A, R&gt;, ...)</code></td><td>дженерик-функция: типы подставятся из переданной fn</td><td><code>def with_retry[**P, R](fn: Callable[P, Awaitable[R]]) -&gt; ...</code></td></tr><tr><td><code>async (...args) =&gt; { ... }</code></td><td>rest-параметр: собрать все аргументы в массив</td><td><code>async def wrapper(*args): ...</code></td></tr><tr><td><code>fn(...args)</code></td><td>spread при вызове: развернуть массив в аргументы</td><td><code>fn(*args)</code></td></tr><tr><td><code>performance.now()</code></td><td>точное время в миллисекундах</td><td><code>time.perf_counter() * 1000</code></td></tr><tr><td><code>try { ... } finally { ... }</code></td><td>finally выполняется всегда</td><td><code>try: ... finally: ...</code></td></tr><tr><td><code>for (let i = 1; i &lt;= n; i++)</code></td><td>цикл со счётчиком в стиле C</td><td><code>for i in range(1, n + 1):</code></td></tr><tr><td><code>let lastError: unknown;</code></td><td>переменная неизвестного типа: перед использованием нужно проверить</td><td><code>last_error: object = None</code></td></tr><tr><td><code>new Map&lt;string, {...}&gt;()</code></td><td>словарь с явными типами ключей и значений</td><td><code>cache: dict[str, ...] = {}</code></td></tr><tr><td><code>cache.get(key)  ·  cache.set(key, v)</code></td><td>прочитать (undefined, если нет) · записать</td><td><code>cache.get(key)  ·  cache[key] = v</code></td></tr><tr><td><code>Date.now()</code></td><td>текущее время в миллисекундах</td><td><code>time.time() * 1000</code></td></tr></tbody></table><p class="note"><b>Главная связь с Python:</b> <code>withRetry(fetchPizzas)</code> — это то же самое, что делает <code>@with_retry</code> над функцией. <code>@decorator</code> в Python — это сахар для <code>f = decorator(f)</code>. В TS такого сахара для обычных функций нет, поэтому обёртываем вызовом. Переменная <code>cache</code> живёт в замыкании, как в Python.</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong>Общая форма</strong>: каждая обёртка принимает функцию <code>fn</code> и возвращает новую функцию <code>async (...args) =&gt; ...</code> с <em>тем же</em> типом <code>AsyncFn&lt;A, R&gt;</code>. Поэтому снаружи обёрнутую функцию не отличить от оригинала.</li>
+    <li><strong>Дженерики <code>&lt;A, R&gt;</code></strong> — A это типы аргументов, R тип результата. Обернули функцию, возвращающую <code>Pizza[]</code>, — получили функцию, возвращающую <code>Pizza[]</code>. Типы не теряются.</li>
+    <li><strong><code>withRetry</code></strong> — до 3 попыток с растущей паузой (200 мс, потом 400 мс), чтобы не долбить упавший сервер. Не вышло — пробрасывает последнюю ошибку.</li>
+    <li><strong><code>withCache</code></strong> — <code>Map</code> «аргументы → результат + время жизни». Ключ — <code>JSON.stringify(args)</code>, чтобы разные аргументы кешировались отдельно.</li>
+    <li><strong><code>withLogging</code></strong> — <code>finally</code> выполняется и при успехе, и при ошибке, поэтому время будет напечатано всегда.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>src/api/pizza.api.ts</code><span class="k">что</span><span>Импорт обёрток и одна новая строка внизу — <code>getMenu</code>. Сама <code>fetchPizzas</code> не меняется.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/api/pizza.api.ts</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-typescript">// Слой API. Отвечает за: получить пиццы с «сервера» и отдать приложению в НАШЕМ формате.
+import type { Pizza } from '../types';
+import { withCache, withLogging, withRetry } from '../lib/decorators';
+import { getPizzasFromServer } from './fake-backend';
+import { toPizza } from './pizza.adapter';
+
+// Шаг Adapter: просто загрузка + перевод формата
+export async function fetchPizzas(): Promise&lt;Pizza[]&gt; {
+  const raw = await getPizzasFromServer();
+  return raw.map(toPizza);
+}
+
+// Шаг Decorator: та же функция в трёх обёртках
+export const getMenu = withLogging(withCache(withRetry(fetchPizzas), 60_000), 'getMenu');</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>60_000</code></td><td>разделитель разрядов в числе</td><td><code>60_000</code></td></tr><tr><td><code>withLogging(withCache(withRetry(fetchPizzas), 60_000), 'getMenu')</code></td><td>читается изнутри наружу: сначала retry, потом кеш, потом лог</td><td><code>@with_logging('getMenu')
+@with_cache(60_000)
+@with_retry
+async def fetch_pizzas(): ...</code></td></tr></tbody></table></div>
+
+  <div class="diagram">
+<pre>  getMenu()
+     │
+  ┌──▼─────────────────────────────────────────────┐
+  │ <span class="tn">withLogging</span>  засекает время                       │
+  │  ┌──────────────────────────────────────────┐  │
+  │  │ <span class="tn">withCache</span>  есть в кеше? → сразу ответ       │  │
+  │  │  ┌───────────────────────────────────┐   │  │
+  │  │  │ <span class="tn">withRetry</span>  упало? → ещё раз          │   │  │
+  │  │  │  ┌────────────────────────────┐   │   │  │
+  │  │  │  │ <span class="pk">fetchPizzas</span>  — оригинал     │   │   │  │
+  │  │  │  └────────────────────────────┘   │   │  │
+  │  │  └───────────────────────────────────┘   │  │
+  │  └──────────────────────────────────────────┘  │
+  └────────────────────────────────────────────────┘</pre>
+  </div>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>src/main.ts</code><span class="k">что</span><span>Импорт <code>fetchPizzas</code> заменяем на <code>getMenu</code> и <code>getRequestCount</code>; блок загрузки меню — на новый.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">импорты вместо fetchPizzas</span></figcaption>
+    <pre><code class="language-typescript">import { getMenu } from './api/pizza.api';
+import { getRequestCount } from './api/fake-backend';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">вместо блока Adapter</span></figcaption>
+    <pre><code class="language-typescript">// --- Decorator: тот же вызов, но с логом, кешем и повторами ---
+const menu = await getMenu();
+menu.forEach((p) =&gt; console.log(`   ${p.id}. ${p.name} — ${p.price} ₽${p.isVegan ? ' 🌱' : ''}`));
+await getMenu();                                            // второй раз — из кеша
+console.log(`   запросов к серверу: ${getRequestCount()}`);
+
+const [margherita, pepperoni] = menu;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">когда сервер «моргнул»</span></figcaption>
+    <pre><code class="language-none">↻  попытка 1 не удалась: 503 Service Unavailable
+⏱  getMenu: 805 мс
+   1. Маргарита — 499 ₽ 🌱
+   ...
+⏱  getMenu: 0 мс
+   запросов к серверу: 2</code></pre>
+  </figure>
+  <div class="expect"><b>Что видим:</b> первая попытка упала, обёртка повторила, и приложение <em>не</em> упало. Второй <code>getMenu()</code> занял 0 мс — ответ из кеша, сервер не трогали. Запустите 3–4 раза: падений больше нет.</div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ПОРЯДОК ОБЁРТОК ВАЖЕН</span>
+    <p>Лог снаружи — видит каждый вызов, включая ответы из кеша. Кеш снаружи ретраев — при попадании в кеш сеть и повторы не трогаются. Ретраи внутри — повторяется только сетевой запрос. Спросите группу: «А если засунуть <code>withLogging</code> в самый центр?» (Ответ: перестанем видеть ответы из кеша, а при ретраях получим три строчки лога вместо одной.)</p>
+  </div></div>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРИКОЛ</span>
+    <p>Без декораторов это решали бы наследованием: <code>CachedApi</code>, <code>RetryApi</code>, <code>CachedRetryApi</code>, <code>LoggedCachedRetryApi</code>… С тремя добавками — 7 классов, с пятью — 31. Это называется «комбинаторный взрыв».</p>
+  </div></div>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p>React HOC <code>withAuth(ProfilePage)</code>, <code>React.memo(Component)</code>, <code>debounce(handler, 300)</code> из lodash, <code>@Component</code> в Angular. <strong>На бэкенде</strong> декораторы повсюду: в NestJS — <code>@Controller('pizzas')</code>, <code>@Get(':id')</code>, в Python FastAPI — <code>@app.get("/pizzas")</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 11 PROXY -->
+<section id="proxy">
+  <div class="sec-head"><h2>11 · Proxy — форма заказа</h2><span class="tag struct">структурный</span><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <div class="oneliner">Объект-охранник: стоит перед настоящим объектом и решает, пускать ли к нему.<small>Интерфейс тот же, но каждый доступ под контролем.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ</span>
+    <p>Секретарь директора. Вы звоните директору, а трубку берёт секретарь: «По какому вопросу? Он занят. А, вы по записи — соединяю». Для вас действие то же — «позвонить директору», но между вами стоит фильтр.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Форма заказа: адрес, телефон, количество. Проверки хочется в одном месте, а не в каждом обработчике <code>onChange</code>. И ещё — чтобы форма сама сообщала «я изменилась, перерисуй меня». В JavaScript для этого есть встроенный <code>Proxy</code>: он перехватывает чтение и запись свойств объекта.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/forms/order-form.proxy.ts</code><span class="k">роль</span><span>Создаёт объект формы, в который нельзя записать невалидное значение. После каждой удачной записи вызывает <code>onChange</code> — как перерисовку во фреймворке.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/forms/order-form.proxy.ts</span><span class="role">Proxy</span></figcaption>
+    <pre><code class="language-typescript">// PROXY. Отвечает за: стоять «на входе» в данные формы — проверять каждое изменение
+// и сообщать интерфейсу, что пора перерисоваться.
+
+export interface OrderForm {
+  address: string;
+  phone: string;
+  qty: number;
+}
+
+type Rule = (value: unknown) =&gt; string | null;   // null = всё хорошо, строка = текст ошибки
+
+const rules: Record&lt;keyof OrderForm, Rule&gt; = {
+  address: (v) =&gt; (typeof v === 'string' &amp;&amp; v.trim().length &gt;= 5 ? null : 'адрес слишком короткий'),
+  phone: (v) =&gt; (typeof v === 'string' &amp;&amp; /^\+7\d{10}$/.test(v) ? null : 'нужен формат +7XXXXXXXXXX'),
+  qty: (v) =&gt; (Number.isInteger(v) &amp;&amp; (v as number) &gt;= 1 &amp;&amp; (v as number) &lt;= 20 ? null : 'можно от 1 до 20 пицц'),
+};
+
+export function createOrderForm(onChange: (form: OrderForm) =&gt; void): OrderForm {
+  const data: OrderForm = { address: '', phone: '', qty: 1 };
+
+  return new Proxy(data, {
+    set(target, prop, value) {
+      const rule = rules[prop as keyof OrderForm];
+      if (!rule) throw new Error(`Неизвестное поле формы: ${String(prop)}`);
+
+      const error = rule(value);
+      if (error) throw new Error(`${String(prop)}: ${error}`);   // охранник не пустил
+
+      Reflect.set(target, prop, value);                          // пропустили к оригиналу
+      onChange({ ...target });                                   // «перерисуй форму»
+      return true;
+    },
+  });
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>type Rule = (value: unknown) =&gt; string | null;</code></td><td>тип функции-правила; unknown — «что угодно, проверь перед использованием»</td><td><code>Rule = Callable[[object], str | None]</code></td></tr><tr><td><code>keyof OrderForm</code></td><td>объединение имён полей: 'address' | 'phone' | 'qty'</td><td><code>Literal['address', 'phone', 'qty']</code></td></tr><tr><td><code>typeof v === 'string'</code></td><td>проверка типа в рантайме</td><td><code>isinstance(v, str)</code></td></tr><tr><td><code>Number.isInteger(v)</code></td><td>целое ли число</td><td><code>isinstance(v, int)</code></td></tr><tr><td><code>new Proxy(data, { set(target, prop, value) { ... } })</code></td><td>объект-обёртка; метод set вызывается при КАЖДОМ присваивании свойства</td><td>класс с переопределённым __setattr__</td></tr><tr><td><code>Reflect.set(target, prop, value)</code></td><td>выполнить обычную запись в исходный объект</td><td><code>object.__setattr__(target, prop, value)</code></td></tr><tr><td><code>String(prop)</code></td><td>привести к строке (имя свойства может быть и Symbol)</td><td><code>str(prop)</code></td></tr><tr><td><code>{ ...target }</code></td><td>поверхностная копия объекта для вывода</td><td><code>dict(target)</code></td></tr></tbody></table><p class="note"><b>Аналогия для питониста:</b> JS-<code>Proxy</code> — это как написать класс-обёртку с <code>__setattr__</code> и <code>__getattr__</code>, только для любого объекта и без своего класса. Ловушка <code>set</code> = <code>__setattr__</code>, ловушка <code>get</code> = <code>__getattr__</code>.</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>new Proxy(data, handler)</code></strong> — <code>data</code> это настоящий объект, <code>handler</code> — охранник. Снаружи прокси выглядит как обычный объект: <code>form.qty = 3</code>.</li>
+    <li><strong>Ловушка <code>set</code></strong> срабатывает на <em>каждое</em> присваивание: <code>prop</code> — имя поля, <code>value</code> — новое значение.</li>
+    <li><strong><code>rules</code></strong> — правила валидации в одном месте: <code>null</code> значит «ок», строка — текст ошибки.</li>
+    <li><strong><code>Reflect.set</code></strong> — «сделай обычную запись в оригинал». Охранник пропустил — передаём дальше.</li>
+    <li><strong>Почему <code>throw</code>, а не <code>return false</code>?</strong> В строгом режиме <code>return false</code> тоже вызовет ошибку, но безликий <code>TypeError</code>. Свой <code>throw</code> даёт понятное сообщение для пользователя.</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорт</span></figcaption>
+    <pre><code class="language-typescript">import { createOrderForm } from './forms/order-form.proxy';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ после блока Factory</span></figcaption>
+    <pre><code class="language-typescript">// --- Proxy: форма с охранником ---
+const form = createOrderForm((f) =&gt; console.log('📝 форма обновилась:', f));
+form.address = 'ул. Ленина, 1';
+form.phone = '+79001234567';
+try {
+  form.qty = 100;
+} catch (error) {
+  notify('error', (error as Error).message);
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>createOrderForm((f) =&gt; console.log(..., f))</code></td><td>передаём callback — функцию, которую вызовут позже</td><td><code>create_order_form(lambda f: print(..., f))</code></td></tr><tr><td><code>form.qty = 100;</code></td><td>обычное присваивание, но его перехватывает ловушка set</td><td><code>form.qty = 100  # сработает __setattr__</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки</span></figcaption>
+    <pre><code class="language-none">📝 форма обновилась: { address: 'ул. Ленина, 1', phone: '', qty: 1 }
+📝 форма обновилась: { address: 'ул. Ленина, 1', phone: '+79001234567', qty: 1 }
+❌ qty: можно от 1 до 20 пицц</code></pre>
+  </figure>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ВОТ ЭТО ПОВОРОТ</span>
+    <p>Посмотрите на <code>onChange</code>: мы просто пишем <code>form.address = ...</code>, а «интерфейс» обновляется сам. Это упрощённое сердце <strong>Vue 3</strong>: его <code>reactive()</code> построен на <code>Proxy</code>. MobX — тоже. А Immer в Redux Toolkit подсовывает вам Proxy-«черновик», когда вы пишете <code>state.count++</code> в редьюсере. Вы пользовались этим паттерном годами.</p>
+  </div></div>
+
+  <p><strong>Виды прокси:</strong> защищающий (проверка прав), валидирующий (наш), кеширующий, логирующий, ленивый (создаёт объект при первом обращении). <strong>На бэкенде:</strong> <strong>nginx — reverse proxy</strong>: стоит перед сервером, принимает все запросы, отдаёт статику и решает, что пропустить к бэкенду. Встретимся с ним в уроке про Docker. А <code>proxy</code> в конфиге Vite, которым вы обходите CORS, — тоже он.</p>
+</section>
+
+<hr>
+
+<!-- 12 FACADE -->
+<section id="facade">
+  <div class="sec-head"><h2>12 · Facade — кнопка «Оформить заказ»</h2><span class="tag struct">структурный</span><span class="tag practice">live-coding · финал</span><span class="tag time">~9 мин</span></div>
+
+  <div class="oneliner">Одна простая кнопка вместо десяти сложных рычагов.<small>Фасад не убирает сложность — он прячет её за простым интерфейсом.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ JS</span>
+    <p>2006 год. Чтобы сделать AJAX-запрос, нужно было создать <code>XMLHttpRequest</code> (а в старом IE — <code>ActiveXObject</code>), подписаться на <code>onreadystatechange</code>, проверить <code>readyState === 4</code>, статус, распарсить ответ… Потом пришёл jQuery с <code>$.ajax({ url, success })</code> — одна функция вместо простыни кода — и захватил интернет. Это был Фасад. Позже браузеры встроили свой — <code>fetch</code>.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Оформление заказа: взять корзину → собрать и проверить заказ → оплатить → очистить корзину → показать уведомление → при любой ошибке показать понятное сообщение. Сейчас часть этого лежит прямо в <code>main.ts</code>. А оформлять заказ нужно с кнопки на сайте, из мобилки, из «Повторить заказ»… Копировать шесть шагов в каждое место?</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/checkout/payment.ts</code><span class="k">роль</span><span>Имитация банка: «списывает» деньги или отказывает, если сумма больше 5000 ₽.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/checkout/payment.ts</span></figcaption>
+    <pre><code class="language-typescript">// Имитация платёжного сервиса. Отвечает за: «списать» деньги или отказать.
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export async function payWithCard(amount: number): Promise&lt;string&gt; {
+  await sleep(200);
+  if (amount &gt; 5000) throw new Error('Банк отклонил платёж: недостаточно средств');
+  return `pay_${Date.now()}`;
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>`pay_${Date.now()}`</code></td><td>шаблонная строка с временем в миллисекундах</td><td><code>f'pay_{int(time.time() * 1000)}'</code></td></tr></tbody></table></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/checkout/checkout.facade.ts</code><span class="k">роль</span><span>Одна функция «Оформить заказ». Внутри управляет корзиной, строителем, оплатой и уведомлениями. Снаружи — простой вход (адрес, телефон, промокод) и понятный результат <code>ok: true / false</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/checkout/checkout.facade.ts</span><span class="role">Facade</span></figcaption>
+    <pre><code class="language-typescript">// FACADE. Отвечает за: одну кнопку «Оформить заказ».
+// Внутри координирует корзину, строитель заказа, оплату и уведомления.
+// Снаружи — одна функция с понятным результатом.
+import { notify } from '../notifications/toast.factory';
+import { OrderBuilder } from '../orders/order.builder';
+import { cartStore } from '../store/cart.store';
+import type { Order } from '../types';
+import { payWithCard } from './payment';
+
+export interface CheckoutInput {
+  address: string;
+  phone: string;
+  promoCode?: string;
+}
+
+export type CheckoutResult =
+  | { ok: true; order: Order; paymentId: string }
+  | { ok: false; error: string };
+
+export async function checkout(input: CheckoutInput): Promise&lt;CheckoutResult&gt; {
+  try {
+    const order = new OrderBuilder()                 // Builder
+      .fromCart(cartStore.getItems())                // Singleton
+      .to(input.address)
+      .withPhone(input.phone)
+      .withPromo(input.promoCode ?? null)
+      .build();
+
+    const paymentId = await payWithCard(order.total);
+    cartStore.clear();
+    notify('success', `Заказ №${order.id} оплачен: ${order.total} ₽`);   // Factory
+    return { ok: true, order, paymentId };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    notify('error', `Заказ не оформлен: ${message}`);
+    return { ok: false, error: message };
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>promoCode?: string;</code></td><td>необязательное поле (может отсутствовать)</td><td><code>promo_code: NotRequired[str]</code></td></tr><tr><td><code>{ ok: true; order: Order } | { ok: false; error: string }</code></td><td>размеченное объединение: по значению ok понятно, какие ещё поля есть</td><td><code>Success | Failure  # два dataclass с Literal-полем ok</code></td></tr><tr><td><code>input.promoCode ?? null</code></td><td>если поля нет (undefined) — подставить null</td><td><code>input.get('promo_code')</code></td></tr><tr><td><code>error instanceof Error ? error.message : String(error)</code></td><td>проверка класса в рантайме</td><td><code>str(error) if isinstance(error, Exception) else repr(error)</code></td></tr><tr><td><code>return { ok: true, order, paymentId };</code></td><td>сокращённая запись объекта</td><td><code>return Success(ok=True, order=order, payment_id=payment_id)</code></td></tr></tbody></table><p class="note">После <code>if (result.ok)</code> TypeScript сам «сужает» тип и разрешает обращаться к <code>result.order</code>. В Python то же делает <code>match result: case Success(): ...</code> или <code>isinstance</code>.</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong>Фасад ничего не считает сам</strong> — он <em>координирует</em>: цену знает <code>pricing</code>, проверки — <code>OrderBuilder</code>, деньги — <code>payment</code>. Это и отличает хороший фасад от «божественного объекта» на 3000 строк.</li>
+    <li><strong><code>CheckoutResult</code></strong> — «дискриминированное объединение»: проверили <code>result.ok</code>, и TypeScript сам знает, есть ли там <code>order</code> или <code>error</code>.</li>
+    <li><strong>Ошибки не вылетают наружу</strong>: всё ловится внутри, пользователь получает уведомление, вызывающий код — <code>{ ok: false }</code>.</li>
+    <li><strong>Внутри работают 4 паттерна</strong>: Singleton (<code>cartStore</code>), Builder (<code>OrderBuilder</code>), Factory (<code>notify</code>) и, через Builder, наши цены.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">заменяем целиком</span><code>src/main.ts</code><span class="k">что</span><span>Ручной блок Builder больше не нужен — его делает фасад. Итоговый <code>main.ts</code> — чистый сценарий пользователя на 50 строк.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-typescript">// Точка входа. Здесь только СЦЕНАРИЙ: что делает пользователь. Вся логика — в модулях.
+import { getMenu } from './api/pizza.api';
+import { getRequestCount } from './api/fake-backend';
+import { checkout } from './checkout/checkout.facade';
+import { createOrderForm } from './forms/order-form.proxy';
+import { notify } from './notifications/toast.factory';
+import { repeatOrder } from './orders/repeat-order';
+import { cartStore } from './store/cart.store';
+import { renderCartPage } from './ui/cart-page';
+import { renderHeader } from './ui/header';
+
+console.log('🍕 PizzaHub\n');
+
+// 1. Меню: Adapter + Decorator
+const menu = await getMenu();
+menu.forEach((p) =&gt; console.log(`   ${p.id}. ${p.name} — ${p.price} ₽${p.isVegan ? ' 🌱' : ''}`));
+await getMenu();   // второй раз — из кеша
+console.log(`   запросов к серверу: ${getRequestCount()}\n`);
+
+// 2. Корзина: Singleton
+cartStore.add(menu[0], 'L', 2);
+cartStore.add(menu[1]);
+renderHeader();
+renderCartPage();
+
+// 3. Форма: Proxy
+const form = createOrderForm((f) =&gt; console.log('📝 форма обновилась:', f));
+form.address = 'ул. Ленина, 1';
+form.phone = '+79001234567';
+try {
+  form.qty = 100;
+} catch (error) {
+  notify('error', (error as Error).message);   // Factory
+}
+
+// 4. Оформление: Facade (внутри Builder + Singleton + Factory)
+console.log();
+const result = await checkout({ address: form.address, phone: form.phone, promoCode: 'PIZZA10' });
+renderHeader();
+
+// 5. Повтор заказа: Prototype
+if (result.ok) {
+  const again = repeatOrder(result.order, { address: 'ул. Пушкина, 10' });
+  again.items[0].qty = 5;
+  console.log(`\n🔁 Повтор №${again.id} на ${again.address}, в нём ${again.items[0].qty} шт.`);
+  console.log(`   а в оригинале №${result.order.id} осталось ${result.order.items[0].qty} шт.`);
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>console.log()</code></td><td>пустая строка в выводе</td><td><code>print()</code></td></tr><tr><td><code>'\n'</code></td><td>перевод строки внутри строки</td><td><code>'\n'</code></td></tr><tr><td><code>if (result.ok) { ... }</code></td><td>после проверки TS знает, что внутри есть result.order</td><td><code>if isinstance(result, Success): ...</code></td></tr></tbody></table></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">полный вывод</span></figcaption>
+    <pre><code class="language-none">🍕 PizzaHub
+
+⏱  getMenu: 303 мс
+   1. Маргарита — 499 ₽ 🌱
+   2. Пепперони — 599 ₽
+   3. Четыре сыра — 649 ₽
+   4. Овощная — 459 ₽ 🌱
+⏱  getMenu: 0 мс
+   запросов к серверу: 1
+
+🛒 Шапка: в корзине 3 шт.
+📄 Страница корзины:
+   Маргарита (L) × 2 = 1298 ₽
+   Пепперони (M) × 1 = 599 ₽
+   Итого: 1897 ₽
+📝 форма обновилась: { address: 'ул. Ленина, 1', phone: '', qty: 1 }
+📝 форма обновилась: { address: 'ул. Ленина, 1', phone: '+79001234567', qty: 1 }
+❌ qty: можно от 1 до 20 пицц
+
+✅ Заказ №9d9fb8f5 оплачен: 1707 ₽
+🛒 Шапка: в корзине 0 шт.
+
+🔁 Повтор №2979819b на ул. Пушкина, 10, в нём 5 шт.
+   а в оригинале №9d9fb8f5 осталось 2 шт.</code></pre>
+  </figure>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ: ФАСАД ПРИ ОШИБКЕ</span>
+    <p>В <code>main.ts</code> положите в корзину 10 «Четырёх сыров» (<code>cartStore.add(menu[2], 'L', 10)</code>) — сумма превысит 5000 ₽. Увидите <code>❌ Заказ не оформлен: Банк отклонил платёж</code>, и корзина <em>не</em> очистится. Или передайте в <code>checkout</code> телефон <code>'123'</code> — ошибку поймает Builder, а сообщение покажет фасад.</p>
+  </div></div>
+
+  <h3>Карта: где какой паттерн</h3>
+  <div class="diagram">
+<pre>                        main.ts — сценарий пользователя
+                                    │
+   ┌────────────────┬───────────────┼─────────────────┬──────────────────┐
+   ▼                ▼               ▼                 ▼                  ▼
+ getMenu        cartStore      orderForm         <span class="tn">checkout()</span>        repeatOrder
+ <span class="pk">Decorator</span>      <span class="pk">Singleton</span>      <span class="pk">Proxy</span>             <span class="pk">Facade</span>            <span class="pk">Prototype</span>
+   │                                                │
+   ▼                                  ┌─────────────┼─────────────┐
+ fetchPizzas → toPizza                ▼             ▼             ▼
+               <span class="pk">Adapter</span>             OrderBuilder   cartStore     notify()
+                                    <span class="pk">Builder</span>       <span class="pk">Singleton</span>     <span class="pk">Factory</span></pre>
+  </div>
+
+  <p>Та же карта в настоящем UML — вставьте в <a href="https://mermaid.live" target="_blank" rel="noopener">mermaid.live</a> и покажите группе. Попросите назвать каждую стрелку: где композиция, где реализация интерфейса, где «просто использует».</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вставить в mermaid.live</span><span class="role">UML-карта PizzaHub</span></figcaption>
+    <pre><code class="language-none">classDiagram
+    class Checkout {
+        &lt;&lt;facade&gt;&gt;
+        +checkout(input) CheckoutResult
+    }
+    class CartStore {
+        &lt;&lt;singleton&gt;&gt;
+        -items: CartItem[]
+        +add(pizza, size, qty) void
+        +getItems() CartItem[]
+        +total() number
+        +clear() void
+    }
+    class OrderBuilder {
+        &lt;&lt;builder&gt;&gt;
+        -items: CartItem[]
+        -address: string
+        -phone: string
+        +fromCart(items) OrderBuilder
+        +to(address) OrderBuilder
+        +withPhone(phone) OrderBuilder
+        +build() Order
+    }
+    class Toast {
+        &lt;&lt;interface&gt;&gt;
+        +show() void
+    }
+    class SuccessToast
+    class ErrorToast
+    class InfoToast
+    class CartItem
+    class Order
+
+    Toast &lt;|.. SuccessToast
+    Toast &lt;|.. ErrorToast
+    Toast &lt;|.. InfoToast
+    CartStore *-- CartItem : хранит
+    Checkout --&gt; CartStore : берёт товары
+    Checkout --&gt; OrderBuilder : собирает заказ
+    Checkout ..&gt; Toast : notify()
+    OrderBuilder ..&gt; Order : build()
+    Order o-- CartItem : позиции</code></pre>
+  </figure>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p>Любой кастомный хук: <code>useAuth()</code> прячет токены, refresh, localStorage и редиректы, а наружу отдаёт <code>login</code>/<code>logout</code>. В React наш фасад стал бы хуком <code>useCheckout()</code>, который возвращает <code>{ pay, loading, error }</code>. <strong>На бэкенде</strong> фасады — это <strong>сервисный слой</strong>: контроллер вызывает <code>orderService.checkout(dto)</code>, а сервис внутри дёргает БД, платёжку и почту. Структура <code>routes → services → repositories</code> встретит вас в первом же бэкенд-проекте.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 13 BLITZ 2 -->
+<section id="blitz2">
+  <div class="sec-head"><h2>13 · Блиц: Bridge и как не путать 4 обёртки</h2><span class="tag blitz">блиц</span><span class="tag time">~5 мин</span></div>
+
+  <h3>Bridge — разделить «что» и «чем»</h3>
+  <p>Пульт и телевизор: любой пульт работает с любым телевизором, потому что между ними «мост» — общий протокол сигналов. В PizzaHub: уведомления 3 видов (заказ принят, курьер в пути, акция) × 3 канала (Email, SMS, Telegram). Если делать класс на каждое сочетание — 9 классов, добавили Push — уже 12. Bridge делит это на две иерархии: <strong>вид уведомления содержит канал</strong> (агрегация из блока UML!). 3 + 3 = 6, новый канал — плюс один.</p>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">идея</span></figcaption>
+  <pre><code class="language-typescript">interface Channel { send(to: string, text: string): void; }          // «ЧЕМ» отправить
+const telegram: Channel = { send: (to, text) =&gt; console.log(`[TG → ${to}] ${text}`) };
+
+class OrderConfirmed {                                               // «ЧТО» отправить
+  constructor(private channel: Channel, private orderId: string) {}  // ← мост
+  notify(to: string) { this.channel.send(to, `Заказ №${this.orderId} принят 🍕`); }
+}
+new OrderConfirmed(telegram, '9d9fb8f5').notify('@tima');</code></pre></figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const telegram: Channel = { send: (to, text) =&gt; ... }</code></td><td>объект, реализующий интерфейс, без класса</td><td>SimpleNamespace(send=lambda to, text: ...)</td></tr><tr><td><code>constructor(private channel: Channel, private orderId: string) {}</code></td><td>два поля создаются прямо из параметров конструктора</td><td><code>def __init__(self, channel, order_id): self._channel = channel; self._order_id = order_id</code></td></tr></tbody></table></div>
+  <p><strong>Видели:</strong> React и его «рисовальщики» — <code>react-dom</code> рисует в браузер, <code>react-native</code> в нативные вьюшки; headless-библиотеки (TanStack Table) — логика отдельно, разметка ваша. <strong>Бэкенд:</strong> один API query builder'а и разные «диалекты» СУБД.</p>
+
+  <h3>Четыре обёртки — частый вопрос на собеседовании</h3>
+  <p>Adapter, Decorator, Proxy и Facade в коде похожи — «объект, который оборачивает другой». Отличаются <strong>намерением</strong>:</p>
+  <table class="cmp">
+    <thead><tr><th>Паттерн</th><th>Интерфейс</th><th>Зачем</th><th>У нас в проекте</th></tr></thead>
+    <tbody>
+      <tr><td>Adapter</td><td><strong>другой</strong></td><td>подружить несовместимое</td><td><code>toPizza</code></td></tr>
+      <tr><td>Decorator</td><td><strong>тот же</strong></td><td>добавить поведение, можно стопкой</td><td><code>withRetry</code>, <code>withCache</code></td></tr>
+      <tr><td>Proxy</td><td><strong>тот же</strong></td><td>контролировать доступ</td><td>форма с валидацией</td></tr>
+      <tr><td>Facade</td><td><strong>новый, простой</strong> над многими</td><td>спрятать сложность подсистемы</td><td><code>checkout()</code></td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ДВА ВОПРОСА</span>
+    <p><strong>1. Интерфейс меняется?</strong> Переводится → Adapter. Упрощается и объединяет много всего → Facade. Нет → вопрос 2. <strong>2. Добавляем возможности или решаем, пускать ли?</strong> Добавляем → Decorator. Решаем → Proxy.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 14 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>14 · Игра «Угадай паттерн»</h2><span class="tag practice">интерактив</span><span class="tag time">~5 мин</span></div>
+  <p>Читаем вслух — группа отвечает — открываем ответ. Кто угадал больше всех, тот выбирает пиццу на следующий созвон (шутка… или нет).</p>
+
+  <details class="quiz"><summary><code>export const queryClient = new QueryClient()</code> в отдельном файле, и весь проект импортирует его оттуда.</summary><div class="ans"><b>Singleton</b> через ES-модуль — как наш <code>cartStore</code>.</div></details>
+  <details class="quiz"><summary>Функция <code>mapUserDto(dto)</code> превращает <code>{ user_name, avatar_url }</code> в <code>{ name, avatar }</code>.</summary><div class="ans"><b>Adapter</b> — как наш <code>toPizza</code>.</div></details>
+  <details class="quiz"><summary><code>const api = withAuthHeader(withTimeout(fetch))</code></summary><div class="ans"><b>Decorator</b>: интерфейс как у <code>fetch</code>, возможностей больше, обёртки вкладываются.</div></details>
+  <details class="quiz"><summary>Во Vue 3 вы пишете <code>state.count++</code>, и интерфейс перерисовывается сам.</summary><div class="ans"><b>Proxy</b> — как наша форма с <code>onChange</code>.</div></details>
+  <details class="quiz"><summary><code>knex('pizzas').where('vegan', true).orderBy('price').limit(10)</code></summary><div class="ans"><b>Builder</b> — SQL собирается по шагам, как наш заказ.</div></details>
+  <details class="quiz"><summary>Хук <code>useAuth()</code> прячет токены, refresh и редиректы, а наружу отдаёт <code>login</code>, <code>logout</code>, <code>user</code>.</summary><div class="ans"><b>Facade</b> — как наш <code>checkout()</code>.</div></details>
+  <details class="quiz"><summary><code>&lt;ThemeProvider theme={dark}&gt;</code> — и все кнопки, поля, модалки под ним тёмные.</summary><div class="ans"><b>Abstract Factory</b>: одно решение даёт согласованное семейство.</div></details>
+  <details class="quiz"><summary>Бонус: сервис с одним методом <code>getUser()</code> создаётся через <code>AbstractUserServiceFactoryProviderBuilder</code>.</summary><div class="ans"><b>Паттернит</b> 🙂 Правильный ответ — удалить четыре слоя и написать функцию.</div></details>
+</section>
+
+<hr>
+
+<!-- 15 HOMEWORK -->
+<section id="homework">
+  <div class="sec-head"><h2>15 · Домашка и шпаргалка</h2><span class="tag time">до следующего урока</span></div>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Паттерн</th><th>Боль</th><th>Файл в PizzaHub</th><th>На бэкенде</th></tr></thead>
+    <tbody>
+      <tr><td>Singleton</td><td>нужен ровно один экземпляр</td><td><code>store/cart.store.ts</code></td><td>пул БД, конфиг, логгер</td></tr>
+      <tr><td>Factory Method</td><td>выбор класса размазан по коду</td><td><code>notifications/toast.factory.ts</code></td><td>платёжка по стране</td></tr>
+      <tr><td>Builder</td><td>конструктор с кучей аргументов</td><td><code>orders/order.builder.ts</code></td><td>query builder SQL</td></tr>
+      <tr><td>Prototype</td><td>нужна независимая копия</td><td><code>orders/repeat-order.ts</code></td><td>клон шаблона</td></tr>
+      <tr><td>Adapter</td><td>чужой формат данных</td><td><code>api/pizza.adapter.ts</code></td><td>строки БД → DTO, ORM</td></tr>
+      <tr><td>Decorator</td><td>добавить поведение без правки</td><td><code>lib/decorators.ts</code></td><td><code>@Get()</code>, middleware</td></tr>
+      <tr><td>Proxy</td><td>контролировать доступ</td><td><code>forms/order-form.proxy.ts</code></td><td>nginx, проверка прав</td></tr>
+      <tr><td>Facade</td><td>код знает о 5 подсистемах</td><td><code>checkout/checkout.facade.ts</code></td><td>сервисный слой</td></tr>
+      <tr><td>Abstract Factory · Lazy · Pool · Bridge</td><td colspan="3">блиц: темы-семейства · грузить по требованию · пул соединений с БД · «что» отдельно от «чем»</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание — продолжаем PizzaHub</h3>
+  <ol>
+    <li><strong>Factory.</strong> Добавьте тип <code>'warning'</code> с иконкой ⚠️ (если не успели на уроке). Покажите уведомление-предупреждение, когда в корзине больше 5 пицц.</li>
+    <li><strong>Decorator.</strong> Напишите <code>withTimeout(fn, ms)</code>: если функция не ответила за <code>ms</code>, бросить ошибку <code>Timeout</code> (подсказка: <code>Promise.race</code>). Встройте в <code>getMenu</code> и решите, на какое место в матрёшке её поставить. Объясните выбор в комментарии.</li>
+    <li><strong>Adapter.</strong> Добавьте в <code>pizzas.json</code> поле <code>"ingredients": "томаты,моцарелла,базилик"</code> (строкой через запятую — «так решил бэкенд»). В нашем типе <code>Pizza</code> это должен быть массив <code>string[]</code>. Изменить нужно только адаптер и тип.</li>
+    <li><strong>Bridge.</strong> Реализуйте уведомления из блица в отдельной папке <code>src/notifications/channels/</code>: 2 вида × 3 канала (каналы пишут в консоль с префиксом). Добавьте канал Push и посчитайте, сколько новых классов понадобилось.</li>
+    <li><strong>Facade.</strong> Добавьте в <code>checkout</code> отправку уведомления о заказе через ваш Bridge из пункта 4.</li>
+    <li><strong>Исследование.</strong> Найдите 3 паттерна в библиотеке, которой пользуетесь каждый день (React, Vue, axios, React Query). Для каждого — 2 предложения: где именно и какую боль решает.</li>
+  </ol>
+
+  <h3>Что дальше в модуле</h3>
+  <ul>
+    <li><strong>Поведенческие паттерны</strong>: Observer (вы знаете его как <code>addEventListener</code>), Strategy, Command, Chain of Responsibility (middleware).</li>
+    <li><strong>Базы данных</strong>: заменим <code>pizzas.json</code> на настоящую БД — с пулом соединений и query builder.</li>
+    <li><strong>Docker</strong>: упакуем PizzaHub, базу и nginx-прокси в контейнеры и поднимем всё одной командой.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · Урок 1 · Паттерны проектирования: порождающие и структурные · проект PizzaHub (TypeScript + Node)</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

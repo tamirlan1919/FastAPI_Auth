@@ -15,5 +15,9 @@ class Settings(BaseSettings):
     mongo_url: str = 'mongodb://localhost:27017'
     mongo_db: str = 'test_db'
 
+    redis_url: str = 'redis://localhost:6379'
+    cache_ttl: int = 60
+
+
 
 settings = Settings()
