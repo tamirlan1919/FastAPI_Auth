@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL · Урок 3 — JOIN и связи между таблицами</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>SQL</div>
+  <p class="lead">Модуль Backend · SQL · Урок 3</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и подготовка</a>
+    <div class="grp">Часть 1 · Связи и первые JOIN</div>
+    <a href="#why"><span class="n theory-dot">01</span>Зачем разрезать данные</a>
+    <a href="#fk"><span class="n practice-dot">02</span>Ссылочная целостность</a>
+    <a href="#inner"><span class="n practice-dot">03</span>INNER JOIN</a>
+    <a href="#left"><span class="n practice-dot">04</span>LEFT JOIN и «сироты»</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 2 · JOIN в реальных отчётах</div>
+    <a href="#chain"><span class="n practice-dot">05</span>Цепочки JOIN</a>
+    <a href="#m2m"><span class="n practice-dot">06</span>Многие-ко-многим</a>
+    <a href="#fanout"><span class="n practice-dot">07</span>JOIN + GROUP BY и ловушка</a>
+    <a href="#more"><span class="n practice-dot">08</span>Self-join, RIGHT/FULL, N+1</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">09</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · SQL · Урок 3 · 2 часа с перерывом · для фронтенд-разработчиков · база Pagila</p>
+  <h1>JOIN и связи между таблицами</h1>
+  <p class="lead-p">Два урока мы работали с одной таблицей за раз и уже упирались в стену: в <code>payment</code> есть <code>customer_id</code>, но нет имени клиента; в <code>film_actor</code> — только пары чисел. Сегодня научимся <strong>склеивать таблицы</strong>. Это главная суперсила реляционных баз и одна из самых частых тем на собеседованиях. А ещё разберём ловушку, из-за которой отчёт показывает выручку в 2,4 раза больше настоящей, и никто этого не замечает.</p>
+
+  <div class="hero">
+    <h3>ЧТО СДЕЛАЕМ ЗА УРОК</h3>
+    <ul>
+      <li><b>Поймём, зачем данные режут</b> на таблицы: нормализация, первичные и внешние ключи, связи 1:N и N:M.</li>
+      <li><b>Проверим ссылочную целостность</b> на живой базе: попробуем удалить клиента с платежами и создать платёж «ни для кого».</li>
+      <li><b>Освоим <code>INNER</code> и <code>LEFT JOIN</code></b>, алиасы, <code>USING</code>, поиск «сирот», разницу <code>ON</code> и <code>WHERE</code>.</li>
+      <li><b>Соберём цепочки из 4–5 таблиц</b>: какие фильмы брал клиент, кто снимался в фильме, откуда наши клиенты.</li>
+      <li><b>Найдём ловушку «размножения строк»</b> в отчётах с <code>JOIN</code> + <code>GROUP BY</code> и научимся её обходить.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Зачем разрезать данные: нормализация, PK, FK, связи 1:N и N:M</td><td>теория</td></tr>
+      <tr><td class="t">0:12</td><td>Ссылочная целостность и <code>ON DELETE</code> вживую</td><td>live-coding</td></tr>
+      <tr><td class="t">0:22</td><td><code>INNER JOIN</code>, алиасы, <code>USING</code>, <code>CROSS JOIN</code> на 51 миллион строк</td><td>live-coding</td></tr>
+      <tr><td class="t">0:40</td><td><code>LEFT JOIN</code>, поиск «сирот», <code>ON</code> против <code>WHERE</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:55</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:05</td><td>Цепочки из 4–5 таблиц, ловушка <code>NATURAL JOIN</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:15</td><td>Многие-ко-многим: актёры и фильмы, категории</td><td>live-coding</td></tr>
+      <tr><td class="t">1:25</td><td><code>JOIN</code> + <code>GROUP BY</code>, ловушка размножения строк</td><td>live-coding</td></tr>
+      <tr><td class="t">1:38</td><td>Self-join, <code>RIGHT</code>/<code>FULL</code>, N+1, индексы</td><td>live-coding</td></tr>
+      <tr><td class="t">1:48</td><td>Игра, шпаргалка, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОДГОТОВКА</span>
+    <p>Та же Pagila в Docker и DBeaver, что на прошлом уроке. Новый скрипт: правой кнопкой по базе <b>pagila</b> → <b>SQL Editor → New SQL script</b>, сохранить как <code>lesson3.sql</code>. Полезно открыть рядом схему базы: в DBeaver раскройте pagila → Schemas → public → Tables, правой кнопкой по <b>Tables</b> → <b>View Diagram</b> — увидите все таблицы и стрелки-связи.</p>
+  </div></div>
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">КАК ЧИТАТЬ БЛОКИ КОДА</span>
+    <p><code>lesson3.sql · + в конец скрипта</code> — пишем и выполняем (Ctrl+Enter). «👀 только посмотреть» — не пишем. Все запросы я выполнил на свежей Pagila из репозитория <code>devrimgunduz/pagila</code> (999 клиентов, 51 061 платёж), результаты в уроке настоящие.</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · самое начало скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 0. Как и на прошлом уроке: время в UTC, чтобы цифры совпадали у всех
+SET TIME ZONE 'UTC';</code></pre>
+  </figure>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Связи и первые JOIN</span><span class="bar"></span></div>
+
+<!-- 01 WHY -->
+<section id="why">
+  <div class="sec-head"><h2>01 · Зачем разрезать данные на таблицы</h2><span class="tag theory">теория</span><span class="tag time">~12 мин</span></div>
+
+  <p>Представим, что видеопрокат хранит всё в одной большой Excel-таблице, как многие маленькие бизнесы:</p>
+  <div class="diagram">
+<pre> клиент      | email                         | город  | дата       | фильм            | сумма
+ ------------+-------------------------------+--------+------------+------------------+------
+ MARY SMITH  | MARY.SMITH@sakilacustomer.org | Sasebo | 2022-01-28 | PATIENT SISTER   | 4.99
+ MARY SMITH  | MARY.SMITH@sakilacustomer.org | Sasebo | 2022-01-29 | TALENTED HOMICIDE| 4.99
+ MARY SMITH  | <span class="fk">MARY.SMITH@sakilacustomr.org</span>  | Sasebo | 2022-02-04 | MUSKETEERS WAIT  | 3.99   ← опечатка
+ ... ещё 62 строки Мэри</pre>
+  </div>
+  <table class="cmp">
+    <thead><tr><th>Проблема</th><th>Что происходит</th></tr></thead>
+    <tbody>
+      <tr><td><b>Дублирование</b></td><td>у Мэри 65 платежей — её имя, email и город записаны 65 раз</td></tr>
+      <tr><td><b>Аномалия обновления</b></td><td>Мэри сменила email — нужно найти и поправить 65 строк. Пропустили одну — и уже непонятно, какой email настоящий</td></tr>
+      <tr><td><b>Аномалия удаления</b></td><td>удалили единственную аренду фильма — и пропала информация о самом фильме</td></tr>
+      <tr><td><b>Аномалия вставки</b></td><td>нельзя добавить нового клиента, пока он ничего не арендовал: строка требует фильм и сумму</td></tr>
+    </tbody>
+  </table>
+  <p><b>Нормализация</b> — разделение данных на отдельные сущности, где каждый факт хранится <b>ровно в одном месте</b>: клиенты — в <code>customer</code>, платежи — в <code>payment</code>, фильмы — в <code>film</code>. Мэри сменила email — правим одну ячейку.</p>
+
+  <h3>Ключи: как таблицы находят друг друга</h3>
+  <table class="cmp">
+    <thead><tr><th>Ключ</th><th>Что это</th><th>Аналогия</th><th>Пример</th></tr></thead>
+    <tbody>
+      <tr><td><b>Primary Key (PK)</b>, первичный ключ</td><td>колонка, которая однозначно определяет строку</td><td>номер паспорта</td><td><code>customer.customer_id</code></td></tr>
+      <tr><td><b>Foreign Key (FK)</b>, внешний ключ</td><td>колонка, которая хранит PK строки из <b>другой</b> таблицы</td><td>«номер паспорта владельца» в документах на машину</td><td><code>payment.customer_id</code> → <code>customer.customer_id</code></td></tr>
+    </tbody>
+  </table>
+  <p>Три закона первичного ключа: <b>уникален</b> (нет двух клиентов с id = 5), <b>не NULL</b>, и в идеале <b>никогда не меняется</b>.</p>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ПОЧЕМУ EMAIL — ПЛОХОЙ ПЕРВИЧНЫЙ КЛЮЧ</span>
+    <p>Ключи бывают <b>естественные</b> (данные из жизни: email, номер паспорта, ИНН) и <b>суррогатные</b> (искусственный номер без смысла: <code>customer_id = 1</code>, <code>UUID</code>). Соблазнительно сделать ключом email — он же уникальный! Но люди меняют email, выходят замуж и меняют фамилию, получают новые паспорта. А первичный ключ уже скопирован во все связанные таблицы — платежи, аренды, отзывы. Смена email превращается в обновление миллионов строк. Поэтому почти везде используют суррогатные ключи: в Pagila это <code>customer_id</code>, <code>film_id</code> и так далее. А email делают просто <code>UNIQUE</code>.</p>
+  </div></div>
+
+  <h3>Типы связей</h3>
+  <div class="diagram">
+<pre> <span class="tn">1 : N</span> (один ко многим) — самая частая
+
+   customer                 payment
+ ┌────────────────┐       ┌──────────────────┐
+ │ <span class="pk">customer_id PK</span> │◀──┐   │ payment_id   PK  │
+ │ first_name     │   └───│ <span class="fk">customer_id  FK</span>  │   у одного клиента — много платежей.
+ │ email          │       │ amount           │   FK всегда на стороне «много»
+ └────────────────┘       └──────────────────┘
+
+ <span class="tn">N : M</span> (многие ко многим) — через таблицу-посредник
+
+   film                film_actor               actor
+ ┌──────────────┐    ┌─────────────────┐    ┌───────────────┐
+ │ <span class="pk">film_id PK</span>   │◀───│ <span class="fk">film_id  FK</span>     │───▶│ <span class="pk">actor_id PK</span>   │   в фильме много актёров,
+ │ title        │    │ <span class="fk">actor_id FK</span>     │    │ first_name    │   у актёра много фильмов
+ └──────────────┘    └─────────────────┘    └───────────────┘</pre>
+  </div>
+  <table class="cmp">
+    <thead><tr><th>Связь</th><th>Пример из Pagila</th><th>Пример с фронтенда</th><th>Как устроена</th></tr></thead>
+    <tbody>
+      <tr><td><b>1:1</b></td><td>— (редко)</td><td>пользователь и его настройки</td><td>FK + <code>UNIQUE</code> (как <code>profiles.user_id</code> в FastAPI-проекте)</td></tr>
+      <tr><td><b>1:N</b></td><td>клиент → платежи, фильм → копии (<code>inventory</code>)</td><td>пользователь → заказы</td><td>FK на стороне «много»</td></tr>
+      <tr><td><b>N:M</b></td><td>фильмы ↔ актёры, фильмы ↔ категории</td><td>товары ↔ теги, пользователи ↔ чаты</td><td>таблица-посредник из двух FK</td></tr>
+    </tbody>
+  </table>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ФРОНТЕНДЕРАМ ЭТО ЗНАКОМО</span>
+    <p>Нормализованный стейт в Redux Toolkit (<code>createEntityAdapter</code>) — та же идея: <code>{ users: { byId: {...} }, posts: { byId: { 7: { authorId: 1 } } } }</code>. Пост хранит не копию автора, а его id. А чтобы показать карточку поста с именем автора, вы «джойните» их в селекторе. В SQL это делает база, одним запросом.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 FK -->
+<section id="fk">
+  <div class="sec-head"><h2>02 · Ссылочная целостность: база не даст соврать</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Внешний ключ — это не просто договорённость «в этой колонке лежат id клиентов». Это <b>правило, которое проверяет база</b>. Убедимся сами. Запросы изменяют данные, поэтому обернём их в транзакцию и откатим: <code>BEGIN</code> начинает транзакцию, <code>ROLLBACK</code> отменяет всё, что в ней было (транзакции подробно — в следующих уроках).</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта · выполнять как скрипт: Alt+X</span></figcaption>
+    <pre><code class="language-sql">-- 1. Попытка удалить клиента, у которого есть платежи
+BEGIN;
+DELETE FROM customer WHERE customer_id = 1;
+ROLLBACK;
+
+-- 2. Попытка создать платёж для несуществующего клиента
+BEGIN;
+INSERT INTO payment (customer_id, staff_id, rental_id, amount, payment_date)
+VALUES (99999, 1, 1, 5.00, '2022-03-01');
+ROLLBACK;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие ошибки</span></figcaption>
+    <pre><code class="language-none">ERROR:  update or delete on table "customer" violates foreign key constraint
+        "payment_p2022_01_customer_id_fkey" on table "payment_p2022_01"
+DETAIL:  Key (customer_id)=(1) is still referenced from table "payment_p2022_01".
+
+ERROR:  insert or update on table "payment_p2022_03" violates foreign key constraint
+        "payment_p2022_03_customer_id_fkey"
+DETAIL:  Key (customer_id)=(99999) is not present in table "customer".</code></pre>
+  </figure>
+  <p>Обе операции отклонены. Нельзя удалить клиента, на которого ссылаются платежи, и нельзя создать платёж, который ссылается в пустоту. Такие записи без пары называют «сиротами» (orphans), и внешний ключ гарантирует, что их не будет. (Таблица <code>payment</code> в Pagila разбита на части по месяцам — <code>payment_p2022_01</code> и т. д., поэтому в ошибке такие имена.)</p>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЗАЧЕМ BEGIN/ROLLBACK, ЕСЛИ И ТАК ОШИБКА?</span>
+    <p>Для клиента №1 база откажет сама. Но у клиентов 647 и 978 нет ни платежей, ни аренд: <code>DELETE</code> для них <b>сработает</b>, и учебная база молча лишится данных. Привычка проверять изменяющие запросы внутри <code>BEGIN ... ROLLBACK</code> однажды спасёт вас на работе.</p>
+  </div></div>
+
+  <h3>Что делать со связанными строками при удалении — ON DELETE</h3>
+  <p>Правило задаётся при создании внешнего ключа (<code>CREATE TABLE</code> разберём позже) и определяет, что случится с платежами, если удалить клиента:</p>
+  <table class="cmp">
+    <thead><tr><th>Правило</th><th>Что будет</th><th>Когда уместно</th></tr></thead>
+    <tbody>
+      <tr><td><code>RESTRICT</code> / <code>NO ACTION</code> (по умолчанию)</td><td><b>запретить</b> удаление, пока есть связанные строки — то, что мы только что увидели</td><td>деньги, заказы, всё ценное</td></tr>
+      <tr><td><code>CASCADE</code></td><td>удалить клиента <b>и все его платежи</b></td><td>зависимые мелочи: удалили пост — удалились его лайки</td></tr>
+      <tr><td><code>SET NULL</code></td><td>удалить клиента, а в платежах поставить <code>customer_id = NULL</code></td><td>история нужна, а владелец — нет</td></tr>
+    </tbody>
+  </table>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРО КАСКАДЫ</span>
+    <p>Классическая история из жизни бэкенда: кто-то настроил <code>ON DELETE CASCADE</code> от «компании» к «пользователям», от «пользователей» к «заказам», от «заказов» к «платежам». Потом в админке удалили тестовую компанию... которая оказалась не тестовой. Одно нажатие — и каскад унёс тысячи строк по всей базе. Поэтому в реальных проектах деньги защищают <code>RESTRICT</code>, а вместо удаления часто делают <b>soft delete</b>: колонку <code>deleted_at</code> или <code>is_deleted = true</code> — запись скрывается, но остаётся в базе.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 INNER -->
+<section id="inner">
+  <div class="sec-head"><h2>03 · INNER JOIN: склеиваем пары</h2><span class="tag practice">live-coding</span><span class="tag time">~18 мин</span></div>
+
+  <div class="oneliner"><b>JOIN</b> берёт строку из одной таблицы, находит подходящие строки в другой по условию <code>ON</code> и склеивает их в одну широкую строку.<small>Добавляет колонки «вбок» — в отличие от <code>UNION</code>, который добавляет строки «вниз».</small></div>
+
+  <h3>Сначала — на игрушечных данных</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 3. Три клиента и три заказа. У Анны заказов нет, заказ №700 — от клиента 4, которого нет
+WITH customers(id, name) AS (VALUES (1, 'Анна'), (2, 'Борис'), (3, 'Вика')),
+     orders(customer_id, total) AS (VALUES (2, 500), (3, 300), (4, 700))
+SELECT c.name, o.total
+FROM customers c
+INNER JOIN orders o ON o.customer_id = c.id;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> name  | total
+-------+-------
+ Борис |   500
+ Вика  |   300</code></pre>
+  </figure>
+  <div class="diagram">
+<pre> customers           orders                     INNER JOIN ON o.customer_id = c.id
+ id | name           customer_id | total
+ 1  | Анна  ✗        2           | 500   ──▶   Борис | 500
+ 2  | Борис ✓──────▶ 3           | 300   ──▶   Вика  | 300
+ 3  | Вика  ✓──────▶ 4           | 700 ✗
+ Анне не нашлось пары — её нет. Заказу клиента 4 не нашлось пары — его нет.</pre>
+  </div>
+  <p><b>INNER JOIN</b> оставляет только строки, у которых пара нашлась <b>с обеих сторон</b>. <code>WITH ... AS (VALUES ...)</code> — это CTE из прошлого урока: две маленькие таблицы прямо в запросе, чтобы увидеть логику без тысяч строк.</p>
+
+  <h3>Теперь на Pagila</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 4. Первые платежи — с именами клиентов
+SELECT customer.first_name, customer.last_name, payment.amount, payment.payment_date
+FROM customer
+INNER JOIN payment ON customer.customer_id = payment.customer_id
+ORDER BY payment.payment_date
+LIMIT 5;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> first_name | last_name  | amount |         payment_date
+------------+------------+--------+-------------------------------
+ JESUS      | MCCARTNEY  |   3.99 | 2022-01-23 13:03:52.212496+00
+ STACY      | CUNNINGHAM |   2.99 | 2022-01-23 13:24:17.906429+00
+ BRADLEY    | MOTLEY     |  10.99 | 2022-01-23 13:42:35.952907+00
+ DAISY      | BATES      |   2.99 | 2022-01-23 13:43:42.505434+00
+ BERNICE    | WILLIS     |   0.99 | 2022-01-23 13:57:04.087741+00</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В JavaScript</th></tr></thead><tbody>
+      <tr><td><code>FROM customer</code></td><td>«левая» таблица</td><td>внешний цикл</td></tr>
+      <tr><td><code>INNER JOIN payment</code></td><td>«правая» таблица. Слово <code>INNER</code> можно опустить: просто <code>JOIN</code> — это <code>INNER JOIN</code></td><td>внутренний поиск</td></tr>
+      <tr><td><code>ON customer.customer_id = payment.customer_id</code></td><td>условие склейки: PK одной таблицы = FK другой</td><td><code>payments.filter(p =&gt; p.customer_id === c.customer_id)</code></td></tr>
+      <tr><td><code>customer.first_name</code></td><td>колонка с указанием таблицы: <code>таблица.колонка</code></td><td><code>c.first_name</code></td></tr>
+    </tbody></table>
+    <p class="note">Сколько строк в результате? Столько же, сколько платежей: 51 061. Каждый платёж нашёл ровно одного клиента — FK гарантирует, что «сирот» нет.</p>
+  </div>
+
+  <h3>Алиасы и ошибка ambiguous</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span><span class="role">первый запрос упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 5. Колонка customer_id есть в ОБЕИХ таблицах
+SELECT customer_id, amount
+FROM customer
+JOIN payment ON customer.customer_id = payment.customer_id
+LIMIT 1;
+
+-- То же с алиасами — короткими именами таблиц
+SELECT c.customer_id, c.email, p.amount
+FROM customer c
+JOIN payment p ON p.customer_id = c.customer_id
+WHERE p.amount &gt; 10
+ORDER BY p.amount DESC, c.customer_id
+LIMIT 3;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">ERROR:  column reference "customer_id" is ambiguous
+
+ customer_id |               email                | amount
+-------------+------------------------------------+--------
+          13 | KAREN.JACKSON@sakilacustomer.org   |  11.99
+         116 | VICTORIA.GIBSON@sakilacustomer.org |  11.99
+         195 | VANESSA.SIMS@sakilacustomer.org    |  11.99</code></pre>
+  </figure>
+  <p><b>Ambiguous</b> — «неоднозначно»: база не знает, из какой таблицы брать <code>customer_id</code>. <b>Алиас</b> — короткое имя таблицы в запросе: <code>customer c</code> (можно и <code>customer AS c</code>). Обычно берут первые буквы. Правило хорошего тона: если в запросе больше одной таблицы, <b>каждую колонку пишите с алиасом</b>, даже если она уникальна — через год кто-то добавит такую же колонку в другую таблицу, и запрос сломается.</p>
+
+  <h3>USING — короче, когда колонки называются одинаково</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 6. То же самое через USING
+SELECT customer_id, c.email, p.amount
+FROM customer c
+JOIN payment p USING (customer_id)
+WHERE p.amount &gt; 10
+ORDER BY p.amount DESC, customer_id
+LIMIT 3;</code></pre>
+  </figure>
+  <p><code>USING (customer_id)</code> = <code>ON c.customer_id = p.customer_id</code>, но короче, и колонка <code>customer_id</code> в результате одна — её можно писать без алиаса. Работает, только если колонки называются <b>одинаково</b> в обеих таблицах. В Pagila так почти везде.</p>
+
+  <h3>CROSS JOIN — что будет, если забыть условие</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span><span class="role">только COUNT! Без него DBeaver попробует показать 51 млн строк</span></figcaption>
+    <pre><code class="language-sql">-- 7. Каждый клиент с каждым платежом
+SELECT COUNT(*) FROM customer CROSS JOIN payment;
+
+-- «Старый стиль» через запятую — то же самое, если забыть WHERE
+SELECT COUNT(*) FROM customer, store;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">  count            count
+----------        --------
+ 51009939          499500</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">51 МИЛЛИОН СТРОК ИЗ ДВУХ МАЛЕНЬКИХ ТАБЛИЦ</span>
+    <p>999 клиентов × 51 061 платёж = 51 009 939. Это <b>декартово произведение</b>: каждая строка слева с каждой строкой справа. Нарочно оно нужно редко (например, «все размеры × все цвета» для карточки товара). А случайно получается, если забыть условие склейки. В книгах 90-х писали <code>FROM customer, payment WHERE customer.customer_id = payment.customer_id</code> — стоит потерять строку <code>WHERE</code>, и база начинает переваривать миллиарды строк. Поэтому всегда пишите явный <code>JOIN ... ON</code>: без <code>ON</code> обычный <code>JOIN</code> в PostgreSQL просто не запустится — синтаксическая ошибка.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 04 LEFT -->
+<section id="left">
+  <div class="sec-head"><h2>04 · LEFT JOIN и поиск «сирот»</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Задача: «список <b>всех</b> клиентов и их платежей». С <code>INNER JOIN</code> клиенты без покупок пропадут — а для маркетинга они как раз самые интересные.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 8. LEFT JOIN на игрушечных данных
+WITH customers(id, name) AS (VALUES (1, 'Анна'), (2, 'Борис'), (3, 'Вика')),
+     orders(customer_id, total) AS (VALUES (2, 500), (3, 300), (4, 700))
+SELECT c.name, o.total
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.id;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> name  | total
+-------+--------
+ Анна  | [NULL]   ← осталась! пары нет — справа NULL
+ Борис |    500
+ Вика  |    300</code></pre>
+  </figure>
+  <p><b>LEFT JOIN</b>: «оставь <b>все</b> строки левой таблицы; если справа нашлась пара — приклей, если нет — заполни колонки правой таблицы <code>NULL</code>». Какая таблица «левая»? Та, что написана в <code>FROM</code>, до слова <code>JOIN</code>.</p>
+
+  <h3>Поиск «сирот» — anti-join</h3>
+  <p>Раз у клиентов без пары справа <code>NULL</code>, их легко найти:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 9. Клиенты без единого платежа
+SELECT c.customer_id, c.first_name, c.last_name
+FROM customer c
+LEFT JOIN payment p ON p.customer_id = c.customer_id
+WHERE p.payment_id IS NULL;
+
+-- 10. Фильмы, которых нет ни в одном магазине
+SELECT COUNT(*)
+FROM film f
+LEFT JOIN inventory i ON i.film_id = f.film_id
+WHERE i.inventory_id IS NULL;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> customer_id | first_name | last_name          count
+-------------+------------+-----------        -------
+         647 | JENNIFER   | MITCHELL              42
+         978 | SOFIA      | BAKER</code></pre>
+  </figure>
+  <p>Узнаёте цифры? На прошлом уроке мы находили тех же двух клиентов через <code>NOT EXISTS</code> и те же 42 фильма. Одна задача — несколько решений. <code>WHERE правая.колонка IS NULL</code> после <code>LEFT JOIN</code> — это «нет пары». Проверяйте колонку, которая <b>не может быть NULL</b> сама по себе: первичный ключ правой таблицы.</p>
+
+  <h3>Главная ловушка LEFT JOIN: условие в ON или в WHERE</h3>
+  <p>Задача: «все клиенты и сколько у каждого крупных платежей (больше 10)». Есть два способа написать условие <code>amount &gt; 10</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 11. Условие в ON
+SELECT c.customer_id, COUNT(p.payment_id) AS big_payments
+FROM customer c
+LEFT JOIN payment p ON p.customer_id = c.customer_id AND p.amount &gt; 10
+GROUP BY c.customer_id
+ORDER BY c.customer_id
+LIMIT 4;
+
+-- 12. Условие в WHERE — сколько клиентов осталось?
+SELECT COUNT(DISTINCT c.customer_id)
+FROM customer c
+LEFT JOIN payment p ON p.customer_id = c.customer_id
+WHERE p.amount &gt; 10;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- 11: все 999 клиентов, у кого нет — 0      -- 12: только 107 клиентов
+ customer_id | big_payments                       count
+-------------+--------------                     -------
+           1 |            0                         107
+           2 |            1
+           3 |            1
+           4 |            0</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ТАК</span>
+    <p><b>Условие в <code>ON</code></b> решает, какие строки справа <b>подходят в пару</b>. Если подходящих нет — левая строка всё равно остаётся (с <code>NULL</code>). <b>Условие в <code>WHERE</code></b> фильтрует <b>уже склеенный</b> результат. У клиента №1 нет платежей больше 10 — значит, после склейки у его строк <code>amount</code> ≤ 10, и <code>WHERE</code> его выбросит. Клиенты без пары вообще имеют <code>amount = NULL</code>, и <code>NULL &gt; 10</code> — «неизвестно» (трёхзначная логика урока 2) — их тоже выбросит. Итог: <code>LEFT JOIN</code> + условие на правую таблицу в <code>WHERE</code> молча превращается в <code>INNER JOIN</code>.</p>
+  </div></div>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">COUNT(*) ИЛИ COUNT(колонка) ПОСЛЕ LEFT JOIN</span>
+    <p>В запросе 11 мы считаем <code>COUNT(p.payment_id)</code>, а не <code>COUNT(*)</code>. Проверим на клиентах 1, 647 и 978: <code>COUNT(*)</code> даёт 65, <b>1</b>, <b>1</b>, а <code>COUNT(p.payment_id)</code> — 65, <b>0</b>, <b>0</b>. Строка «клиент без пары» всё равно одна строка, и <code>COUNT(*)</code> её посчитает. После <code>LEFT JOIN</code> считайте колонку из правой таблицы.</p>
+  </div></div>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — цепочки из нескольких таблиц и ловушка, которая завышает выручку в отчётах в 2,4 раза.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · JOIN в реальных отчётах</span><span class="bar"></span></div>
+
+<!-- 05 CHAIN -->
+<section id="chain">
+  <div class="sec-head"><h2>05 · Цепочки JOIN: 4–5 таблиц — это нормально</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Задача: «какие фильмы брала Мэри Смит (клиент №1)?». Прямой связи «клиент — фильм» нет. Идём по стрелкам схемы:</p>
+  <div class="diagram">
+<pre> <span class="tn">customer</span> ──customer_id──▶ <span class="tn">rental</span> ──inventory_id──▶ <span class="tn">inventory</span> ──film_id──▶ <span class="tn">film</span>
+ кто                         когда взял                 какая копия,                 какой
+                                                        в каком магазине             фильм</pre>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 13. Фильмы, которые брала клиентка №1
+SELECT f.title, r.rental_date
+FROM customer c
+JOIN rental r    ON r.customer_id  = c.customer_id
+JOIN inventory i ON i.inventory_id = r.inventory_id
+JOIN film f      ON f.film_id      = i.film_id
+WHERE c.customer_id = 1
+ORDER BY r.rental_date
+LIMIT 5;
+
+-- 14. Откуда клиентка №1: customer → address → city → country
+SELECT cu.first_name, cu.last_name, ci.city, co.country
+FROM customer cu
+JOIN address a  ON a.address_id  = cu.address_id
+JOIN city ci    ON ci.city_id    = a.city_id
+JOIN country co ON co.country_id = ci.country_id
+WHERE cu.customer_id = 1;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие · всего у неё 66 аренд</span></figcaption>
+    <pre><code class="language-none">       title       |      rental_date              first_name | last_name |  city  | country
+-------------------+------------------------      ------------+-----------+--------+---------
+ PATIENT SISTER    | 2022-05-25 10:30:37+00       MARY       | SMITH     | Sasebo | Japan
+ TALENTED HOMICIDE | 2022-05-28 09:35:23+00
+ MUSKETEERS WAIT   | 2022-06-14 23:54:12+00
+ DETECTIVE VISION  | 2022-06-15 17:02:53+00
+ FERRIS MOTHER     | 2022-06-15 20:08:46+00</code></pre>
+  </figure>
+  <div class="syn"><div class="h">КАК ЧИТАТЬ ЦЕПОЧКУ</div>
+    <table><thead><tr><th>Шаг</th><th>Что происходит</th><th>Строк после шага</th></tr></thead><tbody>
+      <tr><td><code>FROM customer c ... WHERE c.customer_id = 1</code></td><td>одна клиентка</td><td>1</td></tr>
+      <tr><td><code>JOIN rental r</code></td><td>к ней приклеились все её аренды</td><td>66</td></tr>
+      <tr><td><code>JOIN inventory i</code></td><td>к каждой аренде — её копия диска</td><td>66</td></tr>
+      <tr><td><code>JOIN film f</code></td><td>к каждой копии — фильм</td><td>66</td></tr>
+    </tbody></table>
+    <p class="note">Каждый <code>JOIN</code> присоединяет таблицу к результату всех предыдущих. Условие <code>ON</code> всегда связывает новую таблицу с какой-то из уже присоединённых. Шаг «1:N» (клиент → аренды) размножил строки, шаги «N:1» (аренда → копия → фильм) — нет. Запомните это наблюдение, оно понадобится в блоке 07.</p>
+  </div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЛОВУШКА: NATURAL JOIN</span>
+    <p>В PostgreSQL есть <code>NATURAL JOIN</code> — склеивает по <b>всем</b> колонкам с одинаковыми именами, ничего писать не надо. Звучит удобно: <code>SELECT COUNT(*) FROM customer NATURAL JOIN rental;</code> → <b>0</b>. Почему ноль? Общих колонок у этих таблиц три: <code>customer_id</code>, <code>last_update</code> и <code>uuid</code>. База требует совпадения <b>всех трёх</b>, а время последнего изменения клиента и аренды, конечно, не совпадает. Никакой ошибки — просто пустой отчёт. Поэтому <code>NATURAL JOIN</code> в рабочем коде не используют, а в <code>USING</code> перечисляют колонки явно.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 06 M2M -->
+<section id="m2m">
+  <div class="sec-head"><h2>06 · Многие-ко-многим: фильмы, актёры, категории</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>В фильме много актёров, у актёра много фильмов. Одной колонкой <code>actor_id</code> в <code>film</code> это не описать: сколько колонок делать — <code>actor_1</code>, <code>actor_2</code>... <code>actor_50</code>? Поэтому есть таблица-посредник (junction table) <code>film_actor</code>, где каждая строка — одна пара «фильм — актёр». Она превращает одну связь N:M в две связи 1:N. Чтобы пройти от фильма к актёрам, нужно два <code>JOIN</code>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 15. Актёрский состав фильма
+SELECT a.first_name || ' ' || a.last_name AS actor
+FROM film f
+JOIN film_actor fa ON fa.film_id  = f.film_id
+JOIN actor a       ON a.actor_id  = fa.actor_id
+WHERE f.title = 'ACADEMY DINOSAUR'
+ORDER BY actor;
+
+-- 16. Фильмы Пенелопы Гиннесс — на прошлом уроке решали подзапросом с IN
+SELECT f.title
+FROM actor a
+JOIN film_actor fa ON fa.actor_id = a.actor_id
+JOIN film f        ON f.film_id   = fa.film_id
+WHERE a.first_name = 'PENELOPE' AND a.last_name = 'GUINESS'
+ORDER BY f.title
+LIMIT 5;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие · 10 актёров · 19 фильмов, как и на прошлом уроке</span></figcaption>
+    <pre><code class="language-none">      actor                     title
+------------------         -----------------------
+ CHRISTIAN GABLE            ACADEMY DINOSAUR
+ JOHNNY CAGE                ANACONDA CONFESSIONS
+ LUCILLE TRACY              ANGELS LIFE
+ MARY KEITEL                BULWORTH COMMANDMENTS
+ MENA TEMPLE                CHEAPER CLYDE
+ OPRAH KILMER
+ PENELOPE GUINESS
+ ROCK DUKAKIS
+ SANDRA PECK
+ WARREN NOLTE</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В JavaScript</th></tr></thead><tbody>
+      <tr><td><code>a.first_name || ' ' || a.last_name</code></td><td><code>||</code> — склейка строк в SQL</td><td><code>`${a.first_name} ${a.last_name}`</code></td></tr>
+      <tr><td><code>ORDER BY actor</code></td><td>сортировка по псевдониму из <code>SELECT</code> (работает: <code>ORDER BY</code> выполняется после <code>SELECT</code>)</td><td>—</td></tr>
+      <tr><td><code>film_actor fa</code></td><td>посредник: в <code>SELECT</code> его колонки не нужны, он только «мост»</td><td>таблица связей <code>{filmId, actorId}[]</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>У фильма может быть несколько категорий</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 17. Категории двух фильмов
+SELECT f.title, c.name AS category
+FROM film f
+JOIN film_category fc ON fc.film_id     = f.film_id
+JOIN category c       ON c.category_id  = fc.category_id
+WHERE f.film_id IN (70, 273)
+ORDER BY f.title, c.name;
+
+SELECT COUNT(*) FROM film_category;   -- а фильмов всего 1000</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">      title       | category             count
+------------------+-----------          -------
+ BIKINI BORROWERS | Animation             2367
+ BIKINI BORROWERS | Games
+ BIKINI BORROWERS | Sports
+ EFFECT GLADIATOR | Comedy
+ EFFECT GLADIATOR | Foreign
+ EFFECT GLADIATOR | Sports</code></pre>
+  </figure>
+  <p>2367 связей на 1000 фильмов — в среднем по 2,4 категории на фильм. Это совершенно нормально (комедия может быть и мультфильмом), но в следующем блоке это число устроит нам неприятный сюрприз.</p>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ВЫ ЭТО УЖЕ ДЕЛАЛИ В FASTAPI-ПРОЕКТЕ</span>
+    <p>Посты и теги в auth-api — та же схема N:M: таблица <code>post_tags</code> из двух внешних ключей, а <code>relationship(secondary=post_tags)</code> в SQLAlchemy под капотом генерирует ровно такие два <code>JOIN</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 07 FANOUT -->
+<section id="fanout">
+  <div class="sec-head"><h2>07 · JOIN + GROUP BY и ловушка размножения строк</h2><span class="tag practice">live-coding</span><span class="tag time">~13 мин</span></div>
+
+  <p>Соединяем всё, что знаем: <code>JOIN</code> собирает данные из разных таблиц, <code>GROUP BY</code> из урока 2 считает итоги. Задача от аналитика: «выручка по рейтингам фильмов» — платёж относится к аренде, аренда к копии, копия к фильму:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 18. Выручка по рейтингам
+SELECT f.rating, SUM(p.amount) AS revenue
+FROM payment p
+JOIN rental r    ON r.rental_id    = p.rental_id
+JOIN inventory i ON i.inventory_id = r.inventory_id
+JOIN film f      ON f.film_id      = i.film_id
+GROUP BY f.rating
+ORDER BY revenue DESC;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> rating | revenue
+--------+----------
+ PG-13  | 38392.34
+ NC-17  | 35850.33
+ PG     | 34233.65
+ R      | 32992.91
+ G      | 29493.16          сумма пяти строк = 170962.39 = SUM(amount) FROM payment ✓</code></pre>
+  </figure>
+  <p>Отлично, сходится с общей выручкой из урока 2. Теперь аналитик просит то же самое, но по <b>категориям</b>. Добавляем ещё два <code>JOIN</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 19. Выручка по категориям... и проверка суммы
+WITH by_category AS (
+    SELECT c.name AS category, SUM(p.amount) AS revenue
+    FROM payment p
+    JOIN rental r         ON r.rental_id    = p.rental_id
+    JOIN inventory i      ON i.inventory_id = r.inventory_id
+    JOIN film_category fc ON fc.film_id     = i.film_id
+    JOIN category c       ON c.category_id  = fc.category_id
+    GROUP BY c.name
+)
+SELECT SUM(revenue) AS total_by_categories FROM by_category;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> total_by_categories
+---------------------
+           405100.72          ← а настоящая выручка 170962.39. В 2,37 раза больше!</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ОТКУДА ВЗЯЛИСЬ ЛИШНИЕ 234 ТЫСЯЧИ</span>
+    <p>Платёж за «BIKINI BORROWERS» после <code>JOIN film_category</code> превращается в <b>три</b> строки: Animation, Games, Sports. Каждая несёт полную сумму платежа — и <code>SUM</code> складывает её трижды. 51 061 платёж после этого <code>JOIN</code> превращается в 120 925 строк. Ошибки нет, цифры выглядят правдоподобно, отчёт уходит директору. Это самый частый баг в аналитических запросах, у него даже есть названия: <b>fan-out</b>, «размножение строк», а в мире BI — «проблема разветвления».</p>
+  </div></div>
+  <p>Что с этим делать? Сначала признать: «выручку по категориям» при нескольких категориях у фильма <b>нельзя</b> посчитать так, чтобы сумма сошлась — один и тот же рубль действительно относится к трём категориям. Значит, нужно договориться о смысле: «выручка фильмов, в которых есть эта категория» (тогда суммировать строки отчёта нельзя — подпишите это на графике) или делить сумму между категориями. А для счётчиков есть простое лекарство — <code>COUNT(DISTINCT ...)</code>:</p>
+
+  <h3>Ещё нагляднее: два JOIN «в разные стороны»</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 20. Карточка клиента: сколько аренд и сколько заплатил — ОШИБОЧНО
+SELECT c.first_name,
+       COUNT(*)                     AS rows_after_join,
+       COUNT(DISTINCT r.rental_id)  AS rentals,
+       COUNT(DISTINCT p.payment_id) AS payments,
+       SUM(p.amount)                AS wrong_total
+FROM customer c
+JOIN rental r  ON r.customer_id = c.customer_id
+JOIN payment p ON p.customer_id = c.customer_id
+WHERE c.customer_id = 1
+GROUP BY c.customer_id, c.first_name;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> first_name | rows_after_join | rentals | payments | wrong_total
+------------+-----------------+---------+----------+-------------
+ MARY       |            4290 |      66 |       65 |    14345.10      ← на самом деле 217.35</code></pre>
+  </figure>
+  <p>У Мэри 66 аренд и 65 платежей. Оба присоединены к клиенту, но <b>не друг к другу</b> — поэтому каждая аренда склеилась с каждым платежом: 66 × 65 = 4290 строк, мини-<code>CROSS JOIN</code> внутри одного клиента. <code>COUNT(DISTINCT ...)</code> спасает счётчики, но сумму так не спасти: <code>SUM(DISTINCT amount)</code> сложит только <b>разные</b> суммы, и два платежа по 4.99 превратятся в один.</p>
+  <h3>Правильно: сначала агрегировать, потом соединять</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 21. Карточка клиента — ПРАВИЛЬНО: каждую «ветку» считаем отдельно в CTE
+WITH rentals AS (
+    SELECT customer_id, COUNT(*) AS rentals FROM rental GROUP BY customer_id
+),
+payments AS (
+    SELECT customer_id, COUNT(*) AS payments, SUM(amount) AS total
+    FROM payment GROUP BY customer_id
+)
+SELECT c.first_name, r.rentals, p.payments, p.total
+FROM customer c
+JOIN rentals r  ON r.customer_id = c.customer_id
+JOIN payments p ON p.customer_id = c.customer_id
+WHERE c.customer_id = 1;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> first_name | rentals | payments | total
+------------+---------+----------+--------
+ MARY       |      66 |       65 | 217.35</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПРАВИЛО, КОТОРОЕ СТОИТ ЗАПОМНИТЬ</span>
+    <p>Перед тем как писать <code>SUM</code> после <code>JOIN</code>, спросите себя: «могла ли строка, которую я суммирую, размножиться?». Она размножается, если вы присоединили таблицу со стороны «много» (1:N или N:M). Две разные ветки «много» к одной таблице — гарантированный fan-out. Лекарство: сначала агрегировать каждую ветку до одной строки на ключ (CTE из урока 2), потом соединять. Быстрая проверка — сравнить итог с <code>SUM</code> по исходной таблице, как мы сделали в запросе 18.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 MORE -->
+<section id="more">
+  <div class="sec-head"><h2>08 · Self-join, RIGHT и FULL, N+1, индексы</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <h3>Self-join: таблица с самой собой</h3>
+  <p>Классический пример — «сотрудник и его начальник» в одной таблице <code>employee</code>. В Pagila такого нет, зато есть задача интереснее: «какие актёры чаще всего снимаются вместе?». Соединяем <code>film_actor</code> саму с собой по фильму:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 22. Самые частые актёрские пары
+SELECT a1.first_name || ' ' || a1.last_name AS actor_1,
+       a2.first_name || ' ' || a2.last_name AS actor_2,
+       COUNT(*) AS films_together
+FROM film_actor fa1
+JOIN film_actor fa2 ON fa2.film_id = fa1.film_id      -- тот же фильм
+                   AND fa1.actor_id &lt; fa2.actor_id    -- без пар «сам с собой» и без дублей A-B / B-A
+JOIN actor a1 ON a1.actor_id = fa1.actor_id
+JOIN actor a2 ON a2.actor_id = fa2.actor_id
+GROUP BY a1.actor_id, a2.actor_id
+ORDER BY films_together DESC, actor_1
+LIMIT 3;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">    actor_1    |   actor_2   | films_together
+---------------+-------------+----------------
+ JULIA MCQUEEN | HENRY BERRY |              7
+ BEN WILLIS    | HARVEY HOPE |              6
+ CUBA OLIVIER  | MARY KEITEL |              6</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>film_actor fa1 JOIN film_actor fa2</code></td><td>одна и та же таблица дважды, под <b>разными</b> алиасами</td><td>без разных имён база не поймёт, о какой «копии» речь</td></tr>
+      <tr><td><code>fa1.actor_id &lt; fa2.actor_id</code></td><td>условие в <code>ON</code> — не только равенство</td><td>с <code>=</code> по фильму получится 35 292 строки, включая «Пенелопа + Пенелопа» и обе пары «A+B» и «B+A». Условие <code>&lt;</code> оставляет каждую пару один раз</td></tr>
+      <tr><td><code>JOIN</code> по <code>&lt;</code>, <code>BETWEEN</code>, нескольким колонкам</td><td>в <code>ON</code> можно писать <b>любое</b> условие</td><td>например «товар попадает в диапазон цен акции»: <code>ON p.price BETWEEN s.min_price AND s.max_price</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>RIGHT и FULL JOIN</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson3.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 23. Те же Анна, Борис и Вика
+WITH customers(id, name) AS (VALUES (1, 'Анна'), (2, 'Борис'), (3, 'Вика')),
+     orders(customer_id, total) AS (VALUES (2, 500), (3, 300), (4, 700))
+SELECT c.name, o.customer_id, o.total
+FROM customers c
+FULL JOIN orders o ON o.customer_id = c.id;   -- попробуйте и RIGHT JOIN</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- FULL JOIN                              -- RIGHT JOIN
+  name  | customer_id | total              name  | total
+--------+-------------+-------            --------+-------
+ Анна   |      [NULL] | [NULL]            Борис  |   500
+ Борис  |           2 |    500            Вика   |   300
+ Вика   |           3 |    300            [NULL] |   700
+ [NULL] |           4 |    700</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>JOIN</th><th>Что остаётся</th><th>Как часто</th></tr></thead>
+    <tbody>
+      <tr><td><code>INNER</code></td><td>только пары</td><td>постоянно</td></tr>
+      <tr><td><code>LEFT</code></td><td>все слева + пары справа</td><td>постоянно</td></tr>
+      <tr><td><code>RIGHT</code></td><td>все справа + пары слева</td><td>редко: поменяйте таблицы местами и напишите <code>LEFT</code> — так читается проще</td></tr>
+      <tr><td><code>FULL</code></td><td>всё с обеих сторон, без пар — с <code>NULL</code></td><td>сверки: «что есть в старой системе и чего нет в новой»</td></tr>
+      <tr><td><code>CROSS</code></td><td>каждый с каждым</td><td>только нарочно: «все размеры × все цвета»</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Проблема N+1</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">так делать НЕ надо · фронтенд или бэкенд</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-javascript">const customers = await api.get('/customers?limit=100');      // 1 запрос
+for (const c of customers) {
+  c.lastPayment = await api.get(`/payments?customer=${c.id}&amp;last=1`);  // ещё 100 запросов
+}</code></pre>
+  </figure>
+  <p>1 запрос за списком + N запросов за деталями = <b>N+1</b>. Каждый запрос — это сеть, разбор SQL, ответ. 101 запрос вместо одного легко превращает 50 миллисекунд в 3 секунды. Лечится одним запросом с <code>JOIN</code> (или <code>DISTINCT ON</code> из урока 1 для «последнего платежа»). На бэкенде то же самое случается в ORM, когда в цикле обращаются к <code>post.author</code> — в FastAPI-курсе это лечили <code>selectinload</code>.</p>
+
+  <h3>JOIN и индексы</h3>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">PostgreSQL НЕ СОЗДАЁТ ИНДЕКС НА ВНЕШНИЙ КЛЮЧ САМ</span>
+    <p>Распространённый миф (он есть даже в учебных материалах): «PK и FK индексируются автоматически». В PostgreSQL автоматически индексируются только <code>PRIMARY KEY</code> и <code>UNIQUE</code>. Индекс на колонку внешнего ключа нужно создавать <b>вручную</b>, иначе каждый <code>JOIN</code> по ней и каждое удаление родительской строки будут читать всю таблицу. Авторы Pagila это знали: посмотрите индексы таблицы <code>rental</code> или <code>film_actor</code> в DBeaver (вкладка Indexes) — там <code>idx_fk_inventory_id</code>, <code>idx_fk_film_id</code>, созданные отдельной командой. Как создавать индексы и читать <code>EXPLAIN</code> — в уроке про производительность.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 09 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>09 · Игра «Найди баг», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~12 мин</span></div>
+
+  <details class="quiz"><summary><code>SELECT customer_id, amount FROM customer JOIN payment ON customer.customer_id = payment.customer_id;</code></summary><div class="ans"><b>ambiguous</b>: <code>customer_id</code> есть в обеих таблицах. Алиасы и <code>c.customer_id</code>.</div></details>
+  <details class="quiz"><summary>Отчёт «все клиенты и их крупные платежи» — пропали клиенты без крупных платежей. В запросе <code>LEFT JOIN payment p ... WHERE p.amount &gt; 10</code>.</summary><div class="ans"><b>Условие на правую таблицу в <code>WHERE</code></b> превратило LEFT в INNER. Перенести в <code>ON ... AND p.amount &gt; 10</code>.</div></details>
+  <details class="quiz"><summary>Запрос висит минуту, DBeaver пытается показать 51 миллион строк. <code>SELECT * FROM customer, payment;</code></summary><div class="ans"><b>Декартово произведение</b>: забыли условие. Явный <code>JOIN ... ON</code>.</div></details>
+  <details class="quiz"><summary>Сумма выручки по категориям в 2,4 раза больше общей выручки.</summary><div class="ans"><b>Fan-out</b>: у фильма несколько категорий, платёж размножился. Проверять итог, агрегировать до JOIN, объяснить смысл цифр.</div></details>
+  <details class="quiz"><summary>«Сколько платежей у каждого клиента», через LEFT JOIN. Клиенты без платежей показывают 1.</summary><div class="ans"><b><code>COUNT(*)</code> вместо <code>COUNT(p.payment_id)</code></b>: строка без пары — тоже строка.</div></details>
+  <details class="quiz"><summary><code>SELECT COUNT(*) FROM customer NATURAL JOIN rental;</code> → 0.</summary><div class="ans"><b><code>NATURAL JOIN</code> склеил по всем одноимённым колонкам</b>, включая <code>last_update</code> и <code>uuid</code>. Явный <code>USING (customer_id)</code>.</div></details>
+  <details class="quiz"><summary>Карточка клиента: «аренд: 4290, потрачено: 14345.10». На самом деле у клиента 66 аренд.</summary><div class="ans"><b>Два JOIN «в разные стороны»</b> (rental и payment) перемножились. Считать каждую ветку в своём CTE.</div></details>
+  <details class="quiz"><summary>JOIN по <code>rental.customer_id</code> на большой базе работает медленно, «ведь FK индексируются сами».</summary><div class="ans"><b>Не индексируются</b> в PostgreSQL. Создать индекс на колонку FK.</div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Нужно</th><th>SQL</th></tr></thead>
+    <tbody>
+      <tr><td>только пары</td><td><code>FROM a JOIN b ON b.a_id = a.id</code></td></tr>
+      <tr><td>все слева + пары справа</td><td><code>FROM a LEFT JOIN b ON b.a_id = a.id</code></td></tr>
+      <tr><td>«сироты»: нет пары справа</td><td><code>LEFT JOIN b ON ... WHERE b.id IS NULL</code></td></tr>
+      <tr><td>фильтр правой таблицы при LEFT JOIN</td><td>в <code>ON ... AND b.x &gt; 10</code>, не в <code>WHERE</code></td></tr>
+      <tr><td>одинаковые имена колонок</td><td><code>JOIN b USING (customer_id)</code> (не <code>NATURAL JOIN</code>)</td></tr>
+      <tr><td>цепочка</td><td><code>JOIN rental r ON ... JOIN inventory i ON ... JOIN film f ON ...</code></td></tr>
+      <tr><td>N:M</td><td>два JOIN через посредника: <code>film → film_actor → actor</code></td></tr>
+      <tr><td>таблица сама с собой</td><td>разные алиасы: <code>film_actor fa1 JOIN film_actor fa2 ON ...</code></td></tr>
+      <tr><td>считать после LEFT JOIN</td><td><code>COUNT(b.id)</code>, не <code>COUNT(*)</code></td></tr>
+      <tr><td>защита от fan-out</td><td><code>COUNT(DISTINCT ...)</code> · агрегировать в CTE, потом JOIN · сверять итог</td></tr>
+      <tr><td>склейка строк</td><td><code>first_name || ' ' || last_name</code></td></tr>
+      <tr><td>безопасно попробовать DELETE</td><td><code>BEGIN; DELETE ...; ROLLBACK;</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание (Pagila)</h3>
+  <p>Решения — в <code>homework3.sql</code>, первой строкой <code>SET TIME ZONE 'UTC';</code>.</p>
+  <ol>
+    <li><b>Откуда клиенты.</b> Топ-5 стран по числу клиентов (цепочка <code>customer → address → city → country</code>). <i>Проверка: Mexico — 430, India — 60.</i></li>
+    <li><b>Актёрский состав.</b> Список актёров фильма <code>'AFRICAN EGG'</code> через <code>film_actor</code>. <i>Проверка: 5 актёров, первый по алфавиту — DUSTIN TAUTOU.</i></li>
+    <li><b>Неактивные клиенты.</b> Клиенты, которые ни разу ничего не арендовали — через <code>LEFT JOIN</code>. Затем решите той же задачей через <code>NOT EXISTS</code> из урока 2. <i>Проверка: 2 клиента.</i></li>
+    <li><b>Самые прибыльные фильмы.</b> Топ-5 фильмов по сумме платежей (<code>payment → rental → inventory → film</code>). Будет ли здесь fan-out? Объясните. <i>Проверка: первый — CAT CONEHEADS, 640.78.</i></li>
+    <li><b>Сотрудники.</b> Для каждого сотрудника, принимавшего платежи: имя, фамилия, число платежей и сумма (<code>staff JOIN payment</code>). <i>Проверка: 2 сотрудника, суммы как в запросе 5 урока 2.</i></li>
+    <li><b>Популярность категорий.</b> Сколько раз брали в аренду фильмы каждой категории — топ-3. Подумайте, нужен ли тут <code>COUNT(DISTINCT ...)</code> и что он считает. <i>Проверка: New — 8088, Sci-Fi — 8007, Documentary — 7976.</i></li>
+    <li><b>Ловушка.</b> Запустите запрос 20 для клиента №2 и посчитайте вручную, во сколько раз «ошибочная сумма» больше правильной. Почему это число равно количеству его аренд?</li>
+    <li><b>Со звёздочкой.</b> Самая частая актёрская пара (запрос 22) — в каких именно 7 фильмах снимались вместе JULIA MCQUEEN и HENRY BERRY? Подсказка: тот же self-join, но с <code>WHERE</code> по двум актёрам и <code>JOIN film</code>.</li>
+  </ol>
+  <details class="classic"><summary>Ответы для преподавателя</summary><div class="ans">
+    <pre><code class="language-sql">-- 1
+SELECT co.country, COUNT(*) AS customers
+FROM customer cu
+JOIN address a  USING (address_id)
+JOIN city ci    USING (city_id)
+JOIN country co USING (country_id)
+GROUP BY co.country ORDER BY customers DESC LIMIT 5;
+-- 2
+SELECT a.first_name || ' ' || a.last_name AS actor
+FROM film f
+JOIN film_actor fa ON fa.film_id = f.film_id
+JOIN actor a ON a.actor_id = fa.actor_id
+WHERE f.title = 'AFRICAN EGG' ORDER BY actor;
+-- 3
+SELECT c.customer_id, c.first_name, c.last_name
+FROM customer c LEFT JOIN rental r ON r.customer_id = c.customer_id
+WHERE r.rental_id IS NULL;
+-- 4 (fan-out нет: платёж → аренда → копия → фильм — всё «N:1», каждая строка находит ровно одну пару)
+SELECT f.title, SUM(p.amount) AS revenue
+FROM payment p
+JOIN rental r    ON r.rental_id = p.rental_id
+JOIN inventory i ON i.inventory_id = r.inventory_id
+JOIN film f      ON f.film_id = i.film_id
+GROUP BY f.film_id, f.title ORDER BY revenue DESC LIMIT 5;
+-- 5
+SELECT st.staff_id, st.first_name, st.last_name,
+       COUNT(p.payment_id) AS payments, SUM(p.amount) AS revenue
+FROM staff st JOIN payment p ON p.staff_id = st.staff_id
+GROUP BY st.staff_id ORDER BY st.staff_id;
+-- 6 (аренда фильма с 3 категориями засчитывается в каждую из них — это и есть смысл отчёта)
+SELECT c.name, COUNT(DISTINCT r.rental_id) AS rentals
+FROM category c
+JOIN film_category fc USING (category_id)
+JOIN inventory i      USING (film_id)
+JOIN rental r         USING (inventory_id)
+GROUP BY c.name ORDER BY rentals DESC LIMIT 3;
+-- 7: каждый платёж повторяется столько раз, сколько у клиента аренд
+-- 8
+SELECT f.title
+FROM film_actor fa1
+JOIN film_actor fa2 ON fa2.film_id = fa1.film_id
+JOIN actor a1 ON a1.actor_id = fa1.actor_id
+JOIN actor a2 ON a2.actor_id = fa2.actor_id
+JOIN film f   ON f.film_id = fa1.film_id
+WHERE a1.first_name = 'JULIA' AND a1.last_name = 'MCQUEEN'
+  AND a2.first_name = 'HENRY' AND a2.last_name = 'BERRY'
+ORDER BY f.title;</code></pre>
+  </div></details>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю, зачем нормализация, и какие аномалии она убирает.</li>
+    <li>☐ Различаю PK и FK, естественный и суррогатный ключ; знаю, где FK в связи 1:N и как устроена N:M.</li>
+    <li>☐ Понимаю ссылочную целостность и правила <code>RESTRICT</code>, <code>CASCADE</code>, <code>SET NULL</code>; проверяю изменения в <code>BEGIN ... ROLLBACK</code>.</li>
+    <li>☐ Пишу <code>INNER</code> и <code>LEFT JOIN</code> с алиасами, знаю <code>USING</code> и почему не <code>NATURAL JOIN</code>.</li>
+    <li>☐ Нахожу «сирот» через <code>LEFT JOIN ... IS NULL</code> и не путаю условие в <code>ON</code> и в <code>WHERE</code>.</li>
+    <li>☐ Строю цепочки из 3–5 таблиц и self-join.</li>
+    <li>☐ Узнаю fan-out в отчётах и умею его обойти.</li>
+    <li>☐ Объясняю N+1 и знаю, что в PostgreSQL FK не индексируются сами.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://www.postgresql.org/docs/current/tutorial-join.html" target="_blank" rel="noopener">PostgreSQL Tutorial: Joins Between Tables</a></li>
+    <li><a href="https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK" target="_blank" rel="noopener">PostgreSQL: Foreign Keys</a> — <code>ON DELETE</code> и замечание про индексы на FK.</li>
+    <li><a href="https://pgexercises.com/" target="_blank" rel="noopener">PostgreSQL Exercises</a> — раздел Joins and Subqueries.</li>
+    <li><a href="https://blog.jooq.org/say-no-to-venn-diagrams-when-explaining-joins/" target="_blank" rel="noopener">«Say NO to Venn Diagrams When Explaining JOINs»</a> — почему JOIN лучше представлять «склейкой строк», а не кругами.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · SQL, урок 3 · нормализация, PK и FK, суррогатные ключи, связи 1:1, 1:N, N:M, ссылочная целостность, ON DELETE, soft delete, INNER/LEFT/RIGHT/FULL/CROSS JOIN, алиасы, USING, NATURAL JOIN, anti-join, ON против WHERE, цепочки JOIN, self-join, fan-out, N+1, индексы на FK, Pagila</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

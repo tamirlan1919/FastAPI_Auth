@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPI · Урок 9 — Гибридная архитектура и транзакции</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>FastAPI</div>
+  <p class="lead">Python · Гибрид + транзакции · Урок 9</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор урока</a>
+    <div class="grp">Часть 1 · SQL, NoSQL и гибрид</div>
+    <a href="#schema"><span class="n theory-dot">01</span>Схема при записи и при чтении</a>
+    <a href="#scale"><span class="n theory-dot">02</span>Масштабирование: вверх и вширь</a>
+    <a href="#choose"><span class="n theory-dot">03</span>Когда SQL, когда NoSQL</a>
+    <a href="#hybrid"><span class="n theory-dot">04</span>auth-api — уже гибрид</a>
+    <a href="#sync"><span class="n theory-dot">05</span>Как синхронизировать базы</a>
+    <div class="grp">Часть 2 · Транзакции</div>
+    <a href="#acid"><span class="n theory-dot">06</span>Транзакция и ACID</a>
+    <a href="#register"><span class="n practice-dot">07</span>Регистрация с профилем</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 3 · Быстрые запросы</div>
+    <a href="#profiler"><span class="n practice-dot">08</span>Счётчик SQL-запросов</a>
+    <a href="#nplus1"><span class="n practice-dot">09</span>N+1 и жадная загрузка</a>
+    <a href="#stats"><span class="n practice-dot">10</span>Агрегации и подзапросы</a>
+    <a href="#stream"><span class="n practice-dot">11</span>Большие объёмы: поток</a>
+    <a href="#explain"><span class="n practice-dot">12</span>EXPLAIN и индекс</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">13</span>Игра и домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">FastAPI · Урок 9 · 2 часа с перерывом · live-coding в auth-api</p>
+  <h1>Гибридная архитектура и транзакции</h1>
+  <p class="lead-p">За прошлые уроки в <code>auth-api</code> незаметно появились три хранилища: SQLite (пользователи, посты, теги, профили), MongoDB (задачи) и Redis (кеш и счётчики). Это уже <strong>гибридная архитектура</strong>, только мы её так не называли. Сегодня сначала разберёмся, почему так бывает и как жить с несколькими базами сразу. Потом спустимся в SQL и научимся трём вещам, которые отличают учебный проект от боевого: <strong>транзакции</strong>, <strong>избавление от N+1</strong> и <strong>измерение запросов</strong> вместо гадания.</p>
+
+  <div class="hero">
+    <h3>ЧТО ПОЯВИТСЯ В AUTH-API</h3>
+    <ul>
+      <li><b>Карта архитектуры</b> проекта: что в какой базе лежит и почему; где у нас уже есть «двойная запись».</li>
+      <li><b><code>POST /auth/register-with-profile</code></b> — пользователь и профиль создаются <em>одной транзакцией</em>: всё или ничего.</li>
+      <li><b>Счётчик SQL-запросов</b>: в каждом ответе заголовки <code>X-DB-Queries</code> и <code>X-DB-Time-ms</code>.</li>
+      <li><b>API постов</b> (модели и репозиторий уже есть, роутера не было): N+1 «как не надо» на ~60 запросов → жадная загрузка на 2.</li>
+      <li><b><code>GET /posts/stats</code></b> — агрегации и подзапросы, закешированные в Redis.</li>
+      <li><b><code>GET /posts/export.csv</code></b> — выгрузка потоком, без загрузки всех строк в память.</li>
+      <li><b>Индекс на <code>posts.author_id</code></b> через Alembic — и проверка через <code>EXPLAIN</code>, что он работает.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Схема при записи и при чтении</td><td>теория</td></tr>
+      <tr><td class="t">0:07</td><td>Масштабирование вверх и вширь</td><td>теория</td></tr>
+      <tr><td class="t">0:13</td><td>Когда SQL, когда NoSQL</td><td>теория</td></tr>
+      <tr><td class="t">0:18</td><td>auth-api — уже гибрид: разбор нашей архитектуры</td><td>теория на проекте</td></tr>
+      <tr><td class="t">0:23</td><td>Синхронизация баз: общий ID, двойная запись, события</td><td>теория</td></tr>
+      <tr><td class="t">0:31</td><td>Транзакция и ACID</td><td>теория</td></tr>
+      <tr><td class="t">0:39</td><td>Регистрация с профилем в одной транзакции</td><td>live-coding</td></tr>
+      <tr><td class="t">0:52</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:02</td><td>Счётчик SQL-запросов (middleware + события SQLAlchemy)</td><td>live-coding</td></tr>
+      <tr><td class="t">1:10</td><td>Тестовые данные, N+1, <code>joinedload</code> и <code>selectinload</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:24</td><td>Агрегации, подзапросы, кеш статистики</td><td>live-coding</td></tr>
+      <tr><td class="t">1:36</td><td>Большие объёмы: потоковый CSV</td><td>live-coding</td></tr>
+      <tr><td class="t">1:43</td><td><code>EXPLAIN</code> и индекс через Alembic</td><td>live-coding</td></tr>
+      <tr><td class="t">1:52</td><td>Игра «Сколько запросов?», домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">ОТКУДА СТАРТУЕМ (ПРОВЕРЕНО ПО ТЕКУЩЕМУ КОДУ ПРОЕКТА)</span>
+    <p>Урок опирается только на то, что в <code>auth-api</code> уже есть: модели <code>User</code>, <code>Post</code>, <code>Tag</code>, <code>Profile</code> и таблица <code>post_tags</code>; репозитории <code>UserRepo</code>, <code>PostRepo</code>, <code>TagRepo</code>; зависимости <code>SessionDep</code>, <code>PostRepoDep</code>, <code>RedisDep</code>, <code>CurrentUserDep</code>; Redis в <code>lifespan</code>, роутер <code>stats</code> и кеш <code>users:all</code> из урока 8. <code>CacheService</code>, logout и прочие продвинутые шаги урока 8 <strong>не нужны</strong>.</p>
+    <p><strong>Перед уроком одна команда:</strong> база в проекте отстаёт от миграций (в ней ревизия <code>eaa5adc78c06</code>, а последняя — <code>c2fb4cc1990c</code>). Выполните <code>alembic upgrade head</code>, иначе в блоке 12 автогенерация миграции откажется работать.</p>
+    <p>Весь код урока я прогнал на копии проекта: SQLite + Redis, SQLAlchemy 2.1, Alembic 1.20. Числа запросов, ответы и планы <code>EXPLAIN</code> в уроке — настоящие.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · SQL, NoSQL и гибридные архитектуры</span><span class="bar"></span></div>
+
+<!-- 01 SCHEMA -->
+<section id="schema">
+  <div class="sec-head"><h2>01 · Схема при записи и схема при чтении</h2><span class="tag theory">теория</span><span class="tag time">~7 мин</span></div>
+
+  <p>Главное различие SQL и NoSQL — не синтаксис запросов, а вопрос <strong>«кто и когда проверяет форму данных»</strong>.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: АНКЕТА И ЕЖЕДНЕВНИК</span>
+    <p><strong>SQL — это анкета в паспортном столе.</strong> Поля напечатаны заранее: фамилия, имя, дата рождения. Нельзя вписать «любимую пиццу» — для неё нет графы. Хотите новую графу — перепечатываете бланки для всех (миграция). Зато все анкеты одинаковые, и любую можно обработать вслепую.</p>
+    <p><strong>NoSQL — это ежедневник.</strong> Пишите что хотите: сегодня список покупок, завтра телефон, послезавтра рисунок. Свобода! Но когда через год вы ищете «все телефоны», выясняется, что половина записана как «тел.», половина как «phone», а в одной — номер без кода города. Порядок наводит тот, кто <em>читает</em>.</p>
+  </div></div>
+
+  <table class="cmp">
+    <thead><tr><th>&nbsp;</th><th>SQL — schema-on-write</th><th>NoSQL — schema-on-read</th></tr></thead>
+    <tbody>
+      <tr><td>Когда проверяется форма</td><td>при <strong>записи</strong>: база не пустит строку не той формы</td><td>при <strong>чтении</strong>: приложение разбирается, что пришло</td></tr>
+      <tr><td>Новое поле</td><td>миграция <code>ALTER TABLE</code></td><td>просто начинаем его писать</td></tr>
+      <tr><td>Кто следит за порядком</td><td>база данных</td><td>код приложения (Pydantic, валидаторы)</td></tr>
+      <tr><td>В auth-api</td><td>SQLite + Alembic (урок 6)</td><td>MongoDB, задачи (урок 7)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Пример из нашего проекта: «добавить пользователю возраст»</h3>
+  <div class="twocol">
+    <div class="box"><h5>SQL (users в SQLite)</h5>1. <code>age: Mapped[int | None]</code> в <code>User</code><br>2. <code>alembic revision --autogenerate</code><br>3. проверить файл миграции<br>4. <code>alembic upgrade head</code><br>На большой таблице в проде — ещё и думать о блокировках.</div>
+    <div class="box"><h5>NoSQL (todos в MongoDB)</h5><code>db.todos.update_one({"_id": id}, {"$set": {"priority": 1}})</code><br><br>Всё. У старых документов поля нет, и код должен это пережить: <code>doc.get("priority", 2)</code>.</div>
+  </div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ГЛАВНАЯ МЫСЛЬ</span>
+    <p>У NoSQL схема никуда не исчезает — она <strong>переезжает из базы в код</strong>. В SQL дисциплину обеспечивает база, в NoSQL — вы сами. Поэтому «в Mongo нет схемы, это быстрее» — правда только на первых двух неделях проекта. Дальше вы платите за гибкость дисциплиной.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 SCALE -->
+<section id="scale">
+  <div class="sec-head"><h2>02 · Масштабирование: вверх и вширь</h2><span class="tag theory">теория</span><span class="tag time">~6 мин</span></div>
+
+  <div class="diagram">
+<pre><span class="tn">Вертикальное (scale-up)</span> — типично для SQL      <span class="tn">Горизонтальное (scale-out)</span> — типично для NoSQL
+┌──────────┐        ┌──────────────┐          ┌───────┐ ┌───────┐ ┌───────┐ ┌ ─ ─ ─ ┐
+│ 8 CPU    │  ───▶  │ 64 CPU       │          │ узел 1│ │ узел 2│ │ узел 3│   + узел 4
+│ 16 ГБ    │        │ 512 ГБ       │          │ A–H   │ │ I–P   │ │ Q–Z   │ └ ─ ─ ─ ┘
+└──────────┘        └──────────────┘          └───────┘ └───────┘ └───────┘
+ просто: купил сервер мощнее                    данные порезаны на части (шарды)
+ но есть потолок железа и цены                  нужно больше — добавили узел</pre>
+  </div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ОДИН ПОВАР ИЛИ ДЕСЯТЬ</span>
+    <p>Пиццерия не справляется с заказами. <strong>Вертикально:</strong> нанять шеф-повара, который готовит вдвое быстрее, и купить печь побольше. Работает, но лучшего повара в мире не наймёшь, а печь размером с дом не поставишь. <strong>Горизонтально:</strong> открыть ещё девять точек. Масштабируется бесконечно — но теперь, чтобы узнать «сколько всего продали “Пепперони”», нужно обзвонить все десять.</p>
+  </div></div>
+
+  <ul>
+    <li><strong>Почему SQL «растёт вверх».</strong> JOIN-ы и транзакции между таблицами — сильная сторона SQL, но они плохо работают, когда таблицы лежат на разных серверах. Поэтому SQL-базу обычно сначала усиливают, а нагрузку на чтение снимают <strong>репликами</strong> — копиями только для чтения.</li>
+    <li><strong>Почему NoSQL «растёт вширь».</strong> Документ самодостаточен: всё, что нужно, лежит внутри. Его можно целиком положить на любой узел — отсюда простое <strong>шардирование</strong>.</li>
+  </ul>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПРАВДА ЖИЗНИ</span>
+    <p>Граница давно размыта: PostgreSQL шардируют (Citus), у MongoDB есть ACID-транзакции. А одного хорошего сервера PostgreSQL хватает на десятки тысяч запросов в секунду — подавляющему большинству проектов шардирование не понадобится никогда. Масштабирование — аргумент в выборе базы, только когда у вас реально миллионы пользователей, а не «а вдруг».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 CHOOSE -->
+<section id="choose">
+  <div class="sec-head"><h2>03 · Когда SQL, когда NoSQL</h2><span class="tag theory">теория</span><span class="tag time">~5 мин</span></div>
+
+  <table class="cmp">
+    <thead><tr><th>Выбирайте SQL, когда</th><th>Выбирайте NoSQL, когда</th></tr></thead>
+    <tbody>
+      <tr><td>важна целостность: деньги, заказы, бронирования (ACID)</td><td>данных очень много и они разнородные: логи, события, клики</td></tr>
+      <tr><td>много связей и запросов «через» них (JOIN, отчёты)</td><td>нужна очень высокая скорость записи и чтения по ключу</td></tr>
+      <tr><td>структура стабильна и понятна заранее</td><td>структура часто меняется или разная у разных записей</td></tr>
+      <tr><td>нужны сложные агрегации и фильтры</td><td>данные читаются целиком одним куском (документ)</td></tr>
+    </tbody>
+  </table>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">классика SQL — перевод денег</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
+    <pre><code class="language-sql">BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE user_id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE user_id = 2;
+COMMIT;   -- либо обе строки, либо ни одной</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">классика NoSQL — пост в соцсети с денормализацией</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
+    <pre><code class="language-javascript">{
+  "_id": "post123",
+  "author_username": "john_doe",       // копия из users — чтобы не делать JOIN
+  "likes_count": 42,                   // готовое число — чтобы не считать COUNT(*)
+  "first_comments": [ {"user": "jane", "text": "Класс!"} ]
+}</code></pre>
+  </figure>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРАВИЛО БОЛЬШОГО ПАЛЬЦА</span>
+    <p>«Не знаете, что выбрать, — берите PostgreSQL». Это не шутка, а популярный совет архитекторов: Postgres умеет и строгие таблицы, и JSON-колонки (<code>JSONB</code>) с индексами, то есть закрывает 90% «NoSQL-сценариев» небольших проектов. Вторую базу добавляют, когда появилась конкретная боль, а не на всякий случай.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 04 HYBRID -->
+<section id="hybrid">
+  <div class="sec-head"><h2>04 · auth-api — уже гибрид</h2><span class="tag theory">теория на проекте</span><span class="tag time">~5 мин</span></div>
+
+  <p><strong>Гибридная архитектура</strong> (polyglot persistence) — когда разные данные хранятся в разных базах, каждая под свою задачу. Посмотрим на наш проект глазами архитектора:</p>
+
+  <div class="diagram">
+<pre>                                ┌───────────────────────┐
+                                │     <span class="tn">FastAPI auth-api</span>   │
+                                └───┬─────────┬─────────┬─┘
+                SessionDep          │         │         │   RedisDep
+                ┌───────────────────┘         │         └────────────────────┐
+                ▼                             ▼ database (module)            ▼
+  ┌─────────────────────────────┐  ┌──────────────────────┐  ┌──────────────────────────┐
+  │ <span class="pk">SQLite</span>  (SQL)               │  │ <span class="pk">MongoDB</span> (документы)   │  │ <span class="pk">Redis</span> (ключ-значение)     │
+  │ users · profiles            │  │ todos                │  │ users:all · user:{name}  │
+  │ posts · tags · post_tags    │  │ users  ← <span class="fk">!?</span>          │  │ stats:visits             │
+  │ ACID, связи, Alembic        │  │ гибкая схема         │  │ кеш, счётчики, TTL       │
+  └─────────────────────────────┘  └──────────────────────┘  └──────────────────────────┘</pre>
+  </div>
+
+  <table class="cmp">
+    <thead><tr><th>Данные</th><th>Где</th><th>Почему именно там</th></tr></thead>
+    <tbody>
+      <tr><td>пользователи, профили</td><td>SQL</td><td>уникальность email/username, связь 1-к-1 с профилем, вход в систему — нужна строгость</td></tr>
+      <tr><td>посты, теги</td><td>SQL</td><td>много-ко-многим и статистика «по тегам», «по авторам» — работа для JOIN и GROUP BY</td></tr>
+      <tr><td>задачи (todos)</td><td>MongoDB</td><td>гибкая структура, читаются целиком</td></tr>
+      <tr><td>кеш, счётчики</td><td>Redis</td><td>скорость, TTL, атомарный <code>INCR</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">НАХОДКА В НАШЕМ КОДЕ</span>
+    <p>В <code>users.py</code> есть эндпоинт <code>GET /users/mongo/me</code>, который читает коллекцию <code>users</code> из MongoDB. Значит, пользователи теперь живут в <strong>двух</strong> базах. Какая из них главная? Если сменить email через SQL, обновится ли Mongo? Нет. Это классическая проблема гибридных систем, и у неё есть правило: <strong>у каждой сущности ровно один «источник правды»</strong>. Остальные хранилища — только копии, которые синхронизируются от него. Как именно — в следующем блоке.</p>
+  </div></div>
+
+  <p>Подключение к нескольким базам в FastAPI у нас уже сделано правильно: каждая база — своя зависимость (<code>SessionDep</code>, <code>RedisDep</code>), и эндпоинт просит ровно то, что ему нужно. MongoDB пока подключена глобальной переменной <code>database</code> — в домашке переведём её на зависимость, как Redis.</p>
+</section>
+
+<hr>
+
+<!-- 05 SYNC -->
+<section id="sync">
+  <div class="sec-head"><h2>05 · Как синхронизировать базы</h2><span class="tag theory">теория</span><span class="tag time">~8 мин</span></div>
+
+  <h3>Стратегия 1. Общий идентификатор</h3>
+  <p>Сущность живёт в одной базе, а в других хранится только её <strong>ID</strong>. Например, задача в Mongo хранит <code>owner_id</code> = <code>users.id</code> из SQL. В нашем <code>todos</code> такого поля пока нет — задачи ничьи; добавим его в домашке. Связь через ID — без дублирования данных. Внешнего ключа между разными базами не бывает, поэтому за целостность отвечает приложение.</p>
+
+  <h3>Стратегия 2. Двойная запись (dual write)</h3>
+  <p>Приложение само пишет в обе базы подряд. <strong>И у нас это уже есть</strong>: сегодня при регистрации и создании поста мы будем делать <code>COMMIT</code> в SQL, а затем <code>DELETE</code> ключа в Redis.</p>
+  <div class="diagram">
+<pre>  1. SQL:   INSERT + COMMIT    ✅  — данные сохранены навсегда
+  2. Redis: DEL users:all      💥  — сеть моргнула, ключ не удалился
+
+  Итог: в базе новый пользователь, в кеше — старый список. Ещё до 60 секунд (TTL) API отдаёт устаревшее.</pre>
+  </div>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ДЛЯ КЕША ЭТО НОРМАЛЬНО, А ДЛЯ ДЕНЕГ — НЕТ</span>
+    <p>Общей транзакции на две разные базы не бывает: SQLite ничего не знает про Redis. Значит, между двумя записями всегда есть момент, когда одна прошла, а вторая — ещё нет (или уже никогда). Для кеша это терпимо: TTL сам исправит рассинхрон. Для «списали деньги в SQL, начислили бонусы в Mongo» — нет: бонусы потеряются навсегда. Порядок «сначала источник правды, потом копия» хотя бы гарантирует, что потеряется копия, а не оригинал.</p>
+  </div></div>
+
+  <h3>Стратегия 3. События через очередь (event-driven)</h3>
+  <p>Приложение пишет только в главную базу и публикует событие «заказ создан» в брокер сообщений (RabbitMQ, Kafka, Redis Streams). Отдельный обработчик (consumer) получает событие и обновляет вторую базу. Упал обработчик — событие подождёт в очереди и будет обработано позже.</p>
+  <div class="diagram">
+<pre> FastAPI ──1. INSERT заказ + COMMIT──▶ [ <span class="pk">PostgreSQL</span> ]
+    │
+    └──2. publish «order_created»──▶ [ <span class="tn">Брокер</span> ] ──3. доставить──▶ [ Worker ] ──4. обновить──▶ [ <span class="pk">MongoDB</span> ]
+                                     событие лежит,                       упал? повторит
+                                     пока его не заберут</pre>
+  </div>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПОДВОХ ДЛЯ ВНИМАТЕЛЬНЫХ</span>
+    <p>А если приложение упало <em>между</em> шагами 1 и 2? Заказ в базе есть, а события нет — снова двойная запись, только с брокером вместо Mongo! Профессиональное решение называется <strong>Transactional Outbox</strong>: событие пишется <em>в ту же SQL-базу</em>, в таблицу <code>outbox</code>, <strong>в той же транзакции</strong>, что и заказ. А отдельный процесс читает <code>outbox</code> и отправляет события в брокер. Транзакция гарантирует: есть заказ ⇔ есть событие. Это хороший вопрос на собеседовании уровня middle.</p>
+  </div></div>
+
+  <table class="cmp">
+    <thead><tr><th>Стратегия</th><th>Сложность</th><th>Надёжность</th><th>Когда</th></tr></thead>
+    <tbody>
+      <tr><td>Общий ID</td><td>низкая</td><td>высокая</td><td>всегда, когда можно не копировать данные</td></tr>
+      <tr><td>Двойная запись</td><td>низкая</td><td>средняя</td><td>кеш и всё, что переживёт временный рассинхрон</td></tr>
+      <tr><td>События + Outbox</td><td>высокая</td><td>высокая</td><td>важные данные в нескольких системах</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Транзакции</span><span class="bar"></span></div>
+
+<!-- 06 ACID -->
+<section id="acid">
+  <div class="sec-head"><h2>06 · Транзакция и ACID</h2><span class="tag theory">теория</span><span class="tag time">~8 мин</span></div>
+
+  <div class="oneliner">Транзакция — несколько операций с базой, которые выполняются как одна: либо все, либо ни одной.<small>COMMIT — зафиксировать всё. ROLLBACK — откатить всё, как будто ничего не было.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: БАНКОМАТ</span>
+    <p>Вы переводите другу 1000 ₽. Банк должен сделать две вещи: списать у вас и начислить ему. Представьте, что после списания в серверной выбило пробки. Без транзакции деньги просто исчезли: у вас минус, у друга ничего. С транзакцией после перезапуска база видит незавершённую операцию и откатывает списание. Деньги на месте, вы пробуете ещё раз.</p>
+  </div></div>
+
+  <h3>ACID — четыре обещания базы</h3>
+  <table class="cmp">
+    <thead><tr><th>Буква</th><th>Что обещает</th><th>На примере перевода</th></tr></thead>
+    <tbody>
+      <tr><td><b>A</b>tomicity — атомарность</td><td>всё или ничего</td><td>нет состояния «списали, но не начислили»</td></tr>
+      <tr><td><b>C</b>onsistency — согласованность</td><td>после транзакции все правила базы соблюдены</td><td><code>UNIQUE</code>, <code>NOT NULL</code>, <code>FOREIGN KEY</code> не нарушены — иначе откат</td></tr>
+      <tr><td><b>I</b>solation — изолированность</td><td>параллельные транзакции не видят «полуготовые» данные друг друга</td><td>отчёт по балансам не увидит момент, когда деньги «в пути»</td></tr>
+      <tr><td><b>D</b>urability — долговечность</td><td>после COMMIT данные не пропадут</td><td>выключили свет через секунду после «Перевод выполнен» — перевод на месте</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ЗАПОМИНАЛКА</span>
+    <p>ACID по-английски — «кислота». Шутят, что NoSQL-базы долго были «щелочными» — <strong>BASE</strong>: Basically Available, Soft state, Eventually consistent («в целом доступна, состояние может плавать, когда-нибудь станет согласованным»). Кислота против щёлочи — химики оценили бы. С тех пор многие NoSQL-базы получили ACID-транзакции, но название осталось как способ описать два разных подхода.</p>
+  </div></div>
+
+  <h3>Транзакции в SQLAlchemy: три вещи, которые нужно знать</h3>
+  <ol>
+    <li><strong>Autobegin.</strong> Сессия начинает транзакцию <em>сама</em> при первом запросе. В логах <code>echo=True</code> вы постоянно видели строку <code>BEGIN (implicit)</code> — это она.</li>
+    <li><strong><code>flush()</code> ≠ <code>commit()</code>.</strong> <code>flush</code> отправляет накопленные <code>INSERT/UPDATE</code> в базу <em>внутри</em> транзакции — например, чтобы узнать <code>id</code> новой строки. Но это ещё не навсегда: <code>ROLLBACK</code> отменит и их. Навсегда — только <code>commit</code>.</li>
+    <li><strong><code>async with session.begin():</code></strong> — рекомендуемый способ. Вышли из блока без ошибок — <code>COMMIT</code>; вылетело исключение — <code>ROLLBACK</code> и исключение летит дальше. Забыть сделать <code>rollback</code> невозможно.</li>
+  </ol>
+
+  <div class="fileinfo"><span class="k">где</span><span>Сейчас <strong>ничего не пишем</strong> — просто сравниваем. Способ 1 у вас уже есть в <code>app/repositories/user_repo.py</code> (метод <code>create</code>). Способ 2 напишем руками в блоке 07, в новом файле <code>app/services/registration_service.py</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">два способа — сравните</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
+    <pre><code class="language-python"># ── Способ 1: вручную ───────────────────────────────────────────
+# Так сейчас устроен create() в app/repositories/user_repo.py:
+self.session.add(user)
+await self.session.commit()      # упал commit → rollback никто не вызвал,
+                                 # сессия «сломана» до конца запроса
+
+# Правильная ручная версия — с try/except:
+try:
+    session.add(user)
+    await session.commit()
+except Exception:
+    await session.rollback()     # откатили сами
+    raise
+
+# ── Способ 2: контекстный менеджер ─────────────────────────────
+# Его напишем в блоке 07, в app/services/registration_service.py:
+async with session.begin():
+    session.add(user)            # вышли без ошибки → COMMIT, с ошибкой → ROLLBACK</code></pre>
+  </figure>
+</section>
+
+<hr>
+
+<!-- 07 REGISTER -->
+<section id="register">
+  <div class="sec-head"><h2>07 · Регистрация с профилем в одной транзакции</h2><span class="tag practice">live-coding</span><span class="tag time">~13 мин</span></div>
+
+  <h3>Боль: репозитории сами делают commit</h3>
+  <p>В проекте есть <code>UserRepo.create</code> (<code>app/repositories/user_repo.py</code>) и <code>ProfileRepo.create</code> (<code>app/repositories/profile_repo.py</code>). Хотим регистрацию «сразу с профилем» — первая мысль: вызвать их по очереди. Но посмотрите внутрь: каждый метод заканчивается на <code>await self.session.commit()</code>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">мысленный эксперимент · app/api/routers/auth.py</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
+    <pre><code class="language-python"># Представим эндпоинт в app/api/routers/auth.py,
+# собранный из готовых репозиториев:
+@router.post("/register-with-profile-bad")
+async def register_bad(data: RegisterWithProfile,
+                       user_repo: UserRepoDep,
+                       profile_repo: ProfileRepoDep):
+    user = await user_repo.create(...)          # внутри COMMIT №1
+    await profile_repo.create(user.id, ...)     # 💥 упало здесь
+
+# Итог: пользователь в базе есть, профиля нет.
+# Откатывать нечего — COMMIT №1 уже случился.</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ГДЕ ДОЛЖЕН ЖИТЬ COMMIT</span>
+    <p>Репозиторий не знает, частью какой бизнес-операции он является. Решение «всё, операция закончена, фиксируем» должен принимать тот, кто видит операцию целиком, — <strong>сервис</strong> (или эндпоинт). Этот принцип называется <em>Unit of Work</em>: репозитории только добавляют и читают, а сервис открывает транзакцию и закрывает её одним <code>COMMIT</code>. Существующие методы мы трогать не будем — регистрация <code>/auth/register</code> продолжит работать как была. Новую операцию напишем правильно.</p>
+  </div></div>
+
+  <h3>Шаг 1. Схемы</h3>
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/shemas/user.py</code><span class="k">куда</span><span>В конец файла. <code>RegisterWithProfile</code> наследует <code>UserCreate</code> — username, email и пароль с проверками уже есть, добавляем вложенный профиль.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/shemas/user.py</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-python"># ---------- урок 9: регистрация с профилем ----------
+
+class ProfileIn(BaseModel):
+    bio: str = Field('', max_length=500)
+    city: str = Field(..., min_length=2, max_length=100)
+    country: str = Field(..., min_length=2, max_length=100)
+
+
+class RegisterWithProfile(UserCreate):
+    profile: ProfileIn
+
+
+class ProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    bio: str
+    city: str
+    country: str
+
+
+class UserWithProfileOut(UserOut):
+    profile: ProfileOut | None = None</code></pre>
+  </figure>
+
+  <h3>Шаг 2. Сервис с транзакцией</h3>
+  <div class="fileinfo"><span class="k">создаём</span><code>app/services/registration_service.py</code><span class="k">роль</span><span>Знает, что такое «зарегистрироваться с профилем», и делает это атомарно.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/services/registration_service.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">from sqlalchemy import or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import hash_password
+from app.db.models import Profile, User
+from app.shemas.user import RegisterWithProfile
+
+
+class UserAlreadyExists(Exception):
+    pass
+
+
+async def register_with_profile(session: AsyncSession, data: RegisterWithProfile) -&gt; User:
+    """Пользователь и профиль создаются ВМЕСТЕ — или не создаётся ничего."""
+    async with session.begin():                                    # BEGIN
+        taken = await session.scalar(
+            select(User.id).where(or_(User.username == data.username, User.email == data.email))
+        )
+        if taken is not None:
+            raise UserAlreadyExists("Username or email already exists")
+
+        user = User(
+            username=data.username,
+            email=data.email,
+            hashed_password=hash_password(data.password),
+            roles=["user"],
+        )
+        session.add(user)
+        await session.flush()                                      # INSERT INTO users — id уже есть, COMMIT ещё нет
+
+        user.profile = Profile(                                    # user_id подставится сам через relationship
+            bio=data.profile.bio,
+            city=data.profile.city,
+            country=data.profile.country,
+        )
+    # выход из блока без ошибок → COMMIT; с ошибкой → ROLLBACK
+    return user</code></pre>
+  </figure>
+
+  <h4>Разбор по строкам</h4>
+  <ul>
+    <li><strong><code>async with session.begin():</code></strong> — начало транзакции. Всё внутри блока — одна операция.</li>
+    <li><strong>Проверка «занято?»</strong> через <code>select(User.id)</code> — достаём одно число, а не целого пользователя. <code>or_</code> — условие «username ИЛИ email».</li>
+    <li><strong><code>raise UserAlreadyExists</code></strong> внутри блока — транзакция откатится сама, ничего не записано.</li>
+    <li><strong><code>await session.flush()</code></strong> — <code>INSERT INTO users</code> уже ушёл в базу, у <code>user</code> появился <code>id</code>. Но <code>COMMIT</code> ещё не было: если дальше что-то сломается, пользователь исчезнет.</li>
+    <li><strong><code>user.profile = Profile(...)</code></strong> — профиль привязываем через <code>relationship</code>, поэтому <code>user_id</code> SQLAlchemy подставит сам. Бонус: <code>user.profile</code> уже лежит в памяти, и ответ можно отдать без дополнительного запроса (в async ленивая загрузка запрещена — помним урок 6).</li>
+    <li><strong>Выход из блока</strong> → <code>INSERT INTO profiles</code> + <code>COMMIT</code>. Благодаря <code>expire_on_commit=False</code> в нашем <code>database.py</code> объект <code>user</code> остаётся читаемым и после коммита.</li>
+  </ul>
+
+  <h3>Шаг 3. Эндпоинт</h3>
+  <div class="fileinfo"><span class="k">меняем</span><code>app/api/routers/auth.py</code><span class="k">что</span><span>Обновляем импорты и добавляем эндпоинт в конец файла.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py</span><span class="role">импорты</span></figcaption>
+    <pre><code class="language-python">from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+
+from app.core.security import create_access_token
+from app.shemas.token import Token
+from app.shemas.user import RegisterWithProfile, UserCreate, UserOut, UserWithProfileOut
+from app.services import auth_service, registration_service
+from app.api.deps import RedisDep, SessionDep, UserRepoDep
+
+router = APIRouter(
+    prefix="/auth",
+    tags=["Аутентификация"],</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-python">@router.post("/register-with-profile", response_model=UserWithProfileOut,
+             status_code=status.HTTP_201_CREATED)
+async def register_with_profile(data: RegisterWithProfile, session: SessionDep, redis: RedisDep):
+    try:
+        user = await registration_service.register_with_profile(session, data)
+    except registration_service.UserAlreadyExists as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    await redis.delete("users:all")          # список пользователей в кеше устарел (урок 8)
+    return user</code></pre>
+  </figure>
+  <p><code>redis.delete("users:all")</code> — та самая двойная запись из блока 05: сначала <code>COMMIT</code> в SQL (источник правды), потом сброс копии в Redis. Иначе <code>GET /users/</code> ещё минуту не покажет нового пользователя.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">Swagger: POST /auth/register-with-profile</span><span class="role">настоящий ответ</span></figcaption>
+    <pre><code class="language-javascript">// запрос
+{ "username": "pizza_lover", "email": "pizza@t.com", "password": "Super-key123",
+  "profile": { "bio": "люблю пиццу", "city": "Казань", "country": "Россия" } }
+
+// 201 Created,  X-DB-Queries: 4
+{ "id": 33, "username": "pizza_lover", "email": "pizza@t.com", "roles": ["user"],
+  "profile": { "bio": "люблю пиццу", "city": "Казань", "country": "Россия" } }
+
+// тот же запрос ещё раз → 400 {"detail": "Username or email already exists"}</code></pre>
+  </figure>
+  <p>Четыре запроса — это проверка «занято?», <code>INSERT users</code>, <code>INSERT profiles</code> и <code>COMMIT</code>. Заголовок <code>X-DB-Queries</code> появится после перерыва; пока смотрите в консоль: <code>echo=True</code> покажет их построчно.</p>
+
+  <h3>Шаг 4. Ломаем специально — эксперимент «Атлантида»</h3>
+  <p>Как убедиться, что откат реально работает? Временно добавляем в сервис ошибку <em>после</em> <code>flush</code> — когда <code>INSERT</code> пользователя уже выполнен:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/services/registration_service.py</span><span class="role">временно</span></figcaption>
+    <pre><code class="language-python">        await session.flush()                                      # INSERT INTO users — уже выполнен!
+
+        if data.profile.city.lower() == 'атлантида':               # ⚠️ ВРЕМЕННО, для эксперимента
+            raise ValueError('Атлантида утонула — такого города нет')
+
+        user.profile = Profile(</code></pre>
+  </figure>
+  <p>Регистрируемся с <code>"city": "Атлантида"</code> и смотрим в консоль uvicorn:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">консоль uvicorn</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">Engine BEGIN (implicit)
+Engine SELECT users.id FROM users WHERE users.username = ? OR users.email = ?
+Engine INSERT INTO users (username, email, hashed_password, ...) VALUES (?, ?, ?, ...)
+Engine ROLLBACK                                   ← INSERT отменён
+ValueError: Атлантида утонула — такого города нет
+INFO: "POST /auth/register-with-profile HTTP/1.1" 500</code></pre>
+  </figure>
+  <div class="expect"><b>Проверка:</b> <code>GET /users/{username}</code> для этого имени → 404. INSERT был, но после ROLLBACK от него не осталось следа. Повторите регистрацию с нормальным городом — имя свободно. Строку с Атлантидой удалите.</div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЛОВУШКА: «A TRANSACTION IS ALREADY BEGUN»</span>
+    <p><code>session.begin()</code> работает только на «чистой» сессии. Если в этом же запросе сессия уже что-то читала, транзакция уже открыта (autobegin), и вы получите <code>InvalidRequestError: A transaction is already begun on this Session.</code> Типичный случай — эндпоинт с <code>CurrentUserDep</code>: <code>get_current_user</code> уже сходил в базу через ту же сессию (FastAPI отдаёт одну и ту же сессию всем зависимостям одного запроса). В таких эндпоинтах либо делайте <code>await session.commit()</code> / <code>rollback()</code> явно, либо <code>async with session.begin_nested():</code> — вложенная транзакция (SAVEPOINT).</p>
+  </div></div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">А ГОНКИ?</span>
+    <p>Два запроса одновременно регистрируют одного и того же <code>pizza_lover</code>: оба делают <code>SELECT</code> — «свободно», оба делают <code>INSERT</code>. Спасёт <code>unique=True</code> на <code>username</code> и <code>email</code> в модели: второй <code>INSERT</code> упадёт с <code>IntegrityError</code>, и транзакция откатится. Проверка в коде — для красивого сообщения, уникальный индекс в базе — для гарантии. Для «списать со склада» в PostgreSQL используют блокировку строки: <code>select(Item).where(...).with_for_update()</code> (в SQLite её нет — там блокируется вся база на запись).</p>
+  </div></div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ПРАВИЛО КОРОТКИХ ТРАНЗАКЦИЙ</span>
+    <p>Пока транзакция открыта, база держит блокировки. Внутри <code>session.begin()</code> — только работа с базой. Никаких HTTP-запросов к внешним API, отправки писем и <code>sleep</code>. Заметьте: <code>hash_password</code> (bcrypt — специально медленный, ~0.2 секунды) по-хорошему стоит вычислить <em>до</em> <code>begin()</code> — это отличное мини-задание на рефакторинг.</p>
+  </div></div>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — производительность. Вопрос на подумать: как узнать, сколько SQL-запросов делает один HTTP-запрос?</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 3 · Быстрые запросы</span><span class="bar"></span></div>
+
+<!-- 08 PROFILER -->
+<section id="profiler">
+  <div class="sec-head"><h2>08 · Счётчик SQL-запросов</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: «ТОРМОЗИТ»</span>
+    <p>Тимлид пишет в чат: «Список постов тормозит, разберись». Новичок открывает код, видит цикл и начинает его «оптимизировать». Через день выясняется, что тормозил вовсе не цикл, а 300 SQL-запросов внутри него. Мораль из урока про антипаттерны: <strong>сначала измерь</strong>. Помните цитату Кнута про преждевременную оптимизацию? Сегодня сделаем себе прибор для измерений.</p>
+  </div></div>
+
+  <p><code>echo=True</code> печатает все запросы, но на сотне запросов в логе ничего не разобрать. Нужно одно число: <strong>сколько SQL-запросов сделал этот HTTP-запрос и сколько они заняли</strong>. Положим его прямо в заголовки ответа — видно в Swagger и в DevTools браузера.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>app/core/db_profiler.py</code><span class="k">роль</span><span>Считает SQL-запросы и время на каждый HTTP-запрос и пишет результат в заголовки <code>X-DB-Queries</code> и <code>X-DB-Time-ms</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/core/db_profiler.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">"""Счётчик SQL-запросов на каждый HTTP-запрос: сколько запросов ушло в БД и сколько они заняли."""
+import time
+from contextvars import ContextVar
+
+from fastapi import FastAPI, Request
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+# «карман» текущего HTTP-запроса: у каждого запроса — свой
+_stats: ContextVar[dict | None] = ContextVar("db_stats", default=None)
+
+
+def install_db_profiler(app: FastAPI, engine: AsyncEngine) -&gt; None:
+    sync_engine = engine.sync_engine          # события вешаются на синхронный «движок внутри» async-движка
+
+    @event.listens_for(sync_engine, "before_cursor_execute")
+    def _before(conn, cursor, statement, parameters, context, executemany):
+        context._query_started = time.perf_counter()
+
+    @event.listens_for(sync_engine, "after_cursor_execute")
+    def _after(conn, cursor, statement, parameters, context, executemany):
+        stats = _stats.get()
+        if stats is not None:
+            stats["queries"] += 1
+            stats["ms"] += (time.perf_counter() - context._query_started) * 1000
+
+    @app.middleware("http")
+    async def db_stats_middleware(request: Request, call_next):
+        stats = {"queries": 0, "ms": 0.0}
+        token = _stats.set(stats)
+        try:
+            response = await call_next(request)
+        finally:
+            _stats.reset(token)
+        response.headers["X-DB-Queries"] = str(stats["queries"])
+        response.headers["X-DB-Time-ms"] = f"{stats['ms']:.1f}"
+        return response</code></pre>
+  </figure>
+
+  <h4>Как это работает — от простого к сложному</h4>
+  <ul>
+    <li><strong>События SQLAlchemy.</strong> <code>before_cursor_execute</code> вызывается перед каждым SQL-запросом, <code>after_cursor_execute</code> — после. Это Observer из урока по паттернам: подписались — получаем уведомления. Запоминаем время старта в <code>context</code> (объект, свой у каждого запроса к БД) и в конце прибавляем разницу.</li>
+    <li><strong><code>engine.sync_engine</code>.</strong> Async-движок внутри устроен как обычный синхронный, обёрнутый для asyncio. События вешаются на внутренний синхронный.</li>
+    <li><strong><code>@app.middleware("http")</code></strong> — функция вокруг каждого HTTP-запроса. До <code>call_next</code> — «запрос пришёл», после — «ответ готов». Это Chain of Responsibility из того же урока: <code>call_next</code> — это <code>next()</code>.</li>
+    <li><strong><code>ContextVar</code></strong> — переменная, у которой своё значение в каждом асинхронном запросе. Если бы счётчик был глобальным <code>dict</code>, десять параллельных запросов складывали бы свои цифры в одну кучу. <code>ContextVar</code> как карман у каждого посетителя: кладёте туда — достаёте ровно то же, чужие карманы не видно.</li>
+    <li><strong><code>reset(token)</code> в <code>finally</code></strong> — вернуть переменную в исходное состояние, даже если эндпоинт упал.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>app/main.py</code><span class="k">что</span><span>Две строки импорта и две строки внизу. Роутер <code>posts</code> напишем в следующем блоке — подключаем сразу.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/main.py</span><span class="role">изменения</span></figcaption>
+    <pre><code class="language-python">from app.api.routers import users, auth, todos, stats, posts      # + posts
+from app.core.db_profiler import install_db_profiler               # + профайлер
+
+# ... lifespan и app = FastAPI(lifespan=lifespan) — без изменений ...
+
+app.include_router(stats.router)
+app.include_router(posts.router)                                   # + роутер постов
+
+install_db_profiler(app, engine)                                   # + счётчик запросов</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <p>Если запускаете приложение до блока 09, создайте пока пустой <code>app/api/routers/posts.py</code> с двумя строками: <code>from fastapi import APIRouter</code> и <code>router = APIRouter(prefix="/posts")</code> — иначе импорт упадёт.</p>
+  </div></div>
+
+  <div class="expect"><b>Проверка:</b> в Swagger вызовите <code>GET /users/</code> дважды. Первый раз (кеш пуст): <code>x-db-queries: 1</code>. Второй (кеш в Redis): <code>x-db-queries: 0</code> — ответ пришёл, а база даже не узнала. Наглядное доказательство, что кеш из урока 8 работает.</div>
+</section>
+
+<hr>
+
+<!-- 09 N+1 -->
+<section id="nplus1">
+  <div class="sec-head"><h2>09 · N+1 и жадная загрузка</h2><span class="tag practice">live-coding</span><span class="tag time">~14 мин</span></div>
+
+  <h3>Шаг 1. Наполняем базу</h3>
+  <p>На трёх постах любой код быстрый. Нужны данные — сделаем скрипт, который создаст 30 авторов, 8 тегов и 300 постов. Заодно ещё одна транзакция: всё наполнение — <em>один</em> <code>COMMIT</code>.</p>
+  <div class="fileinfo"><span class="k">создаём</span><code>scripts/seed.py</code><span class="k">роль</span><span>Тестовые данные. Папка <code>scripts</code> — в корне проекта, рядом с <code>app</code>. Повторный запуск ничего не дублирует.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">scripts/seed.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">"""Наполняем БД тестовыми данными: 30 авторов, 8 тегов, 300 постов.
+Запуск из корня проекта:  python -m scripts.seed
+"""
+import asyncio
+import random
+
+from sqlalchemy import select
+
+from app.core.security import hash_password
+from app.db.database import async_session_maker
+from app.db.models import Post, Tag, User
+
+TITLES = ["Как я перестал бояться и полюбил", "10 фактов, которые вы не знали про", "Почему все так любят",
+          "Боль и страдания:", "Шпаргалка по", "Мой первый опыт с"]
+TAG_NAMES = ["python", "fastapi", "sql", "redis", "mongo", "docker", "async", "testing"]
+AUTHORS = 30
+POSTS = 300
+
+
+async def main() -&gt; None:
+    random.seed(42)                                   # одинаковые данные у всех в группе
+    async with async_session_maker() as session:
+        async with session.begin():                   # ВСЁ наполнение — одна транзакция
+            already = await session.scalar(select(User.id).where(User.username == "seed_user_01"))
+            if already:
+                print("Данные уже есть — пропускаем")
+                return
+
+            password = hash_password("Seed-pass-123")  # bcrypt медленный — считаем один раз
+            authors = [
+                User(username=f"seed_user_{i:02}", email=f"seed{i:02}@example.com",
+                     hashed_password=password, roles=["user"])
+                for i in range(1, AUTHORS + 1)
+            ]
+            existing = {t.name: t for t in (await session.scalars(select(Tag))).all()}
+            tags = [existing.get(name) or Tag(name=name) for name in TAG_NAMES]
+
+            # у авторов разная «плодовитость» — чтобы статистика была интересной
+            weights = [random.randint(1, 10) for _ in authors]
+            posts = [
+                Post(title=f"{random.choice(TITLES)} {random.choice(TAG_NAMES)}",
+                     author=random.choices(authors, weights)[0],
+                     tags=random.sample(tags, k=random.randint(1, 3)))
+                for _ in range(POSTS)
+            ]
+            session.add_all(authors + tags + posts)
+        print(f"Готово: {AUTHORS} авторов, {len(TAG_NAMES)} тегов, {POSTS} постов")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">из корня проекта</span></figcaption>
+    <pre><code class="language-bash">python -m scripts.seed
+# Готово: 30 авторов, 8 тегов, 300 постов
+python -m scripts.seed
+# Данные уже есть — пропускаем</code></pre>
+  </figure>
+  <ul>
+    <li><strong><code>random.seed(42)</code></strong> — генератор случайных чисел выдаёт одну и ту же последовательность. У всех в группе получатся одинаковые данные, и цифры можно сравнивать.</li>
+    <li><strong>Одна транзакция на 300 постов</strong> — это ещё и скорость. SQLite при каждом <code>COMMIT</code> честно сбрасывает данные на диск (помним D в ACID), так что 300 коммитов по одному — это 300 медленных записей на диск вместо одной.</li>
+    <li><strong><code>random.choices(authors, weights)</code></strong> — у авторов разная «плодовитость», чтобы статистика в блоке 10 была интересной.</li>
+  </ul>
+
+  <h3>Шаг 2. Схемы ответа</h3>
+  <div class="fileinfo"><span class="k">создаём</span><code>app/shemas/post.py</code><span class="k">роль</span><span>Что API отдаёт про посты: пост с автором и тегами, а также схемы статистики для блока 10.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/shemas/post.py</span><span class="role">новый файл</span></figcaption>
+    <pre><code class="language-python">from pydantic import BaseModel, ConfigDict, Field
+
+
+class AuthorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    username: str
+
+
+class TagOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+
+class PostOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    title: str
+    author: AuthorOut
+    tags: list[TagOut] = []
+
+
+class PostCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=200)
+    tags: list[str] = Field(default_factory=list, max_length=10)
+
+
+class TagStat(BaseModel):
+    tag: str
+    posts: int
+
+
+class AuthorStat(BaseModel):
+    username: str
+    posts: int
+
+
+class PostStats(BaseModel):
+    total_posts: int
+    avg_posts_per_author: float
+    by_tag: list[TagStat]
+    top_authors: list[AuthorStat]
+    above_average: list[AuthorStat]</code></pre>
+  </figure>
+  <p><code>AuthorOut</code> — только <code>id</code> и <code>username</code>: в ответ про пост не нужно тащить email и тем более <code>hashed_password</code>.</p>
+
+  <h3>Шаг 3. Как НЕ надо: N+1</h3>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ПОХОД В МАГАЗИН</span>
+    <p>Вам нужно купить продукты по списку из 50 пунктов. Вариант «N+1»: сходить в магазин за списком, вернуться, сходить за молоком, вернуться, сходить за хлебом, вернуться… 51 поход. Вариант «жадная загрузка»: взять корзину и купить всё за один раз. SQL-запрос по сети — это поход в магазин.</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>app/api/routers/posts.py</code><span class="k">что</span><span>Начинаем с импортов и учебного «плохого» эндпоинта. Остальное добавим ниже по ходу урока.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/posts.py</span><span class="role">новый файл · начало</span></figcaption>
+    <pre><code class="language-python">import csv
+import io
+import json
+
+from fastapi import APIRouter, Query, Response
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select
+
+from app.api.deps import CurrentUserDep, PostRepoDep, RedisDep, SessionDep
+from app.db.database import async_session_maker
+from app.db.models import Post, Tag, User, post_tags
+from app.shemas.post import AuthorOut, AuthorStat, PostCreate, PostOut, PostStats, TagOut, TagStat
+
+router = APIRouter(prefix="/posts", tags=["Посты"])
+
+POSTS_STATS_KEY = "posts:stats"</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/posts.py</span><span class="role">+ под импорты</span></figcaption>
+    <pre><code class="language-python"># ---------- 1. Как НЕ надо: N+1 ----------
+@router.get("/naive", response_model=list[PostOut])
+async def list_posts_naive(session: SessionDep, limit: int = Query(50, le=100)):
+    posts = (await session.scalars(select(Post).order_by(Post.id).limit(limit))).all()   # 1 запрос
+
+    result = []
+    for post in posts:                                                                   # + N раз:
+        author = await session.get(User, post.author_id)                                 #   автор
+        tags = (await session.scalars(
+            select(Tag).join(post_tags).where(post_tags.c.post_id == post.id)            #   теги
+        )).all()
+        result.append(PostOut(
+            id=post.id, title=post.title,
+            author=AuthorOut.model_validate(author),
+            tags=[TagOut.model_validate(t) for t in tags],
+        ))
+    return result</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">GET /posts/naive?limit=50</span><span class="role">настоящие заголовки</span></figcaption>
+    <pre><code class="language-none">x-db-queries: 59
+x-db-time-ms: 15.6</code></pre>
+  </figure>
+  <p>1 запрос за постами + 50 за тегами + ещё по запросу на каждого <em>нового</em> автора. Почему авторов меньше 50? <code>session.get()</code> сначала смотрит в <strong>identity map</strong> — «записную книжку» сессии: если пользователь с таким id уже загружен, второй раз в базу за ним не ходят. Число у вас может немного отличаться, но порядок тот же: около 60.</p>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">А ПОЧЕМУ НЕ ПРОСТО <code>post.author</code>?</span>
+    <p>В синхронном SQLAlchemy (и в Django) обращение <code>post.author</code> внутри цикла тихо сделает запрос — это «классический» N+1, который годами живёт незамеченным. В async SQLAlchemy такое обращение без предварительной загрузки сразу падает: <code>MissingGreenlet: greenlet_spawn has not been called; can't call await_() here</code>. Неприятно, но честно: async-режим заставляет думать о загрузке связей заранее. В «плохом» эндпоинте мы поэтому сделали лишние запросы явно — чтобы их было видно.</p>
+  </div></div>
+
+  <h3>Шаг 4. Как надо: joinedload и selectinload</h3>
+  <table class="cmp">
+    <thead><tr><th>&nbsp;</th><th><code>joinedload</code></th><th><code>selectinload</code></th></tr></thead>
+    <tbody>
+      <tr><td>Как грузит</td><td><code>LEFT OUTER JOIN</code> в том же запросе</td><td>второй запрос <code>WHERE id IN (...)</code></td></tr>
+      <tr><td>Лучше для</td><td>«к одному»: <code>Post.author</code>, <code>User.profile</code></td><td>«ко многим»: <code>Post.tags</code>, <code>User.posts</code></td></tr>
+      <tr><td>Подвох</td><td>с коллекциями строки размножаются (пост × теги), нужен <code>.unique()</code></td><td>на один запрос больше</td></tr>
+    </tbody>
+  </table>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/repositories/post_repo.py</code><span class="k">что</span><span>Обновляем импорты в начале файла и добавляем метод <code>get_page</code> в конец класса <code>PostRepo</code>. Существующий <code>_with_relations</code> грузит и автора, и теги через <code>selectinload</code> — это 3 запроса; новый метод покажет, как сделать за 2.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/post_repo.py</span><span class="role">заменить импорты в начале файла</span></figcaption>
+    <pre><code class="language-python">from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, selectinload
+
+from app.db.models import Post, Tag, User, post_tags</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/post_repo.py</span><span class="role">+ в конец класса</span></figcaption>
+    <pre><code class="language-python">    # ---------- урок 9: оптимизация и статистика ----------
+
+    async def get_page(self, limit: int = 50, offset: int = 0):
+        stmt = (
+            select(Post)
+            .options(
+                joinedload(Post.author),     # «к одному» — JOIN в том же запросе
+                selectinload(Post.tags),     # «ко многим» — второй запрос WHERE post_id IN (...)
+            )
+            .order_by(Post.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/posts.py</span><span class="role">+ в конец файла</span></figcaption>
+    <pre><code class="language-python"># ---------- 2. Как надо: жадная загрузка ----------
+@router.get("/", response_model=list[PostOut])
+async def list_posts(post_repo: PostRepoDep,
+                     limit: int = Query(50, le=100), offset: int = Query(0, ge=0)):
+    return await post_repo.get_page(limit=limit, offset=offset)</code></pre>
+  </figure>
+  <p>Эндпоинт стал одной строкой: возвращаем ORM-объекты, а <code>response_model=list[PostOut]</code> сам превращает их в JSON (в схемах <code>from_attributes=True</code>).</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">консоль uvicorn: GET /posts/?limit=3</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-sql">-- запрос 1: посты + авторы одним JOIN-ом
+SELECT posts.id, posts.title, posts.author_id, users_1.id AS id_1, users_1.username, ...
+FROM posts LEFT OUTER JOIN users AS users_1 ON users_1.id = posts.author_id
+ORDER BY posts.id LIMIT ? OFFSET ?
+
+-- запрос 2: теги для всех постов страницы разом
+SELECT post_tags.post_id, tags.id, tags.name
+FROM post_tags JOIN tags ON tags.id = post_tags.tag_id
+WHERE post_tags.post_id IN (?, ?, ?)</code></pre>
+  </figure>
+
+  <table class="cmp">
+    <thead><tr><th>Эндпоинт (50 постов)</th><th>X-DB-Queries</th><th>X-DB-Time-ms</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /posts/naive</code></td><td class="bad">59</td><td>15.6</td></tr>
+      <tr><td><code>GET /posts/</code></td><td class="ok">2</td><td>1.0</td></tr>
+    </tbody>
+  </table>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ЭТО ЕЩЁ ЦВЕТОЧКИ</span>
+    <p>SQLite лежит в файле рядом с приложением — запрос к нему стоит микросекунды. В реальном мире PostgreSQL стоит на другом сервере, и каждый запрос — это поход по сети (~0.5 мс туда-обратно). 59 запросов × 0.5 мс = 30 мс чистого ожидания сети на <em>каждый</em> вызов списка. При 100 пользователях в секунду база получает 6000 запросов в секунду вместо 200. N+1 — одна из самых частых причин «почему API тормозит под нагрузкой».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 10 STATS -->
+<section id="stats">
+  <div class="sec-head"><h2>10 · Агрегации, подзапросы и кеш статистики</h2><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <p>Продакт хочет дашборд: сколько всего постов, сколько в среднем на автора, популярные теги, топ авторов и «кто пишет больше среднего». Можно загрузить 300 постов в Python и посчитать циклами… но база посчитает быстрее и не потащит через сеть 300 строк ради пяти чисел.</p>
+
+  <table class="cmp">
+    <thead><tr><th>SQL</th><th>SQLAlchemy</th><th>Что делает</th></tr></thead>
+    <tbody>
+      <tr><td><code>COUNT(*)</code>, <code>AVG</code>, <code>SUM</code>, <code>MAX</code></td><td><code>func.count()</code>, <code>func.avg()</code>, …</td><td>агрегатные функции: из многих строк — одно число</td></tr>
+      <tr><td><code>GROUP BY tag</code></td><td><code>.group_by(Tag.name)</code></td><td>посчитать отдельно для каждой группы</td></tr>
+      <tr><td><code>(SELECT ...) AS t</code></td><td><code>.subquery()</code></td><td>подзапрос как «временная таблица»</td></tr>
+      <tr><td><code>WHERE x &gt; (SELECT AVG(...))</code></td><td><code>.scalar_subquery()</code></td><td>подзапрос, который возвращает одно значение</td></tr>
+    </tbody>
+  </table>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>app/repositories/post_repo.py</code><span class="k">куда</span><span>В конец класса <code>PostRepo</code>, после <code>get_page</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/post_repo.py</span><span class="role">+ статистика</span></figcaption>
+    <pre><code class="language-python">    async def count_all(self) -&gt; int:
+        return await self.session.scalar(select(func.count(Post.id)))
+
+    async def count_by_tag(self) -&gt; list[tuple[str, int]]:
+        stmt = (
+            select(Tag.name, func.count(post_tags.c.post_id).label("posts"))
+            .join(post_tags, post_tags.c.tag_id == Tag.id)
+            .group_by(Tag.name)
+            .order_by(func.count(post_tags.c.post_id).desc())
+        )
+        return [(row.name, row.posts) for row in await self.session.execute(stmt)]
+
+    async def top_authors(self, limit: int = 5) -&gt; list[tuple[str, int]]:
+        posts_count = func.count(Post.id).label("posts")
+        stmt = (
+            select(User.username, posts_count)
+            .join(Post, Post.author_id == User.id)
+            .group_by(User.id)
+            .order_by(posts_count.desc())
+            .limit(limit)
+        )
+        return [(row.username, row.posts) for row in await self.session.execute(stmt)]
+
+    async def avg_posts_per_author(self) -&gt; float:
+        per_author = (
+            select(func.count(Post.id).label("cnt"))
+            .group_by(Post.author_id)
+            .subquery()
+        )
+        return float(await self.session.scalar(select(func.avg(per_author.c.cnt))) or 0)
+
+    async def authors_above_average(self) -&gt; list[tuple[str, int]]:
+        # подзапрос 1: сколько постов у каждого автора
+        per_author = (
+            select(Post.author_id, func.count(Post.id).label("cnt"))
+            .group_by(Post.author_id)
+            .subquery()
+        )
+        # подзапрос 2: среднее по подзапросу 1 — одно число
+        average = select(func.avg(per_author.c.cnt)).scalar_subquery()
+
+        stmt = (
+            select(User.username, per_author.c.cnt)
+            .join(per_author, per_author.c.author_id == User.id)
+            .where(per_author.c.cnt &gt; average)
+            .order_by(per_author.c.cnt.desc())
+        )
+        return [(row.username, row.cnt) for row in await self.session.execute(stmt)]</code></pre>
+  </figure>
+
+  <h4>Разбор от простого к сложному</h4>
+  <ul>
+    <li><strong><code>count_all</code></strong> — самое простое: <code>SELECT count(posts.id) FROM posts</code>. <code>session.scalar()</code> возвращает сразу одно значение, без <code>.scalars().first()</code>.</li>
+    <li><strong><code>count_by_tag</code></strong> — <code>JOIN</code> тегов с таблицей связей <code>post_tags</code> и <code>GROUP BY</code> по имени тега: «для каждого тега посчитай строки». <code>.label("posts")</code> — имя колонки в результате, как <code>AS posts</code>.</li>
+    <li><strong><code>top_authors</code></strong> — то же самое для авторов плюс <code>ORDER BY ... DESC LIMIT 5</code>.</li>
+    <li><strong><code>avg_posts_per_author</code></strong> — среднее от количеств. Нельзя написать <code>AVG(COUNT(...))</code> — агрегаты не вкладываются. Поэтому сначала подзапрос «сколько у каждого автора» (<code>.subquery()</code> — превращается в <code>FROM (SELECT ...)</code>), а потом <code>AVG</code> по нему.</li>
+    <li><strong><code>authors_above_average</code></strong> — самый сложный: подзапрос «посты по авторам» используется <em>дважды</em> — один раз для <code>JOIN</code> с <code>users</code> (получить имена), второй — внутри <code>.scalar_subquery()</code> для среднего, с которым сравниваем в <code>WHERE</code>.</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/posts.py</span><span class="role">+ в конец файла</span></figcaption>
+    <pre><code class="language-python"># ---------- 3. Агрегации + кеш в Redis ----------
+@router.get("/stats", response_model=PostStats)
+async def posts_stats(post_repo: PostRepoDep, redis: RedisDep, response: Response):
+    cached = await redis.get(POSTS_STATS_KEY)
+    if cached is not None:
+        response.headers["X-Cache"] = "HIT"
+        return json.loads(cached)
+
+    stats = PostStats(
+        total_posts=await post_repo.count_all(),
+        avg_posts_per_author=round(await post_repo.avg_posts_per_author(), 2),
+        by_tag=[TagStat(tag=t, posts=n) for t, n in await post_repo.count_by_tag()],
+        top_authors=[AuthorStat(username=u, posts=n) for u, n in await post_repo.top_authors()],
+        above_average=[AuthorStat(username=u, posts=n) for u, n in await post_repo.authors_above_average()],
+    )
+    await redis.set(POSTS_STATS_KEY, stats.model_dump_json(), ex=60)
+    response.headers["X-Cache"] = "MISS"
+    return stats</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/posts.py</span><span class="role">+ в конец файла</span></figcaption>
+    <pre><code class="language-python"># ---------- 4. Создание поста: SQL + сброс кеша в Redis ----------
+@router.post("/", response_model=PostOut, status_code=201)
+async def create_post(data: PostCreate, current_user: CurrentUserDep,
+                      post_repo: PostRepoDep, redis: RedisDep):
+    post = await post_repo.create(data.title, current_user.id, data.tags)   # 1) SQL: COMMIT
+    await redis.delete(POSTS_STATS_KEY)                                     # 2) Redis: статистика устарела
+    return post</code></pre>
+  </figure>
+  <ul>
+    <li><strong>Кеш статистики в Redis</strong> — тот же приём, что <code>users:all</code> в уроке 8. Статистика дорогая (5 запросов с <code>GROUP BY</code>), а меняется только при новом посте.</li>
+    <li><strong><code>POST /posts/</code></strong> использует существующий <code>PostRepo.create</code>: теги через <code>get_or_create_many</code> (там <code>flush</code>) и пост — <em>одним</em> <code>COMMIT</code> внутри репозитория. Не нашлось тега — создался; упала вставка поста — откатятся и новые теги. Затем сбрасываем кеш — двойная запись «SQL → Redis» в правильном порядке.</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">GET /posts/stats</span><span class="role">настоящий ответ (сокращён)</span></figcaption>
+    <pre><code class="language-javascript">// x-cache: MISS, x-db-queries: 5      → повторно: x-cache: HIT, x-db-queries: 0
+{
+  "total_posts": 300,
+  "avg_posts_per_author": 10.34,
+  "by_tag":       [ {"tag": "docker", "posts": 99}, {"tag": "python", "posts": 77}, ... ],
+  "top_authors":  [ {"username": "seed_user_10", "posts": 25}, ... ],
+  "above_average":[ {"username": "seed_user_10", "posts": 25}, ... ]
+}</code></pre>
+  </figure>
+  <div class="expect"><b>Проверка двойной записи:</b> <code>GET /posts/stats</code> → HIT. Авторизуйтесь (<code>seed_user_01</code> / <code>Seed-pass-123</code>), <code>POST /posts/</code> с тегом <code>"transactions"</code>. Снова <code>GET /posts/stats</code> → MISS, <code>total_posts: 301</code>, в <code>by_tag</code> появился новый тег.</div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЗАЧЕМ СЧИТАТЬ В БАЗЕ</span>
+    <p>Посчитать то же самое в Python — это 3 запроса (посты, теги, авторы), 300+ объектов в памяти и циклы. База считает там, где лежат данные, и отдаёт пять чисел. Правило: <strong>фильтруйте, сортируйте и агрегируйте в SQL, а в Python — только то, что SQL не умеет</strong>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 11 STREAM -->
+<section id="stream">
+  <div class="sec-head"><h2>11 · Большие объёмы: выгрузка потоком</h2><span class="tag practice">live-coding</span><span class="tag time">~7 мин</span></div>
+
+  <p>Бухгалтерия просит CSV со <em>всеми</em> постами. Сегодня их 300, через год — 3 миллиона. <code>.all()</code> загрузит все строки в память сервера сразу, а потом ещё соберёт гигантскую строку CSV. Это прямой путь к тому, что процесс убьют по нехватке памяти.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ВОДОПРОВОД</span>
+    <p>Чтобы наполнить бассейн, не нужно сначала привезти всю воду в цистерне. Открываете кран — вода идёт по трубе понемногу и сразу в бассейн. Потоковая выгрузка устроена так же: читаем из базы порцию → отправляем клиенту → читаем следующую. В памяти всегда одна порция.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/posts.py</span><span class="role">+ в конец файла</span></figcaption>
+    <pre><code class="language-python"># ---------- 5. Выгрузка всех постов потоком ----------
+@router.get("/export.csv")
+async def export_posts_csv():
+    async def rows():
+        yield "id,title,author\n"
+        async with async_session_maker() as session:          # своя сессия: живёт, пока идёт поток
+            stmt = (
+                select(Post.id, Post.title, User.username)
+                .join(User, User.id == Post.author_id)
+                .order_by(Post.id)
+                .execution_options(yield_per=100)             # читать из БД порциями по 100
+            )
+            result = await session.stream(stmt)
+            async for chunk in result.partitions(100):
+                buffer = io.StringIO()
+                csv.writer(buffer).writerows(chunk)
+                yield buffer.getvalue()
+
+    return StreamingResponse(
+        rows(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=posts.csv"},
+    )</code></pre>
+  </figure>
+  <ul>
+    <li><strong><code>select(Post.id, Post.title, User.username)</code></strong> — только нужные колонки, а не целые ORM-объекты: меньше памяти, никаких связей.</li>
+    <li><strong><code>session.stream(stmt)</code></strong> — вместо <code>execute</code>: результат читается из базы по мере надобности, а не весь сразу. <code>yield_per=100</code> — порции по 100 строк.</li>
+    <li><strong><code>result.partitions(100)</code></strong> — асинхронно отдаёт списки по 100 строк. Каждую порцию превращаем в кусок CSV и сразу <code>yield</code> клиенту.</li>
+    <li><strong><code>StreamingResponse</code></strong> принимает генератор и отправляет ответ кусками, по мере того как генератор их выдаёт. <code>Content-Disposition: attachment</code> — браузер скачает файл.</li>
+    <li><strong>Почему своя сессия, а не <code>SessionDep</code>?</strong> Генератор работает, <em>пока ответ отправляется</em>, — уже после того, как эндпоинт вернул <code>StreamingResponse</code>. Сессия из зависимости к этому моменту может быть закрыта. Поэтому сессия открывается внутри генератора и живёт ровно столько, сколько поток.</li>
+  </ul>
+  <div class="expect"><b>Проверка:</b> откройте в браузере <code>http://localhost:8000/posts/export.csv</code> — скачается файл на 301 строку (заголовок + 300 постов). <code>x-db-queries</code> у этого ответа будет 0: запросы идут уже после того, как middleware отработал, — ещё одна иллюстрация того, что поток живёт дольше эндпоинта.</div>
+</section>
+
+<hr>
+
+<!-- 12 EXPLAIN -->
+<section id="explain">
+  <div class="sec-head"><h2>12 · EXPLAIN и индекс через Alembic</h2><span class="tag practice">live-coding</span><span class="tag time">~9 мин</span></div>
+
+  <p>Мы научились считать запросы. Теперь узнаем, <em>как</em> база выполняет один запрос. Для этого есть <code>EXPLAIN</code> — «покажи план, не выполняя». В PostgreSQL это <code>EXPLAIN ANALYZE</code> (план + реальное время), в SQLite — <code>EXPLAIN QUERY PLAN</code>.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ПРЕДМЕТНЫЙ УКАЗАТЕЛЬ</span>
+    <p>Найти в учебнике всё про «транзакции» можно двумя способами: листать все 600 страниц (<strong>SCAN</strong> — полный перебор) или открыть предметный указатель в конце: «Транзакции — стр. 214, 389» (<strong>SEARCH USING INDEX</strong>). Индекс — это и есть предметный указатель для столбца.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал (sqlite3 есть на macOS из коробки)</span><span class="role">до индекса</span></figcaption>
+    <pre><code class="language-bash">sqlite3 db.sqlite3 "EXPLAIN QUERY PLAN SELECT * FROM posts WHERE author_id = 5"
+# SCAN posts                       ← перебор ВСЕЙ таблицы</code></pre>
+  </figure>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">НАХОДКА В НАШЕЙ СХЕМЕ</span>
+    <p>По <code>author_id</code> мы ищем постоянно: <code>PostRepo.get_by_author</code>, <code>JOIN</code> в статистике. А индекса на этом столбце нет! Многие думают, что <code>ForeignKey</code> создаёт индекс автоматически. <strong>Нет</strong> — ни SQLite, ни PostgreSQL не индексируют внешний ключ сами (MySQL — индексирует). Это одна из самых частых причин медленных JOIN в проде.</p>
+  </div></div>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>app/db/models.py</code><span class="k">что</span><span>Одно слово в модели <code>Post</code>: <code>index=True</code> у <code>author_id</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/db/models.py</span><span class="role">класс Post</span></figcaption>
+    <pre><code class="language-python">class Post(Base):
+    __tablename__ = 'posts'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str]
+
+    #Уровень БД реальный столбец
+    author_id: Mapped[int] = mapped_column(ForeignKey('users.id'), index=True)   # ← добавили index=True</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-bash">alembic upgrade head        # если ещё не сделали в начале урока
+alembic revision --autogenerate -m "add index on posts.author_id"
+# INFO  [alembic.autogenerate.compare.constraints] Detected added index 'ix_posts_author_id' on '('author_id',)'
+# Generating .../alembic/versions/31dde013f7a9_add_index_on_posts_author_id.py ...  done</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">alembic/versions/..._add_index_on_posts_author_id.py</span><span class="role">создастся сам — только проверяем</span></figcaption>
+    <pre><code class="language-python">def upgrade() -&gt; None:
+    """Upgrade schema."""
+    op.create_index(op.f('ix_posts_author_id'), 'posts', ['author_id'], unique=False)
+
+
+def downgrade() -&gt; None:
+    """Downgrade schema."""
+    op.drop_index(op.f('ix_posts_author_id'), table_name='posts')</code></pre>
+  </figure>
+  <p>Помним правило из урока 6: <strong>читаем миграцию глазами</strong> перед применением. Здесь всё правильно: одна операция, и <code>downgrade</code> её отменяет.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">после индекса</span></figcaption>
+    <pre><code class="language-bash">alembic upgrade head
+sqlite3 db.sqlite3 "EXPLAIN QUERY PLAN SELECT * FROM posts WHERE author_id = 5"
+# SEARCH posts USING INDEX ix_posts_author_id (author_id=?)    ← по указателю</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ЦЕНА ИНДЕКСА</span>
+    <p>Индекс ускоряет чтение, но замедляет каждую запись (<code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> обновляют и таблицу, и все её индексы) и занимает место. Индексируем столбцы, по которым реально ищем, джойним и сортируем, — и проверяем <code>EXPLAIN</code>, а не ставим <code>index=True</code> везде «на всякий случай». В PostgreSQL ищите в плане <code>Seq Scan</code> на большой таблице — это и есть «листаем все 600 страниц».</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 13 GAME + HOMEWORK -->
+<section id="game">
+  <div class="sec-head"><h2>13 · Игра «Сколько запросов?» и домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~8 мин</span></div>
+  <p>Группа угадывает значение <code>X-DB-Queries</code> (или исход), потом открываем ответ и проверяем в Swagger.</p>
+
+  <details class="quiz"><summary><code>GET /users/</code> два раза подряд. Сколько запросов во втором ответе?</summary><div class="ans"><b>0.</b> Ответ взят из Redis, база не участвовала.</div></details>
+  <details class="quiz"><summary><code>GET /posts/naive?limit=10</code> — больше или меньше 11 запросов?</summary><div class="ans"><b>Больше.</b> 1 за посты + 10 за теги + по одному на каждого нового автора (до 10). Identity map спасает только повторных авторов.</div></details>
+  <details class="quiz"><summary><code>GET /posts/?limit=100</code> — сколько запросов?</summary><div class="ans"><b>2</b>, при любом limit. Посты с авторами одним JOIN, теги одним <code>IN (...)</code>. В этом смысл жадной загрузки: число запросов не растёт вместе с данными.</div></details>
+  <details class="quiz"><summary>Регистрация с профилем, город «Атлантида». Что окажется в таблице <code>users</code>?</summary><div class="ans"><b>Ничего.</b> INSERT был выполнен, но ROLLBACK его отменил.</div></details>
+  <details class="quiz"><summary>Создали пост, а Redis в этот момент лёг. Что с постом и статистикой?</summary><div class="ans"><b>Пост сохранён</b> (COMMIT был первым), а статистика устареет до 60 секунд — TTL исправит. Цена двойной записи.</div></details>
+  <details class="quiz"><summary>Индекс на <code>posts.author_id</code> ускорит <code>INSERT</code> новых постов?</summary><div class="ans"><b>Нет, чуть замедлит.</b> Каждая вставка теперь обновляет ещё и индекс. Индексы — для чтения.</div></details>
+
+  <h3>Домашнее задание</h3>
+  <ol>
+    <li><strong>Рефакторинг транзакции.</strong> Перенесите <code>hash_password</code> в <code>register_with_profile</code> <em>до</em> <code>session.begin()</code> и объясните в комментарии, почему так лучше.</li>
+    <li><strong>Удаление пользователя целиком.</strong> <code>DELETE /users/me</code>: в одной транзакции удалить профиль, посты и самого пользователя (каскады в модели уже есть — проверьте, что они срабатывают), после <code>COMMIT</code> сбросить <code>users:all</code>, <code>user:{username}</code> и <code>posts:stats</code> в Redis. Подсказка про ловушку из блока 07: здесь <code>CurrentUserDep</code> уже открыл транзакцию.</li>
+    <li><strong>N+1 в профиле.</strong> Эндпоинт <code>GET /users/{username}/full</code> — пользователь + профиль + посты с тегами. Используйте готовый <code>UserRepo.get_full</code>, посмотрите на <code>X-DB-Queries</code>, затем замените <code>selectinload(User.profile)</code> на <code>joinedload</code> и сравните.</li>
+    <li><strong>Гибрид: общий ID.</strong> Добавьте в задачи MongoDB поле <code>owner_id</code> (= <code>id</code> пользователя из SQL), заполняйте его из <code>CurrentUserDep</code> при создании и фильтруйте по нему список. Подключите Mongo через зависимость <code>get_mongo_db</code> по образцу <code>get_redis</code>.</li>
+    <li><strong>Источник правды.</strong> Решите судьбу <code>GET /users/mongo/me</code>: удалить или переделать так, чтобы данные шли только из SQL. Запишите аргумент в комментарии.</li>
+    <li><strong>EXPLAIN своими руками.</strong> Найдите ещё один запрос без индекса (подсказка: <code>post_tags</code> по <code>tag_id</code> в <code>count_by_tag</code>), посмотрите план, решите, нужен ли индекс.</li>
+  </ol>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю schema-on-write и schema-on-read на примере «добавить поле».</li>
+    <li>☐ Знаю разницу вертикального и горизонтального масштабирования и почему SQL обычно «растёт вверх».</li>
+    <li>☐ Могу нарисовать архитектуру auth-api: что в SQLite, что в Mongo, что в Redis и почему.</li>
+    <li>☐ Знаю три стратегии синхронизации и что такое Transactional Outbox.</li>
+    <li>☐ Расшифровываю ACID и понимаю разницу <code>flush</code> и <code>commit</code>.</li>
+    <li>☐ Пишу транзакции через <code>async with session.begin()</code> и знаю ловушку autobegin.</li>
+    <li>☐ Понимаю, почему commit должен жить в сервисе, а не в репозитории (Unit of Work).</li>
+    <li>☐ Измеряю число запросов и нахожу N+1; выбираю между <code>joinedload</code> и <code>selectinload</code>.</li>
+    <li>☐ Пишу <code>func.count</code>, <code>group_by</code>, <code>subquery</code>, <code>scalar_subquery</code>.</li>
+    <li>☐ Выгружаю большие данные потоком через <code>session.stream</code> и <code>StreamingResponse</code>.</li>
+    <li>☐ Читаю <code>EXPLAIN</code> и добавляю индекс через Alembic.</li>
+  </ul>
+
+  <h3>Что дальше</h3>
+  <ul>
+    <li><strong>Docker Compose</strong>: переезжаем с SQLite на PostgreSQL и поднимаем Postgres + Mongo + Redis одной командой. <code>EXPLAIN ANALYZE</code> и <code>with_for_update()</code> заработают по-настоящему.</li>
+    <li><strong>Фоновые задачи и очереди</strong>: настоящая событийная синхронизация между базами вместо двойной записи.</li>
+  </ul>
+
+  <p class="foot">Методичка · FastAPI, урок 9 · SQL vs NoSQL, гибридная архитектура, синхронизация данных, транзакции и ACID, N+1, joinedload/selectinload, агрегации и подзапросы, потоковая выгрузка, EXPLAIN и индексы</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

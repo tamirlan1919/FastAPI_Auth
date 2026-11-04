@@ -40,7 +40,7 @@ class Post(Base):
     title: Mapped[str]
 
     #Уровень БД реальный столбец
-    author_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    author_id: Mapped[int] = mapped_column(ForeignKey('users.id'), index=True)
 
     #Увроень Python posts.author - объект User
     #Этого столбца в таблице не будет

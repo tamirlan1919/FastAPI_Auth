@@ -14,3 +14,22 @@ class UserOut(BaseModel):
     email: EmailStr
     roles: List[str] = []
 
+
+
+class ProfileIn(BaseModel):
+    bio: str = Field('', max_length=500)
+    city: str = Field('', min_length=2, max_length=100)
+    country: str = Field('', min_length=2, max_length=100)
+
+
+class RegisterWithProfile(UserCreate):
+    profile: ProfileIn
+
+class ProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    bio: str = Field(..., max_length=500)
+    city: str = Field(..., min_length=2, max_length=100)
+    country: str = Field(..., min_length=2, max_length=100)
+
+class UserWithProfileOut(UserOut):
+    profile: ProfileOut | None = None

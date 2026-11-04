@@ -319,7 +319,7 @@
 
   <p>Первая мысль питониста: «Зачем отдельная база? Положу ответ в словарь!»</p>
   <figure class="code">
-    <figcaption><span class="dot"></span><span class="path">наивный кеш — так НЕ делаем</span></figcaption>
+    <figcaption><span class="dot"></span><span class="path">наивный кеш — так НЕ делаем</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
     <pre><code class="language-python">_cache: dict[str, list] = {}
 
 @router.get('/')
@@ -675,7 +675,7 @@ async def get_users(user_repo: UserRepoDep):
   <h3>Первая попытка — и первая ошибка</h3>
   <p>Логичная мысль: «Redis хранит строки — сделаю <code>json.dumps</code> от того, что вернул репозиторий». Пробуем:</p>
   <figure class="code">
-    <figcaption><span class="dot"></span><span class="path">так не сработает</span></figcaption>
+    <figcaption><span class="dot"></span><span class="path">так не сработает</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
     <pre><code class="language-python">users = await user_repo.get_users()
 await redis.set("users:all", json.dumps(users), ex=60)
 # TypeError: Object of type User is not JSON serializable</code></pre>

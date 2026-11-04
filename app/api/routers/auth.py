@@ -3,9 +3,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.security import create_access_token
 from app.shemas.token import Token
-from app.shemas.user import UserCreate, UserOut
+from app.shemas.user import UserCreate, UserOut, UserWithProfileOut, RegisterWithProfile
 from app.services import auth_service
-from app.api.deps import UserRepoDep
+from app.api.deps import UserRepoDep, ProfileRepoDep, SessionDep, RedisDep, PublisherDep
+from app.services.registration_service import register_with_profile, UserAlreadyExists
+from app.services.email_service import send_welcome_email
+from  fastapi import BackgroundTasks
+
 
 router = APIRouter(
     prefix="/auth",
@@ -13,9 +17,20 @@ router = APIRouter(
 )
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register(data: UserCreate, user_repo: UserRepoDep):
+async def register(data: UserCreate, user_repo: UserRepoDep, publisher: PublisherDep):
     try:
         user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    try:
+        await publisher.publish(
+            'user.registered',
+            {
+                'user_id': user.id,
+                'username': user.username,
+                'email': user.email,
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return user
@@ -29,3 +44,16 @@ async def login(user_repo: UserRepoDep, form_data: OAuth2PasswordRequestForm = D
                             headers={"WWW-Authenticate": "Bearer"})
     access_token = create_access_token(data={"sub": user.username})
     return Token(access_token=access_token)
+
+
+@router.post('/register-with-profile', response_model=UserWithProfileOut,
+             status_code=status.HTTP_201_CREATED)
+async def register_bad(data: RegisterWithProfile, session: SessionDep, redis: RedisDep):
+    try:
+        user = await register_with_profile(session, data)
+    except UserAlreadyExists as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    await redis.delete('users:all')
+    return user

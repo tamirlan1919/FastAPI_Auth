@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker · Урок 1 — Введение в Docker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>Docker</div>
+  <p class="lead">Модуль Backend · Docker · Урок 1</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и подготовка</a>
+    <div class="grp">Часть 1 · Зачем и как устроено</div>
+    <a href="#why"><span class="n theory-dot">01</span>«У меня работает!» и история</a>
+    <a href="#how"><span class="n theory-dot">02</span>Как устроен Docker</a>
+    <div class="grp">Часть 2 · Руками в терминале</div>
+    <a href="#hello"><span class="n practice-dot">03</span>Установка и hello-world</a>
+    <a href="#nginx"><span class="n practice-dot">04</span>nginx: порты и управление</a>
+    <a href="#mount"><span class="n practice-dot">05</span>Своя страница через -v</a>
+    <a href="#devenv"><span class="n practice-dot">06</span>Redis и Postgres за минуту</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 3 · Упаковываем PizzaHub</div>
+    <a href="#hell"><span class="n practice-dot">07</span>Демо: «матрица ада»</a>
+    <a href="#dockerfile"><span class="n practice-dot">08</span>Dockerfile для PizzaHub</a>
+    <a href="#layers"><span class="n practice-dot">09</span>Слои и кеш</a>
+    <a href="#images"><span class="n practice-dot">10</span>Образы: теги, чистка, Hub</a>
+    <a href="#prod"><span class="n theory-dot">11</span>Docker в продакшене</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">12</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · Docker · Урок 1 · 2 часа с перерывом · для фронтенд-разработчиков</p>
+  <h1>Введение в Docker</h1>
+  <p class="lead-p">Два урока мы писали PizzaHub с паттернами. Сегодня научимся его <strong>упаковывать</strong>: так, чтобы он одинаково запускался у вас, у коллеги на Windows и на сервере в облаке, без фразы «а у меня работает». Docker — не «инструмент для админов». Это то, с чем фронтенд сталкивается каждый день: CI, превью-сборки, локальные базы данных, деплой. После этого урока вы сможете поднять любую базу одной командой и собрать образ своего приложения.</p>
+
+  <div class="hero">
+    <h3>ЧТО СДЕЛАЕМ ЗА УРОК</h3>
+    <ul>
+      <li><b>Разберёмся, зачем</b> нужны контейнеры: история про морские контейнеры, виртуальные машины и «у меня работает».</li>
+      <li><b>Поймём устройство</b>: образ, контейнер, слои, реестр, демон и CLI — на простых аналогиях.</li>
+      <li><b>Руками в терминале</b>: hello-world, сайт на nginx, своя страница PizzaHub через <code>-v</code>, Redis и Postgres за минуту.</li>
+      <li><b>Упакуем PizzaHub</b>: напишем <code>Dockerfile</code> и <code>.dockerignore</code>, соберём образ, ускорим сборку в 20 раз за счёт правильного порядка слоёв.</li>
+      <li><b>Посмотрим, как это живёт в проде</b>: неизменяемые образы, CI, что будет на следующих уроках.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>«У меня работает!», история: от железа к контейнерам</td><td>теория</td></tr>
+      <tr><td class="t">0:12</td><td>Как устроен Docker: образ, контейнер, слои, реестр, демон</td><td>теория</td></tr>
+      <tr><td class="t">0:24</td><td>Установка, <code>docker run hello-world</code> — что произошло</td><td>практика</td></tr>
+      <tr><td class="t">0:30</td><td>nginx: порты, фон, логи, остановка, удаление</td><td>практика</td></tr>
+      <tr><td class="t">0:42</td><td>Своя страница PizzaHub в nginx через <code>-v</code></td><td>практика</td></tr>
+      <tr><td class="t">0:52</td><td>Redis и Postgres одной командой, <code>docker exec</code></td><td>практика</td></tr>
+      <tr><td class="t">1:00</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:10</td><td>Демо «матрица ада»: Node 16 против Node 22</td><td>практика</td></tr>
+      <tr><td class="t">1:16</td><td>Dockerfile и .dockerignore для PizzaHub, build и run</td><td>live-coding</td></tr>
+      <tr><td class="t">1:30</td><td>Слои и кеш: правильный и неправильный порядок</td><td>live-coding</td></tr>
+      <tr><td class="t">1:40</td><td>Образы: теги, чистка диска, Docker Hub</td><td>практика</td></tr>
+      <tr><td class="t">1:46</td><td>Docker в продакшене, что дальше</td><td>теория</td></tr>
+      <tr><td class="t">1:52</td><td>Игра «Угадай команду», шпаргалка, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОДГОТОВКА — ОТПРАВЬТЕ ГРУППЕ ЗА ДЕНЬ</span>
+    <p>Самая частая причина сорванного урока по Docker — у половины группы он не установлен или образы качаются 20 минут через медленный Wi-Fi. Попросите студентов заранее:</p>
+    <p>1. Установить <strong>Docker Desktop</strong> (docker.com → Get Docker) и запустить его — в трее/меню должен появиться кит. Пользователям Windows — включить режим <strong>WSL 2</strong> (Docker Desktop предложит сам).<br>
+    2. Выполнить в терминале одну команду — она скачает всё, что нужно на уроке:</p>
+    <p><code>docker pull hello-world &amp;&amp; docker pull nginx &amp;&amp; docker pull redis:8 &amp;&amp; docker pull postgres:17 &amp;&amp; docker pull node:22-alpine &amp;&amp; docker pull node:16-alpine</code></p>
+    <p>3. Иметь проект PizzaHub после урока 2 по паттернам (<code>pizzahub-lesson2.zip</code>). Если его нет — раздайте архив: Dockerfile мы пишем именно для него.</p>
+  </div></div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">КАК ЧИТАТЬ БЛОКИ КОДА</span>
+    <p>В заголовке каждого блока написано, <strong>где</strong> это вводить: «терминал · из папки pizzahub», «новый файл · pizzahub/Dockerfile» и т.д. Блоки с пометкой «👀 только посмотреть» вводить не нужно. Под каждой командой — таблица «разбор»: что делает каждый флаг. Сборку образа PizzaHub, порядок слоёв и кеш я проверил на реальном Docker Engine 29: вывод в уроке настоящий (в выводе базовый образ подписан как <code>node:22-alpine</code>).</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Зачем и как устроено</span><span class="bar"></span></div>
+
+<!-- 01 WHY -->
+<section id="why">
+  <div class="sec-head"><h2>01 · «У меня работает!» и немного истории</h2><span class="tag theory">теория</span><span class="tag time">~12 мин</span></div>
+
+  <div class="oneliner">Docker упаковывает приложение вместе со всем, что ему нужно для запуска, в один переносимый «контейнер».<small>Запустился у вас — запустится где угодно, где есть Docker.</small></div>
+
+  <h3>Боль, знакомая каждому</h3>
+  <p>Вы склонировали проект коллеги. <code>npm install</code> — ошибки. Оказывается, у него Node 22, у вас Node 18. Поставили Node 22 — теперь не собирается ваш старый проект. На сервере вообще Linux, а у вас Windows, и пути с <code>\</code> ломают скрипт. Добавьте сюда базу данных нужной версии, Redis, переменные окружения… Это называют <strong>«матрицей ада»</strong> (matrix of hell): N приложений × M окружений, и каждая клетка — свой сюрприз.</p>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">МЕМ, С КОТОРОГО ВСЁ НАЧАЛОСЬ</span>
+    <p>— У меня на машине всё работает!<br>— Отлично, тогда отправим в продакшен твою машину.</p>
+    <p>Шутка стала реальностью: Docker делает ровно это — упаковывает «вашу машину» (точнее, всё, что нужно приложению) и отправляет её куда угодно.</p>
+  </div></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ЖЕЛЕЗНЫЙ ЯЩИК, КОТОРЫЙ ИЗМЕНИЛ МИР</span>
+    <p>До 1950-х корабли грузили вручную: мешки, бочки, ящики разных форм. Погрузка одного судна занимала дни, грузчики носили всё на спине, половина времени корабль стоял в порту. В 1956 году американский предприниматель <strong>Малкольм Маклин</strong> отправил из Нью-Джерси судно с 58 одинаковыми стальными ящиками — первыми интермодальными контейнерами. Кран ставит контейнер на корабль, потом на поезд, потом на грузовик, и <em>никто не заглядывает внутрь</em>. Стоимость погрузки упала в десятки раз, и это во многом сделало возможной глобальную торговлю.</p>
+    <p>Docker — та же идея для программ: стандартный «ящик», который одинаково грузится на ноутбук, сервер или в облако, неважно, что внутри — Node, Python или Java. Поэтому на логотипе Docker кит, который несёт на спине контейнеры.</p>
+  </div></div>
+
+  <h3>Эволюция: как запускали код раньше</h3>
+  <div class="diagram">
+<pre> <span class="tn">1. Один сервер на всех</span>        <span class="tn">2. Виртуальные машины</span>               <span class="tn">3. Контейнеры</span>
+┌─────────────────────┐      ┌──────────┐ ┌──────────┐      ┌────────┐ ┌────────┐ ┌────────┐
+│ App A  App B  App C │      │  App A   │ │  App B   │      │ App A  │ │ App B  │ │ App C  │
+│ (общие библиотеки,  │      │  Libs    │ │  Libs    │      │ Libs   │ │ Libs   │ │ Libs   │
+│  общая память)      │      │ <span class="fk">Guest OS</span> │ │ <span class="fk">Guest OS</span> │      └────────┘ └────────┘ └────────┘
+├─────────────────────┤      ├──────────┴─┴──────────┤      ├──────────────────────────────┤
+│        ОС           │      │      Гипервизор       │      │        <span class="pk">Docker Engine</span>         │
+├─────────────────────┤      ├───────────────────────┤      ├──────────────────────────────┤
+│      Железо         │      │   ОС  +  Железо       │      │   ОС (одно ядро)  +  Железо  │
+└─────────────────────┘      └───────────────────────┘      └──────────────────────────────┘
+ одно приложение съело        полная изоляция, но у          изоляция без лишних ОС:
+ память — упали все           каждой VM своя ОС: гигабайты,  мегабайты, старт за секунды
+                              минуты на запуск</pre>
+  </div>
+
+  <table class="cmp">
+    <thead><tr><th>&nbsp;</th><th>Виртуальная машина</th><th>Контейнер</th></tr></thead>
+    <tbody>
+      <tr><td>Что внутри</td><td>целая ОС + приложение</td><td>только приложение и его библиотеки</td></tr>
+      <tr><td>Ядро ОС</td><td>своё у каждой VM</td><td>общее с хостом</td></tr>
+      <tr><td>Размер</td><td>гигабайты</td><td>десятки–сотни мегабайт</td></tr>
+      <tr><td>Запуск</td><td>минуты</td><td>секунды и меньше</td></tr>
+      <tr><td>Аналогия</td><td>отдельный дом со своим фундаментом и котельной</td><td>квартира в многоэтажке: свои стены и замок, но общий фундамент и отопление</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ПЯТЬ МИНУТ НА PYCON</span>
+    <p>Контейнеры в Linux существовали и до Docker, но пользоваться ими было больно. В марте 2013 года Соломон Хайкс из маленькой компании dotCloud вышел на конференцию <strong>PyCon</strong> с пятиминутным «молниеносным» докладом «The future of Linux Containers» и показал Docker. Через несколько месяцев проект был одним из самых обсуждаемых на GitHub, а компания переименовалась в Docker Inc. Сегодня в контейнерах запускается большая часть бэкенда в мире, включая Kubernetes, на котором крутятся крупнейшие сервисы.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 HOW -->
+<section id="how">
+  <div class="sec-head"><h2>02 · Как устроен Docker</h2><span class="tag theory">теория</span><span class="tag time">~12 мин</span></div>
+
+  <p>Пять понятий — и весь урок станет понятен. Для фронтендеров есть удобная аналогия из ООП.</p>
+
+  <table class="cmp">
+    <thead><tr><th>Понятие</th><th>Что это</th><th>Аналогия</th></tr></thead>
+    <tbody>
+      <tr><td><b>Образ</b> (image)</td><td>«замороженный» шаблон: файлы приложения, Node/Python, системные библиотеки, настройки. Только для чтения</td><td><code>class Pizza</code> · рецепт торта · установочный диск</td></tr>
+      <tr><td><b>Контейнер</b> (container)</td><td>запущенный экземпляр образа — живой процесс</td><td><code>new Pizza()</code> · испечённый торт · установленная программа</td></tr>
+      <tr><td><b>Dockerfile</b></td><td>текстовый рецепт, по которому собирается образ</td><td>исходный код класса</td></tr>
+      <tr><td><b>Реестр</b> (registry)</td><td>хранилище образов. Главный — Docker Hub</td><td>npm для пакетов · GitHub для кода</td></tr>
+      <tr><td><b>Том</b> (volume)</td><td>папка, которая живёт вне контейнера и переживает его удаление</td><td>внешний диск, подключённый к компьютеру</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ОДИН ОБРАЗ — МНОГО КОНТЕЙНЕРОВ</span>
+    <p>Как из одного класса можно создать сколько угодно объектов, так из одного образа <code>nginx</code> можно запустить десять независимых контейнеров. Удалили контейнер — образ остался, можно запустить новый. Это главное, что нужно запомнить сегодня.</p>
+  </div></div>
+
+  <h3>Слои: почему Docker быстрый</h3>
+  <p>Образ — это не один большой архив, а <strong>стопка слоёв</strong>. Каждая инструкция в Dockerfile добавляет слой сверху:</p>
+  <div class="diagram">
+<pre>  ┌────────────────────────────────────┐
+  │ <span class="fk">слой для записи контейнера</span>         │  ← создаётся при запуске; логи, временные файлы. Удалили контейнер — исчез
+  ╞════════════════════════════════════╡
+  │ 4. ваш код (src/, data/)          │  ← меняется часто
+  │ 3. node_modules (npm ci)          │  ← меняется редко
+  │ 2. package.json                   │
+  │ 1. Alpine Linux + Node.js 22      │  ← не меняется никогда, скачан один раз
+  └────────────────────────────────────┘
+         слои образа — только для чтения</pre>
+  </div>
+  <ul>
+    <li><strong>Кеш.</strong> Поменяли код — Docker пересобирает только слой 4, нижние берёт из кеша. Сборка за секунды вместо минут. В блоке 09 увидим это вживую.</li>
+    <li><strong>Экономия места.</strong> Десять образов на <code>node:22-alpine</code> хранят базовый слой один раз — на всех.</li>
+    <li><strong>Контейнер = образ + тонкий слой для записи.</strong> Всё, что приложение запишет на диск, попадёт в этот верхний слой и пропадёт вместе с контейнером. Поэтому базы данных хранят в томах (блок 06).</li>
+  </ul>
+
+  <h3>Кто с кем общается: клиент, демон, реестр</h3>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">АНАЛОГИЯ: РЕСТОРАН</span>
+    <p>Вы (терминал, команда <code>docker ...</code>) — <strong>посетитель</strong>. Docker CLI — <strong>официант</strong>: принимает заказ и несёт на кухню. Docker Daemon (<code>dockerd</code>) — <strong>кухня</strong>: она реально готовит (скачивает образы, собирает, запускает контейнеры). Docker Hub — <strong>оптовый склад</strong>, откуда кухня берёт продукты, если их нет в холодильнике. Посетитель на кухню не ходит — только через официанта.</p>
+  </div></div>
+  <div class="diagram">
+<pre>  терминал                  ваш компьютер                                  интернет
+┌────────────┐  REST API  ┌──────────────────────────────┐   pull/push   ┌──────────────┐
+│ <span class="tn">docker CLI</span> │ ─────────▶ │ <span class="pk">Docker Daemon</span> (dockerd)      │ ◀───────────▶ │ <span class="tn">Docker Hub</span>   │
+│ docker run │            │  образы · контейнеры · тома  │               │  nginx, node │
+└────────────┘            └──────────────────────────────┘               │  postgres... │
+  Docker Desktop UI,                                                     └──────────────┘
+  VS Code — тоже клиенты API</pre>
+  </div>
+  <p>Демон слушает <strong>REST API</strong>. CLI — лишь один из клиентов; Docker Desktop, расширение VS Code или ваш Python-скрипт шлют демону те же JSON-запросы. Поэтому всё, что сделано мышкой в Docker Desktop, видно в терминале, и наоборот.</p>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">А КАК ЖЕ MAC И WINDOWS?</span>
+    <p>Контейнеры используют механизмы ядра Linux (namespaces — «свои стены» для процесса, cgroups — «лимиты по памяти и процессору»). У macOS и Windows другое ядро. Поэтому Docker Desktop тихо запускает внутри <strong>маленькую виртуальную машину с Linux</strong>, и контейнеры живут в ней. Отсюда две практические вещи: Docker Desktop нужно запустить перед работой (иначе ошибка <code>Cannot connect to the Docker daemon</code>), и ему нужна оперативная память — настройки → Resources.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Руками в терминале</span><span class="bar"></span></div>
+
+<!-- 03 HELLO -->
+<section id="hello">
+  <div class="sec-head"><h2>03 · Установка и hello-world</h2><span class="tag practice">практика</span><span class="tag time">~6 мин</span></div>
+
+  <p><strong>Docker Desktop</strong> — всё в одном для Mac, Windows и Linux: демон, CLI, Docker Compose и графический интерфейс. Для учёбы и личных проектов он бесплатный; у крупных компаний есть платная подписка — условия лицензии уточняйте на сайте docker.com. Бесплатные альтернативы для Mac: OrbStack, Colima, Rancher Desktop — команды <code>docker ...</code> в них те же.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span><span class="role">bash / PowerShell</span></figcaption>
+    <pre><code class="language-bash">docker --version          # CLI установлен?
+docker run hello-world    # демон работает?</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вывод (сокращён)</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-none">Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+...
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.</code></pre>
+  </figure>
+  <p>Контейнер сам рассказывает, что произошло, — и это ровно схема из блока 02: <strong>клиент → демон → Docker Hub → контейнер → вывод обратно в терминал</strong>. Попросите группу перевести 4 шага — отличная проверка понимания. Если образ уже скачан заранее, строк <code>Unable to find image</code> не будет.</p>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЧАСТАЯ ОШИБКА</span>
+    <p><code>Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?</code> — CLI есть, а «кухня» не работает. Запустите Docker Desktop и подождите, пока кит перестанет «шевелиться».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 04 NGINX -->
+<section id="nginx">
+  <div class="sec-head"><h2>04 · nginx: порты и управление контейнерами</h2><span class="tag practice">практика</span><span class="tag time">~12 мин</span></div>
+
+  <p>hello-world вывел текст и завершился. Теперь запустим что-то, что работает долго, — веб-сервер <strong>nginx</strong> (тот самый reverse proxy из урока по паттернам).</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span></figcaption>
+    <pre><code class="language-bash">docker run -d -p 8080:80 --name my-site nginx</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Часть команды</th><th>Что значит</th></tr></thead>
+    <tbody>
+      <tr><td><code>docker run</code></td><td>создать контейнер из образа и запустить его</td></tr>
+      <tr><td><code>-d</code> (detach)</td><td>запустить в фоне и вернуть терминал. Без флага логи nginx займут терминал, а Ctrl+C остановит контейнер</td></tr>
+      <tr><td><code>-p 8080:80</code></td><td><strong>проброс порта</strong>: <code>ВАШ_ПОРТ:ПОРТ_В_КОНТЕЙНЕРЕ</code>. Внутри nginx слушает 80, снаружи стучимся на 8080</td></tr>
+      <tr><td><code>--name my-site</code></td><td>имя контейнера. Без него Docker придумает смешное вроде <code>quirky_hopper</code></td></tr>
+      <tr><td><code>nginx</code></td><td>имя образа (без тега = <code>nginx:latest</code>)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ НУЖЕН -p</span>
+    <p>У контейнера своя изолированная сеть — «квартира с закрытой дверью». nginx внутри слушает порт 80, но снаружи туда никто не попадёт. <code>-p 8080:80</code> — «прорубить окно»: всё, что приходит на <code>localhost:8080</code> вашего компьютера, пересылается на порт 80 контейнера. Порядок важен и часто путается: <strong>слева — снаружи, справа — внутри</strong>.</p>
+  </div></div>
+
+  <p>Откройте <code>http://localhost:8080</code> — увидите «Welcome to nginx!». Обновите страницу пару раз и посмотрите логи:</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span><span class="role">управление</span></figcaption>
+    <pre><code class="language-bash">docker ps                 # запущенные контейнеры
+docker logs my-site       # логи: видно ваши GET-запросы из браузера
+docker logs -f my-site    # следить за логами в реальном времени (выход — Ctrl+C)
+docker stop my-site       # остановить (контейнер остаётся, его можно стартовать снова)
+docker ps -a              # все контейнеры, включая остановленные
+docker start my-site      # запустить снова
+docker rm -f my-site      # удалить (-f — даже если запущен)
+docker images             # скачанные образы</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Команда</th><th>Аналогия</th></tr></thead>
+    <tbody>
+      <tr><td><code>docker ps</code></td><td>«Диспетчер задач» для контейнеров</td></tr>
+      <tr><td><code>docker logs</code></td><td>консоль браузера DevTools для контейнера</td></tr>
+      <tr><td><code>docker stop</code> / <code>start</code></td><td>свернуть и развернуть программу — данные внутри сохраняются</td></tr>
+      <tr><td><code>docker rm</code></td><td>удалить программу — слой записи контейнера пропадает</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ НА 2 МИНУТЫ: ОДИН ОБРАЗ — ТРИ КОНТЕЙНЕРА</span>
+    <p>Запустите <code>docker run -d -p 8081:80 --name site2 nginx</code> и <code>docker run -d -p 8082:80 --name site3 nginx</code>. Три независимых сервера из одного образа — вот она, аналогия «класс и объекты». Затем попробуйте занять уже занятый порт: <code>docker run -d -p 8081:80 nginx</code> → ошибка <code>port is already allocated</code>. Два процесса не могут слушать один порт — ни в Docker, ни без него (вспомните, как ругается Vite, когда 5173 занят). Уберите за собой: <code>docker rm -f site2 site3</code>.</p>
+  </div></div>
+
+  <p><strong>Мышкой:</strong> всё то же самое есть в Docker Desktop во вкладке <em>Containers</em>: Stop, Delete, клик по имени — логи, вкладка <em>Exec</em> — терминал внутри контейнера.</p>
+</section>
+
+<hr>
+
+<!-- 05 MOUNT -->
+<section id="mount">
+  <div class="sec-head"><h2>05 · Своя страница PizzaHub через -v</h2><span class="tag practice">практика</span><span class="tag time">~10 мин</span></div>
+
+  <p>«Welcome to nginx» — скучно. Покажем в nginx свою страницу. Но образ nginx чужой, внутрь него мы ничего не писали. Решение — <strong>bind mount</strong>: подключить папку с вашего компьютера внутрь контейнера.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>pizzahub/site/index.html</code><span class="k">роль</span><span>Простая статическая страница меню. Папку <code>site</code> создаём в корне проекта PizzaHub, рядом с <code>src</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · pizzahub/site/index.html</span></figcaption>
+    <pre><code class="language-markup">&lt;!doctype html&gt;
+&lt;html lang="ru"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;PizzaHub&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: system-ui, sans-serif; max-width: 520px; margin: 40px auto; }
+    li { padding: 6px 0; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;🍕 PizzaHub&lt;/h1&gt;
+  &lt;p&gt;Эту страницу отдаёт nginx из Docker-контейнера.&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;Маргарита — 499 ₽&lt;/li&gt;
+    &lt;li&gt;Пепперони — 599 ₽&lt;/li&gt;
+    &lt;li&gt;Четыре сыра — 649 ₽&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · из папки pizzahub</span><span class="role">macOS / Linux / Git Bash</span></figcaption>
+    <pre><code class="language-bash">docker run -d -p 8080:80 --name pizzahub-site \
+  -v "$(pwd)/site:/usr/share/nginx/html:ro" \
+  nginx</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · из папки pizzahub</span><span class="role">Windows PowerShell</span></figcaption>
+    <pre><code class="language-bash">docker run -d -p 8080:80 --name pizzahub-site -v "${PWD}/site:/usr/share/nginx/html:ro" nginx</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Часть</th><th>Что значит</th></tr></thead>
+    <tbody>
+      <tr><td><code>-v ПАПКА_У_ВАС:ПАПКА_В_КОНТЕЙНЕРЕ</code></td><td>подключить папку. Снова: слева — снаружи, справа — внутри</td></tr>
+      <tr><td><code>$(pwd)</code> / <code>${PWD}</code></td><td>текущая папка. Docker требует <strong>абсолютный</strong> путь, поэтому не пишем просто <code>./site</code> — в старых версиях это не работало</td></tr>
+      <tr><td><code>/usr/share/nginx/html</code></td><td>папка, откуда nginx отдаёт файлы. Это написано в описании образа на Docker Hub — читать описание образа полезно всегда</td></tr>
+      <tr><td><code>:ro</code></td><td>read-only: контейнер может читать файлы, но не менять их. Сайту писать в папку незачем, а защита бесплатная</td></tr>
+      <tr><td><code>\</code> в конце строки</td><td>перенос длинной команды в bash (в PowerShell пишем в одну строку)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="expect"><b>Проверка:</b> если <code>my-site</code> ещё жив и занимает 8080 — сначала <code>docker rm -f my-site</code>. Откройте <code>http://localhost:8080</code> — страница PizzaHub. Теперь поменяйте в <code>index.html</code> цену Маргариты, сохраните и обновите браузер — изменения видны сразу, без перезапуска контейнера. Папка не скопирована, а <em>подключена</em>.</div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">BIND MOUNT vs ТОМ</span>
+    <p><strong>Bind mount</strong> (<code>-v /путь/на/компьютере:...</code>) — конкретная папка, которую вы видите и редактируете. Удобно в разработке: правите код в IDE — контейнер видит сразу. <strong>Именованный том</strong> (<code>-v имя:...</code>) — папкой управляет Docker, где она лежит, вам знать не обязательно. Удобно для данных баз (блок 06). Отличить просто: начинается с <code>/</code> или <code>.</code> — bind mount, просто имя — том.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 06 DEVENV -->
+<section id="devenv">
+  <div class="sec-head"><h2>06 · Redis и Postgres за минуту</h2><span class="tag practice">практика</span><span class="tag time">~8 мин</span></div>
+
+  <p>Самая полезная для фронтендера часть урока. Бэкенду, который вы будете писать в этом модуле, нужна база. Раньше: скачать установщик, пройти мастер установки, запомнить пароль, через год удалять из системы. Теперь:</p>
+
+  <h3>Redis</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span></figcaption>
+    <pre><code class="language-bash">docker run -d --name dev-redis -p 6379:6379 redis:8
+docker exec -it dev-redis redis-cli</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">внутри redis-cli</span></figcaption>
+    <pre><code class="language-bash">PING                       # → PONG
+SET pizza "Маргарита"      # → OK
+GET pizza                  # → "Маргарита" (кириллица может показаться как \xd0\x9c... — это нормально)
+exit</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Часть</th><th>Что значит</th></tr></thead>
+    <tbody>
+      <tr><td><code>redis:8</code></td><td>образ <code>redis</code> с <strong>тегом</strong> <code>8</code> — конкретная версия. Тег как версия в <code>package.json</code></td></tr>
+      <tr><td><code>docker exec</code></td><td>выполнить команду внутри <em>уже запущенного</em> контейнера</td></tr>
+      <tr><td><code>-it</code></td><td><code>-i</code> — держать ввод открытым, <code>-t</code> — дать «настоящий» терминал. Нужно для всего интерактивного: консоли БД, <code>sh</code></td></tr>
+      <tr><td><code>redis-cli</code></td><td>программа, которую запускаем внутри. Она уже есть в образе — ставить на ваш компьютер ничего не нужно</td></tr>
+    </tbody>
+  </table>
+
+  <h3>PostgreSQL</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span></figcaption>
+    <pre><code class="language-bash">docker run -d --name dev-pg -p 5432:5432 \
+  -e POSTGRES_PASSWORD=secret \
+  -v pizzahub-pgdata:/var/lib/postgresql/data \
+  postgres:17
+
+docker exec -it dev-pg psql -U postgres -c "SELECT version();"</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Часть</th><th>Что значит</th></tr></thead>
+    <tbody>
+      <tr><td><code>-e POSTGRES_PASSWORD=secret</code></td><td><strong>переменная окружения</strong> внутри контейнера (как <code>.env</code>). Образ postgres без пароля не запустится — это написано в его описании</td></tr>
+      <tr><td><code>-v pizzahub-pgdata:/var/lib/postgresql/data</code></td><td>именованный том для данных базы. Без него <code>docker rm</code> удалит все таблицы вместе с контейнером</td></tr>
+      <tr><td><code>postgres:17</code></td><td>конкретная мажорная версия. Не <code>latest</code>: обновление базы с версии на версию — отдельная процедура, внезапно получить его при <code>pull</code> не хочется</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ: ДАННЫЕ ПЕРЕЖИВАЮТ КОНТЕЙНЕР</span>
+    <p>1. Создайте таблицу: <code>docker exec -it dev-pg psql -U postgres -c "CREATE TABLE pizzas(name text); INSERT INTO pizzas VALUES ('Маргарита');"</code><br>
+    2. Удалите контейнер совсем: <code>docker rm -f dev-pg</code><br>
+    3. Запустите новый той же командой с тем же <code>-v pizzahub-pgdata:...</code><br>
+    4. <code>docker exec -it dev-pg psql -U postgres -c "SELECT * FROM pizzas;"</code> — Маргарита на месте. Контейнер новый, а данные в томе остались. Без <code>-v</code> таблица бы исчезла.</p>
+  </div></div>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ИСТОРИЯ ИЗ ЖИЗНИ</span>
+    <p>Классика первых недель с Docker: разработчик поднимает Postgres без тома, неделю наполняет тестовыми данными, потом делает «уборку» <code>docker rm -f $(docker ps -aq)</code> — а новый контейнер стартует с пустой базой. Строго говоря, данные остались в безымянном томе, который Docker создал сам, но найти его среди десятка томов с именами вроде <code>3f9a1c…</code> — тот ещё квест. Контейнеры <strong>одноразовые</strong> (эфемерные), и это не баг, а принцип. Всё ценное — в тома.</p>
+  </div></div>
+
+  <p>Удалить всё после урока: <code>docker rm -f dev-redis dev-pg pizzahub-site</code>. Том с данными Postgres при этом останется; удалить его — <code>docker volume rm pizzahub-pgdata</code>.</p>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва пишем Dockerfile для PizzaHub. Откройте проект и проверьте, что <code>docker ps</code> отвечает без ошибок.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 3 · Упаковываем PizzaHub</span><span class="bar"></span></div>
+
+<!-- 07 HELL -->
+<section id="hell">
+  <div class="sec-head"><h2>07 · Демо: «матрица ада» вживую</h2><span class="tag practice">практика</span><span class="tag time">~6 мин</span></div>
+
+  <p>Помните, в уроках по паттернам мы использовали <code>structuredClone</code> для глубокой копии (Prototype, Memento)? Эта функция появилась только в <strong>Node 17</strong>. Проверим, что будет на сервере, где «исторически» стоит Node 16, — для этого не нужно ничего устанавливать:</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span></figcaption>
+    <pre><code class="language-bash">docker run --rm node:16-alpine node -e "console.log(structuredClone({ pizza: 'Маргарита' }))"
+# ReferenceError: structuredClone is not defined
+
+docker run --rm node:22-alpine node -e "console.log(structuredClone({ pizza: 'Маргарита' }))"
+# { pizza: 'Маргарита' }</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Часть</th><th>Что значит</th></tr></thead>
+    <tbody>
+      <tr><td><code>--rm</code></td><td>удалить контейнер сразу после завершения — для одноразовых команд, чтобы не копился мусор в <code>docker ps -a</code></td></tr>
+      <tr><td><code>node:16-alpine</code></td><td>образ <code>node</code>, тег <code>16-alpine</code>: Node 16 на Alpine Linux (крошечный дистрибутив, ~5 МБ)</td></tr>
+      <tr><td><code>node -e "..."</code></td><td>команда, которая выполнится внутри вместо стандартной. Всё, что после имени образа, — команда для контейнера</td></tr>
+    </tbody>
+  </table>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ВОТ ЗАЧЕМ ВСЁ ЭТО</span>
+    <p>Две версии Node на одном компьютере, без nvm, за две секунды, и ни одна не установлена в систему. И главное — если мы упакуем PizzaHub в образ на <code>node:22-alpine</code>, ошибка «на сервере старый Node» станет невозможной: Node 22 едет <em>внутри</em> образа вместе с кодом. Это и есть решение «матрицы ада».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 DOCKERFILE -->
+<section id="dockerfile">
+  <div class="sec-head"><h2>08 · Dockerfile для PizzaHub</h2><span class="tag practice">live-coding</span><span class="tag time">~14 мин</span></div>
+
+  <div class="oneliner">Dockerfile — рецепт образа: построчные инструкции «возьми базу, скопируй, установи, запусти».<small>Каждая инструкция — новый слой.</small></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>pizzahub/Dockerfile</code><span class="k">роль</span><span>Рецепт образа PizzaHub. Файл в <strong>корне проекта</strong>, рядом с <code>package.json</code>. Имя ровно <code>Dockerfile</code> — с большой буквы и без расширения.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · pizzahub/Dockerfile</span></figcaption>
+    <pre><code class="language-docker"># 1. Базовый образ: Linux (Alpine) + Node.js 22 уже установлены
+FROM node:22-alpine
+
+# 2. Рабочая папка внутри контейнера — дальше все пути относительно неё
+WORKDIR /app
+
+# 3. Сначала ТОЛЬКО файлы зависимостей...
+COPY package.json package-lock.json ./
+
+# 4. ...и установка зависимостей (этот слой закешируется)
+RUN npm ci
+
+# 5. Потом весь остальной код
+COPY . .
+
+# 6. Что запускать при старте контейнера
+CMD ["npm", "run", "dev"]</code></pre>
+  </figure>
+
+  <h4>Разбор каждой инструкции</h4>
+  <table class="cmp">
+    <thead><tr><th>Инструкция</th><th>Что делает</th><th>Аналогия для фронтендера</th></tr></thead>
+    <tbody>
+      <tr><td><code>FROM node:22-alpine</code></td><td>базовый образ — с него начинается наш. Всегда первая строка</td><td><code>extends</code> — наследуемся от готового класса</td></tr>
+      <tr><td><code>WORKDIR /app</code></td><td>создать папку <code>/app</code> внутри образа и перейти в неё (<code>mkdir</code> + <code>cd</code>)</td><td>корень проекта</td></tr>
+      <tr><td><code>COPY package.json package-lock.json ./</code></td><td>скопировать файлы <em>с вашего компьютера</em> в <code>/app</code> образа. Слева — откуда, справа — куда</td><td>—</td></tr>
+      <tr><td><code>RUN npm ci</code></td><td>выполнить команду <strong>при сборке</strong> образа; результат (node_modules) сохраняется в слой</td><td><code>npm ci</code> — как <code>npm install</code>, но строго по <code>package-lock.json</code>, без обновлений. Для сборок только так</td></tr>
+      <tr><td><code>COPY . .</code></td><td>скопировать весь проект (кроме того, что в <code>.dockerignore</code>)</td><td>—</td></tr>
+      <tr><td><code>CMD ["npm", "run", "dev"]</code></td><td>команда <strong>при запуске</strong> контейнера. Записана как JSON-массив</td><td>скрипт <code>start</code> в <code>package.json</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">RUN ИЛИ CMD — САМАЯ ЧАСТАЯ ПУТАНИЦА</span>
+    <p><code>RUN</code> выполняется <strong>один раз при сборке</strong> (<code>docker build</code>) — «приготовить заготовки». <code>CMD</code> выполняется <strong>при каждом запуске</strong> (<code>docker run</code>) — «подать блюдо». <code>RUN</code> может быть много, <code>CMD</code> — одна (если написать две, сработает последняя). А почему <code>CMD</code> массивом, а не строкой <code>CMD npm run dev</code>? Строка запускается через оболочку <code>sh</code>, и Ctrl+C/<code>docker stop</code> приходят оболочке, а не вашему приложению. Массив запускает программу напрямую.</p>
+  </div></div>
+
+  <h3>.dockerignore — что НЕ отправлять в сборку</h3>
+  <div class="fileinfo"><span class="k">создаём</span><code>pizzahub/.dockerignore</code><span class="k">роль</span><span>Работает как <code>.gitignore</code>, но для <code>COPY</code>. Тоже в корне проекта. Имя начинается с точки.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · pizzahub/.dockerignore</span></figcaption>
+    <pre><code class="language-bash"># что НЕ отправлять в Docker при сборке
+node_modules
+.git
+.DS_Store
+*.log
+site
+Dockerfile
+.dockerignore</code></pre>
+  </figure>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ПОЧЕМУ node_modules — ПЕРВАЯ СТРОКА</span>
+    <p>Без <code>.dockerignore</code> команда <code>COPY . .</code> скопирует в образ и ваш локальный <code>node_modules</code> — поверх того, что только что аккуратно поставил <code>RUN npm ci</code>. Проблема в том, что некоторые пакеты содержат программы, собранные под конкретную ОС. В PizzaHub это <code>esbuild</code>, на котором работает <code>tsx</code>. На Mac или Windows установится версия для Mac/Windows, а внутри контейнера Linux. Итог — загадочная ошибка вида <code>You installed esbuild for another platform than the one you're currently using</code>. Плюс лишние сотни мегабайт в «посылке» для сборки. Правило: <strong><code>node_modules</code> всегда ставится внутри образа, а снаружи игнорируется</strong>.</p>
+  </div></div>
+  <p>Остальные строки: <code>.git</code> — история репозитория в образе не нужна (и может содержать секреты); <code>site</code> — страница для nginx из блока 05 к приложению не относится; <code>Dockerfile</code> и <code>.dockerignore</code> — рецепт внутри торта не нужен.</p>
+
+  <h3>Собираем и запускаем</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · из папки pizzahub (где лежит Dockerfile)</span></figcaption>
+    <pre><code class="language-bash">docker build -t pizzahub .
+docker run --rm pizzahub</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Часть</th><th>Что значит</th></tr></thead>
+    <tbody>
+      <tr><td><code>docker build</code></td><td>собрать образ по <code>Dockerfile</code></td></tr>
+      <tr><td><code>-t pizzahub</code></td><td>tag — имя образа (и версия после двоеточия, по умолчанию <code>latest</code>)</td></tr>
+      <tr><td><code>.</code> (точка!)</td><td><strong>контекст сборки</strong> — папка, файлы из которой можно копировать через <code>COPY</code>. Точку в конце забывают постоянно — получают <code>requires 1 argument</code></td></tr>
+    </tbody>
+  </table>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вывод docker build (первая сборка)</span><span class="role">настоящий · 👀 только посмотреть</span></figcaption>
+    <pre><code class="language-none"> =&gt; [internal] load build definition from Dockerfile
+ =&gt; [internal] load .dockerignore
+ =&gt; [1/5] FROM docker.io/library/node:22-alpine
+ =&gt; [2/5] WORKDIR /app
+ =&gt; [3/5] COPY package.json package-lock.json ./
+ =&gt; [4/5] RUN npm ci                                   2.0s
+ =&gt; [5/5] COPY . .
+ =&gt; exporting to image
+ =&gt; =&gt; naming to docker.io/library/pizzahub:latest</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вывод docker run --rm pizzahub</span><span class="role">настоящий · начало</span></figcaption>
+    <pre><code class="language-none">&gt; pizzahub@1.0.0 dev
+&gt; tsx src/main.ts
+
+🍕 PizzaHub · урок 2
+
+⏱  getMenu: 302 мс
+— страница 1 —
+   Маргарита — 499 ₽
+   Пепперони — 599 ₽
+...
+🔔 Заказ №f3ce142a: delivering → delivered
+❌ Нельзя перейти из «delivered» в «cancelled»</code></pre>
+  </figure>
+  <div class="expect"><b>Готово:</b> весь сценарий урока 2 по паттернам отработал <em>внутри Linux-контейнера с Node 22</em> — даже если у вас на компьютере Windows и Node 18. Этот же образ можно запустить у коллеги или на сервере: результат будет тот же.</div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЗАГЛЯНЕМ ВНУТРЬ</span>
+    <p><code>docker run --rm -it pizzahub sh</code> — вместо <code>CMD</code> запустится оболочка внутри образа. Наберите <code>ls</code> — увидите <code>data  node_modules  package-lock.json  package.json  src  tsconfig.json</code>. Папки <code>site</code> и файла <code>Dockerfile</code> нет — их отрезал <code>.dockerignore</code>. <code>node -v</code> → <code>v22...</code>. Выход — <code>exit</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 09 LAYERS -->
+<section id="layers">
+  <div class="sec-head"><h2>09 · Слои и кеш: почему порядок строк важен</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Поменяем код и пересоберём. Допишите в конец <code>src/main.ts</code> любую строку, например <code>console.log('👋 из Docker');</code>, и снова <code>docker build -t pizzahub .</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вывод docker build после правки кода</span><span class="role">настоящий · 👀 только посмотреть</span></figcaption>
+    <pre><code class="language-none"> =&gt; [1/5] FROM docker.io/library/node:22-alpine
+ =&gt; CACHED [2/5] WORKDIR /app
+ =&gt; CACHED [3/5] COPY package.json package-lock.json ./
+ =&gt; CACHED [4/5] RUN npm ci                            ← не выполнялся!
+ =&gt; [5/5] COPY . .                                     0.0s
+                                                       итого: 0.2 с</code></pre>
+  </figure>
+  <p>Docker проверяет слои сверху вниз: «изменилось ли что-то, от чего зависит этот шаг?». <code>package.json</code> не менялся — значит, <code>npm ci</code> даст то же самое, берём из кеша. Изменился только код — пересобирается только последний слой.</p>
+
+  <h3>А если написать «очевидно»?</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">Dockerfile «как НЕ надо»</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
+    <pre><code class="language-docker">FROM node:22-alpine
+WORKDIR /app
+COPY . .            # сначала ВСЁ
+RUN npm ci          # потом зависимости
+CMD ["npm", "run", "dev"]</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вывод после правки одной строки кода</span><span class="role">настоящий · 👀 только посмотреть</span></figcaption>
+    <pre><code class="language-none"> =&gt; CACHED [2/4] WORKDIR /app
+ =&gt; [3/4] COPY . .                                     0.1s
+ =&gt; [4/4] RUN npm ci                                   1.9s   ← ставим зависимости заново
+                                                       итого: 4.1 с</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ТАК</span>
+    <p>Кеш слоя сбрасывается, если изменилось хоть что-то, что в него копируется, — <strong>и вместе с ним сбрасываются все слои ниже</strong>. В «плохом» варианте <code>COPY . .</code> зависит от любого файла проекта, поэтому любая правка кода ломает кеш и тянет за собой <code>npm ci</code>. В нашем замере: 0.2 секунды против 4.1 — в 20 раз. В настоящем фронтенд-проекте с сотнями зависимостей <code>npm ci</code> идёт минуту-две, и разница превращается в «пересобрал за секунду» против «пошёл за кофе» на каждую правку. Правило: <strong>то, что меняется редко, — выше; то, что часто, — ниже</strong>.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span><span class="role">посмотреть слои образа</span></figcaption>
+    <pre><code class="language-bash">docker history pizzahub</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">вывод (наши слои, размеры у вас будут похожими)</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-none">CMD ["npm" "run" "dev"]                       0B
+COPY . . # buildkit                           201kB    ← ваш код
+RUN /bin/sh -c npm ci # buildkit              65.9MB   ← node_modules
+COPY package.json package-lock.json ./        41kB
+WORKDIR /app                                  8.19kB
+...                                                    ← ниже слои самого node:22-alpine</code></pre>
+  </figure>
+  <p>Код весит 200 КБ, зависимости — 66 МБ (в основном это <code>esbuild</code> для <code>tsx</code>). Поэтому и важно, чтобы тяжёлый слой не пересобирался из-за лёгкого.</p>
+</section>
+
+<hr>
+
+<!-- 10 IMAGES -->
+<section id="images">
+  <div class="sec-head"><h2>10 · Образы: теги, чистка диска, Docker Hub</h2><span class="tag practice">практика</span><span class="tag time">~6 мин</span></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · из папки pizzahub</span></figcaption>
+    <pre><code class="language-bash">docker build -t pizzahub:1.0 .       # версия в теге
+docker images                        # список образов и их размер
+docker run --rm pizzahub:1.0         # запустить конкретную версию
+
+docker system df                     # сколько места занимает Docker
+docker image prune                   # удалить «висячие» образы без имени
+docker rmi pizzahub:1.0              # удалить образ</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th>Понятие</th><th>Что значит</th></tr></thead>
+    <tbody>
+      <tr><td><code>имя:тег</code></td><td>тег — версия образа. <code>latest</code> — просто тег по умолчанию, а <strong>не</strong> «самая свежая версия». Если собрать <code>pizzahub:1.0</code>, а потом <code>pizzahub</code>, <code>latest</code> укажет на вторую сборку, и никакой магии</td></tr>
+      <tr><td>«висячие» образы (<code>&lt;none&gt;</code>)</td><td>старые сборки, у которых имя отобрала новая. Каждая пересборка оставляет такой «хвост»</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРО МЕСТО НА ДИСКЕ</span>
+    <p>Через месяц активной работы с Docker многие открывают «Хранилище» на Mac и видят «Docker: 60 ГБ». Это старые образы, остановленные контейнеры и кеш сборок. <code>docker system df</code> покажет, кто сколько занимает, а <code>docker system prune</code> удалит всё неиспользуемое. Осторожно: с флагом <code>--volumes</code> удалятся и тома — вместе с данными баз из блока 06.</p>
+  </div></div>
+
+  <h3>Опубликовать образ (по желанию)</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span><span class="role">нужен аккаунт на hub.docker.com</span></figcaption>
+    <pre><code class="language-bash">docker login
+docker tag pizzahub:1.0 ВАШ_ЛОГИН/pizzahub:1.0     # имя в формате логин/образ
+docker push ВАШ_ЛОГИН/pizzahub:1.0
+# теперь на любом компьютере: docker run --rm ВАШ_ЛОГИН/pizzahub:1.0</code></pre>
+  </figure>
+  <p>Это и есть <code>git push</code> для готовых сборок. Публичные образы на Docker Hub видны всем — никаких паролей и <code>.env</code> внутри образа (ещё одна причина держать <code>.dockerignore</code> в порядке).</p>
+</section>
+
+<hr>
+
+<!-- 11 PROD -->
+<section id="prod">
+  <div class="sec-head"><h2>11 · Docker в продакшене и что дальше</h2><span class="tag theory">теория</span><span class="tag time">~6 мин</span></div>
+
+  <h3>Неизменяемая инфраструктура</h3>
+  <p>Раньше на сервер заходили по SSH и обновляли код «руками»: <code>git pull</code>, <code>npm install</code>, перезапуск. Каждый сервер постепенно становился уникальной «снежинкой», и никто точно не знал, что на нём стоит. С Docker принцип другой — <strong>immutable infrastructure</strong>: сервер ничего не собирает, он только запускает готовые образы.</p>
+  <div class="diagram">
+<pre> git push ──▶ <span class="tn">CI</span> (GitHub Actions)
+               1. docker build -t pizzahub:a1b2c3d .     ← тег = хеш коммита
+               2. тесты ВНУТРИ этого образа
+               3. docker push в реестр
+                         │
+                         ▼
+               <span class="pk">сервер</span>: docker pull pizzahub:a1b2c3d → docker run
+               тот же самый образ, байт в байт, что прошёл тесты</pre>
+  </div>
+  <p>Что-то сломалось после релиза — запускаем предыдущий тег, откат за секунды. Риск «на тесте работало, а на проде другая версия библиотеки» сводится к нулю: тестировали и запускаем буквально один и тот же образ.</p>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ФРОНТЕНДЕР ВСТРЕЧАЕТ DOCKER</span>
+    <p>Сборка фронтенда в CI идёт в контейнере <code>node:22</code>. Превью-окружения для каждого pull request. Прод фронтенда часто выглядит как «собрали статику в образе <code>node</code>, положили в образ <code>nginx</code>» — это называется multi-stage build, его разберём дальше. Плюс Playwright и Cypress гоняют e2e-тесты в своих официальных Docker-образах с браузерами.</p>
+  </div></div>
+
+  <h3>Что будет на следующих уроках</h3>
+  <ul>
+    <li><strong>Сети</strong> — как контейнер с бэкендом находит контейнер с базой по имени.</li>
+    <li><strong>Docker Compose</strong> — вместо пяти длинных <code>docker run</code> один файл <code>compose.yaml</code> и одна команда <code>docker compose up</code>: бэкенд + Postgres + Redis + nginx.</li>
+    <li><strong>Multi-stage build</strong> — маленькие и безопасные образы для прода.</li>
+  </ul>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 12 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>12 · Игра «Угадай команду», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~8 мин</span></div>
+
+  <details class="quiz"><summary>Хочу посмотреть, какие контейнеры сейчас работают.</summary><div class="ans"><b><code>docker ps</code></b> (а с остановленными — <code>docker ps -a</code>).</div></details>
+  <details class="quiz"><summary>Nginx в контейнере слушает 80, а я хочу открыть его на <code>localhost:3000</code>.</summary><div class="ans"><b><code>-p 3000:80</code></b>. Слева — снаружи, справа — внутри.</div></details>
+  <details class="quiz"><summary>Нужно зайти в консоль Postgres в уже запущенном контейнере <code>dev-pg</code>.</summary><div class="ans"><b><code>docker exec -it dev-pg psql -U postgres</code></b>.</div></details>
+  <details class="quiz"><summary>Удалил контейнер с базой — данные пропали. Что забыл?</summary><div class="ans"><b>Том:</b> <code>-v имя-тома:/var/lib/postgresql/data</code>. Контейнеры одноразовые, данные — в томах.</div></details>
+  <details class="quiz"><summary><code>RUN npm ci</code> или <code>CMD npm ci</code>, чтобы зависимости были в образе?</summary><div class="ans"><b><code>RUN</code></b> — выполняется при сборке, результат сохраняется в слой. <code>CMD</code> — при каждом запуске контейнера.</div></details>
+  <details class="quiz"><summary>Поменял одну строчку в <code>src/main.ts</code>, а сборка снова ставит все зависимости. Почему?</summary><div class="ans"><b><code>COPY . .</code> стоит выше <code>RUN npm ci</code>.</b> Сначала копируем <code>package*.json</code>, ставим зависимости, потом копируем код.</div></details>
+  <details class="quiz"><summary>На Mac собрал образ, в контейнере ошибка про esbuild «for another platform».</summary><div class="ans"><b>Нет <code>node_modules</code> в <code>.dockerignore</code></b> — локальные пакеты для macOS попали в Linux-контейнер.</div></details>
+  <details class="quiz"><summary><code>docker build -t pizzahub</code> → «requires 1 argument». Что не так?</summary><div class="ans"><b>Забыли точку</b> — контекст сборки: <code>docker build -t pizzahub .</code></div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Задача</th><th>Команда</th></tr></thead>
+    <tbody>
+      <tr><td>запустить в фоне с портом и именем</td><td><code>docker run -d -p 8080:80 --name site nginx</code></td></tr>
+      <tr><td>одноразово выполнить и удалить</td><td><code>docker run --rm образ команда</code></td></tr>
+      <tr><td>подключить папку / том</td><td><code>-v "$(pwd)/site:/usr/share/nginx/html:ro"</code> · <code>-v pgdata:/var/lib/postgresql/data</code></td></tr>
+      <tr><td>переменная окружения</td><td><code>-e POSTGRES_PASSWORD=secret</code></td></tr>
+      <tr><td>список / логи / остановить / удалить</td><td><code>docker ps -a</code> · <code>docker logs -f имя</code> · <code>docker stop имя</code> · <code>docker rm -f имя</code></td></tr>
+      <tr><td>зайти внутрь</td><td><code>docker exec -it имя sh</code></td></tr>
+      <tr><td>собрать образ</td><td><code>docker build -t имя:тег .</code></td></tr>
+      <tr><td>образы и место</td><td><code>docker images</code> · <code>docker history имя</code> · <code>docker system df</code> · <code>docker image prune</code></td></tr>
+      <tr><td>опубликовать</td><td><code>docker login</code> → <code>docker tag</code> → <code>docker push</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание</h3>
+  <ol>
+    <li><strong>Своя страница.</strong> Запустите nginx с любой своей HTML-страницей (портфолио, лендинг) на порту 3000 через bind mount. Поменяйте страницу и убедитесь, что изменения видны без перезапуска.</li>
+    <li><strong>Две версии.</strong> Соберите <code>pizzahub:1.0</code>, поменяйте что-нибудь в сценарии <code>main.ts</code>, соберите <code>pizzahub:1.1</code>. Запустите обе версии и сравните вывод. Посмотрите <code>docker images</code>: сколько места занимает вторая версия «сверху» первой и почему почти нисколько?</li>
+    <li><strong>Версия Node.</strong> Поменяйте в Dockerfile <code>node:22-alpine</code> на <code>node:16-alpine</code>, пересоберите и запустите. Запишите ошибку и объясните её. Верните 22.</li>
+    <li><strong>Сломать кеш специально.</strong> Поставьте <code>COPY . .</code> перед <code>RUN npm ci</code>, засеките время пересборки после правки кода и сравните с правильным порядком.</li>
+    <li><strong>Postgres с томом.</strong> Поднимите Postgres с томом, создайте таблицу <code>orders</code> с парой строк, удалите контейнер, поднимите заново — данные должны остаться. Затем то же <em>без</em> тома — что изменилось?</li>
+    <li><strong>По желанию:</strong> опубликуйте <code>pizzahub:1.0</code> на Docker Hub и попросите одногруппника запустить его у себя одной командой.</li>
+  </ol>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю разницу между виртуальной машиной и контейнером.</li>
+    <li>☐ Различаю образ и контейнер (класс и объект), знаю, что такое слои и реестр.</li>
+    <li>☐ Запускаю контейнеры с <code>-d</code>, <code>-p</code>, <code>--name</code>, <code>-e</code>, <code>-v</code>, <code>--rm</code> и понимаю каждый флаг.</li>
+    <li>☐ Управляю контейнерами: <code>ps</code>, <code>logs</code>, <code>stop</code>, <code>start</code>, <code>rm</code>, <code>exec</code>.</li>
+    <li>☐ Поднимаю Redis и Postgres одной командой и храню данные в томе.</li>
+    <li>☐ Пишу Dockerfile и <code>.dockerignore</code>, понимаю <code>FROM</code>, <code>WORKDIR</code>, <code>COPY</code>, <code>RUN</code>, <code>CMD</code>.</li>
+    <li>☐ Располагаю инструкции так, чтобы кеш работал.</li>
+    <li>☐ Слежу за тегами и местом на диске.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://labs.play-with-docker.com/" target="_blank" rel="noopener">Play with Docker</a> — Docker прямо в браузере, если на компьютере не получилось установить.</li>
+    <li><a href="https://github.com/wsargent/docker-cheat-sheet" target="_blank" rel="noopener">Docker Cheat Sheet</a> на GitHub.</li>
+    <li><a href="https://github.com/veggiemonk/awesome-docker" target="_blank" rel="noopener">Awesome Docker</a> — подборка ресурсов и проектов.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · Docker, урок 1 · Контейнеры vs VM, образ, контейнер, слои, реестр, docker run/ps/logs/exec, порты, bind mount и тома, Dockerfile и .dockerignore для PizzaHub, кеш слоёв, теги и Docker Hub, immutable infrastructure</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

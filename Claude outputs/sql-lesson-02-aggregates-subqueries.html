@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL · Урок 2 — Агрегация, группировка, NULL, CASE и подзапросы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>SQL</div>
+  <p class="lead">Модуль Backend · SQL · Урок 2</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и подготовка</a>
+    <div class="grp">Часть 1 · Считаем в базе</div>
+    <a href="#why"><span class="n theory-dot">01</span>Зачем считать в базе</a>
+    <a href="#agg"><span class="n practice-dot">02</span>COUNT, SUM, AVG, MIN, MAX</a>
+    <a href="#group"><span class="n practice-dot">03</span>GROUP BY</a>
+    <a href="#having"><span class="n practice-dot">04</span>HAVING и порядок 2.0</a>
+    <a href="#dates"><span class="n practice-dot">05</span>Даты в отчётах</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 2 · Логика и подзапросы</div>
+    <a href="#null"><span class="n practice-dot">06</span>NULL, COALESCE, NULLIF</a>
+    <a href="#case"><span class="n practice-dot">07</span>CASE и отчёт в колонках</a>
+    <a href="#subq"><span class="n practice-dot">08</span>Подзапросы, IN, EXISTS</a>
+    <a href="#cte"><span class="n practice-dot">09</span>CTE: WITH</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">10</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · SQL · Урок 2 · 2 часа с перерывом · для фронтенд-разработчиков · база Pagila</p>
+  <h1>Агрегация, группировка, NULL, CASE и подзапросы</h1>
+  <p class="lead-p">На прошлом уроке мы научились <strong>доставать</strong> строки: фильтровать, сортировать, листать страницами. Сегодня научимся <strong>отвечать на вопросы бизнеса</strong>: сколько заработали, кто лучший клиент, в какие часы пик, какие фильмы никто не берёт. Это язык любого дашборда. К концу урока мы одним запросом соберём сегментацию клиентов «VIP / Постоянный / Обычный» — ровно такую таблицу, которую потом рисуют графиком на фронтенде.</p>
+
+  <div class="hero">
+    <h3>ЧТО СДЕЛАЕМ ЗА УРОК</h3>
+    <ul>
+      <li><b>Агрегатные функции</b> <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code> и как они обращаются с <code>NULL</code>.</li>
+      <li><b>Отчёты с группировкой</b> <code>GROUP BY</code> и фильтр групп <code>HAVING</code>, обновлённый порядок выполнения запроса.</li>
+      <li><b>Даты для графиков</b>: выручка по месяцам и годам, часы пик, часовые пояса в действии.</li>
+      <li><b>Логика</b>: трёхзначная логика, <code>COALESCE</code>, <code>NULLIF</code>, <code>CASE</code>, отчёт «значения в колонки».</li>
+      <li><b>Запросы в запросах</b>: подзапросы, <code>IN</code>, <code>EXISTS</code>, ловушка <code>NOT IN</code> и <code>CTE</code> для читаемого кода.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Зачем считать в базе, а не в JS. Проверка версии Pagila</td><td>теория</td></tr>
+      <tr><td class="t">0:08</td><td><code>COUNT(*)</code> и <code>COUNT(колонка)</code>, <code>SUM/AVG/MIN/MAX</code>, агрегаты и <code>NULL</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:22</td><td><code>GROUP BY</code>: отчёты по группам, главная ошибка новичка</td><td>live-coding</td></tr>
+      <tr><td class="t">0:37</td><td><code>HAVING</code> против <code>WHERE</code>, порядок выполнения 2.0</td><td>live-coding</td></tr>
+      <tr><td class="t">0:47</td><td>Даты: <code>date_trunc</code>, <code>EXTRACT</code>, интервалы, часовые пояса</td><td>live-coding</td></tr>
+      <tr><td class="t">0:55</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:05</td><td>Трёхзначная логика, <code>COALESCE</code>, <code>NULLIF</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:15</td><td><code>CASE</code>, <code>CASE</code> внутри агрегатов, <code>FILTER</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:28</td><td>Подзапросы: скалярный, <code>IN</code>, <code>EXISTS</code>, ловушка <code>NOT IN</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:43</td><td><code>CTE</code>: сегментация клиентов по шагам</td><td>live-coding</td></tr>
+      <tr><td class="t">1:52</td><td>Игра «Найди баг», шпаргалка, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОДГОТОВКА: БАЗА PAGILA В DOCKER</span>
+    <p>Работаем с базой <b>Pagila</b>, поднятой через <code>docker compose up</code> из репозитория <a href="https://github.com/devrimgunduz/pagila" target="_blank" rel="noopener">devrimgunduz/pagila</a>. Подключение в DBeaver: Host <code>localhost</code>, Port <code>5432</code>, Database <code>pagila</code>, User <code>postgres</code>, Password <code>123456</code> (так задано в их <code>docker-compose.yml</code>).</p>
+    <p>Все запросы пишем в один SQL-скрипт: в DBeaver правой кнопкой по базе <b>pagila</b> → <b>SQL Editor → New SQL script</b>, сохранить как <code>lesson2.sql</code>. Выполнить запрос под курсором — <b>Ctrl+Enter</b> (Mac: Cmd+Enter).</p>
+  </div></div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">КАК ЧИТАТЬ БЛОКИ КОДА</span>
+    <p>Заголовок <code>lesson2.sql · + в конец скрипта</code> — пишем в скрипт и выполняем. «👀 только посмотреть» — не пишем. Под запросами — разбор синтаксиса с аналогами из JavaScript и <b>настоящий результат</b>: все запросы урока я выполнил на свежей Pagila из того же репозитория (данные за 2022–2026 годы, 999 клиентов, 51 061 платёж).</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · самое начало скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 0. Подготовка: работаем в UTC, чтобы цифры совпадали у всех
+SET TIME ZONE 'UTC';
+
+-- Проверка версии Pagila
+SELECT COUNT(*) FROM customer;   -- 999 — новая версия, как в уроке</code></pre>
+  </figure>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЗАЧЕМ SET TIME ZONE</span>
+    <p>DBeaver при подключении сообщает базе часовой пояс <b>вашего компьютера</b>. От него зависит, к какому дню и месяцу отнесётся платёж, сделанный около полуночи, — и суммы «по месяцам» у студентов в разных городах разойдутся на копейки. <code>SET TIME ZONE 'UTC'</code> выравнивает всех. Подробно разберём в блоке 05. Если <code>COUNT(*)</code> вернул <b>599</b> — у вас старая Pagila 3.x: запросы те же, цифры другие.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Считаем в базе</span><span class="bar"></span></div>
+
+<!-- 01 WHY -->
+<section id="why">
+  <div class="sec-head"><h2>01 · Зачем считать в базе, а не в JavaScript</h2><span class="tag theory">теория</span><span class="tag time">~8 мин</span></div>
+
+  <div class="oneliner"><b>Агрегация</b> — сжатие множества строк в одно значение: 51 061 платёж → одна сумма «выручка».</div>
+  <p>Задача от менеджера: «покажи на дашборде общую выручку». Первое, что приходит в голову фронтендеру:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">так делать НЕ надо · JavaScript</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-javascript">// бэкенд: SELECT * FROM payment  → 51 061 строка по сети
+const payments = await fetch('/api/payments').then(r =&gt; r.json());
+const total = payments.reduce((sum, p) =&gt; sum + Number(p.amount), 0);</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР JS (для преподавателя-питониста)</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>На Python</th></tr></thead><tbody>
+      <tr><td><code>payments.reduce((sum, p) =&gt; sum + p.amount, 0)</code></td><td>пройти по массиву, накапливая сумму, начиная с 0</td><td><code>sum(p['amount'] for p in payments)</code></td></tr>
+      <tr><td><code>Number(p.amount)</code></td><td>строку в число — тип <code>NUMERIC</code> приходит из драйвера строкой (урок 1)</td><td><code>float(...)</code></td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">так правильно · SQL</span><span class="role">👀 только посмотреть — через минуту напишем сами</span></figcaption>
+    <pre><code class="language-sql">SELECT SUM(amount) FROM payment;   -- по сети идёт одно число: 170962.39</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th></th><th>Считать в JS</th><th>Считать в базе</th></tr></thead>
+    <tbody>
+      <tr><td>Трафик</td><td>все строки, мегабайты JSON</td><td>одна строка</td></tr>
+      <tr><td>Память</td><td>весь массив в памяти сервера и браузера</td><td>база считает на ходу, не храня всё сразу</td></tr>
+      <tr><td>Точность</td><td><code>0.1 + 0.2 = 0.30000000000000004</code></td><td><code>NUMERIC</code> складывает деньги точно</td></tr>
+      <tr><td>Скорость</td><td>сериализация, сеть, парсинг JSON</td><td>база для этого и создана, плюс индексы</td></tr>
+    </tbody>
+  </table>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ФРОНТЕНДЕР ЭТО ВСТРЕЧАЕТ</span>
+    <p>Каждая плитка на дашборде («Выручка за месяц», «Новых клиентов», «Средний чек»), каждый график «по дням», счётчики в табах «Все (128) · Активные (97)», «самые популярные товары» на главной — всё это <code>GROUP BY</code> с агрегатами на бэкенде. Фронтенд получает уже готовые маленькие таблички.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 AGG -->
+<section id="agg">
+  <div class="sec-head"><h2>02 · COUNT, SUM, AVG, MIN, MAX</h2><span class="tag practice">live-coding</span><span class="tag time">~14 мин</span></div>
+
+  <table class="cmp">
+    <thead><tr><th>Функция</th><th>Что считает</th><th>Аналог в JS</th><th>Работает с</th></tr></thead>
+    <tbody>
+      <tr><td><code>COUNT(*)</code></td><td>количество строк</td><td><code>arr.length</code></td><td>чем угодно</td></tr>
+      <tr><td><code>COUNT(col)</code></td><td>количество <b>не-NULL</b> значений в колонке</td><td><code>arr.filter(x =&gt; x.col != null).length</code></td><td>чем угодно</td></tr>
+      <tr><td><code>SUM(col)</code></td><td>сумма</td><td><code>reduce((s, x) =&gt; s + x, 0)</code></td><td>числами</td></tr>
+      <tr><td><code>AVG(col)</code></td><td>среднее</td><td>сумма / количество</td><td>числами</td></tr>
+      <tr><td><code>MIN(col)</code> / <code>MAX(col)</code></td><td>наименьшее / наибольшее</td><td><code>Math.min(...arr)</code></td><td>числами, датами, строками (по алфавиту)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>COUNT: два режима</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 1. Сколько всего аренд и сколько из них вернули
+SELECT COUNT(*)           AS total,
+       COUNT(return_date) AS returned
+FROM rental;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> total | returned
+-------+----------
+ 51805 |    51564</code></pre>
+  </figure>
+  <p><code>COUNT(*)</code> считает строки. <code>COUNT(return_date)</code> — только строки, где дата возврата <b>заполнена</b>. Разница 241 — фильмы, которые сейчас на руках у клиентов (<code>return_date</code> = <code>NULL</code>). Один запрос — два числа для дашборда.</p>
+
+  <h3>SUM, AVG, MIN, MAX</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 2. Выручка и средний чек
+SELECT SUM(amount)           AS total_revenue,
+       AVG(amount)           AS average_check,
+       ROUND(AVG(amount), 2) AS avg_rounded
+FROM payment;
+
+-- 3. Диапазон цен и последняя оплата
+SELECT MIN(rental_rate) AS cheapest,
+       MAX(rental_rate) AS most_expensive
+FROM film;
+
+SELECT MAX(payment_date) AS last_payment FROM payment;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> total_revenue |   average_check    | avg_rounded
+---------------+--------------------+-------------
+     170962.39 | 3.3481990168621844 |        3.35
+
+ cheapest | most_expensive          last_payment
+----------+----------------        ------------------------
+     0.99 |           4.99          2026-07-28 23:59:59+00</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Подвох</th></tr></thead><tbody>
+      <tr><td><code>SUM(amount) AS total_revenue</code></td><td>сумма по всем строкам, имя колонки результата</td><td>результат — <b>одна</b> строка, сколько бы ни было платежей</td></tr>
+      <tr><td><code>AVG(amount)</code></td><td>среднее с 16 знаками после запятой</td><td>для отчёта почти всегда оборачивают в <code>ROUND(..., 2)</code></td></tr>
+      <tr><td><code>MAX(payment_date)</code></td><td>самая поздняя дата</td><td>для строк <code>MIN/MAX</code> работают по алфавиту: <code>MIN(title)</code> = «ACADEMY DINOSAUR»</td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>Агрегаты и NULL — вопрос с собеседования</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 4. Как агрегаты обращаются с NULL: «таблица» из трёх чисел прямо в запросе
+SELECT SUM(x), AVG(x), COUNT(x), COUNT(*)
+FROM (VALUES (10), (NULL), (20)) AS t(x);</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> sum |         avg         | count | count
+-----+---------------------+-------+-------
+  30 | 15.0000000000000000 |     2 |     3</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ 15, А НЕ 10</span>
+    <p><code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code>, <code>COUNT(колонка)</code> <b>пропускают NULL</b>, будто этой строки нет. Поэтому <code>AVG</code> = 30 / 2 = 15. Только <code>COUNT(*)</code> считает все строки. Чаще всего так и нужно: средняя оценка фильма считается по тем, кто поставил оценку. Но если <code>NULL</code> для вас означает «ноль», превращайте его в ноль явно — <code>COALESCE</code> в блоке 06.</p>
+  </div></div>
+  <div class="syn"><div class="h">РАЗБОР НОВОГО</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем</th></tr></thead><tbody>
+      <tr><td><code>(VALUES (10), (NULL), (20)) AS t(x)</code></td><td>временная таблица <code>t</code> с одной колонкой <code>x</code> и тремя строками, прямо в запросе</td><td>удобно проверить поведение SQL на маленьком примере, ничего не создавая</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЛОВУШКА: SUM ОТ ПУСТОТЫ — ЭТО NULL, А НЕ 0</span>
+    <p><code>SELECT SUM(amount), COUNT(*) FROM payment WHERE amount &gt; 100;</code> вернёт <code>NULL</code> и <code>0</code>. Платежей нет — <code>COUNT</code> честно говорит 0, а <code>SUM</code> говорит «не знаю». На фронтенде это превратится в <code>null</code>, и график нарисует дыру или напишет «NaN ₽». Лечение: <code>COALESCE(SUM(amount), 0)</code>.</p>
+  </div></div>
+
+  <h3>Типы результатов и JavaScript</h3>
+  <table class="cmp">
+    <thead><tr><th>Что</th><th>Тип в PostgreSQL</th><th>Что придёт в Node.js (драйвер <code>pg</code>)</th></tr></thead>
+    <tbody>
+      <tr><td><code>COUNT(*)</code></td><td><code>bigint</code> (8 байт)</td><td><b>строка</b> <code>"51061"</code> — драйвер боится потерять точность, ведь <code>bigint</code> больше <code>Number.MAX_SAFE_INTEGER</code></td></tr>
+      <tr><td><code>SUM(amount)</code>, <code>AVG(...)</code></td><td><code>numeric</code></td><td><b>строка</b> <code>"170962.39"</code> — точные деньги</td></tr>
+      <tr><td><code>MIN(rental_rate)</code></td><td>тип колонки — <code>numeric(4,2)</code></td><td>строка <code>"0.99"</code></td></tr>
+      <tr><td><code>FLOAT</code> / <code>REAL</code></td><td>приближённое число</td><td><code>number</code> — но для денег не годится</td></tr>
+    </tbody>
+  </table>
+  <p>Это не баг: «счётчик пришёл строкой» — самый частый вопрос фронтендеров к бэкенду. Для счётчиков и денег безопасно <code>Number(...)</code> на клиенте или <code>COUNT(*)::int</code> прямо в запросе. А деление целых, напомню, режет дробь: <code>SELECT 10 / 3</code> → <code>3</code>, <code>10.0 / 3</code> → <code>3.3333333333333333</code>.</p>
+</section>
+
+<hr>
+
+<!-- 03 GROUP -->
+<section id="group">
+  <div class="sec-head"><h2>03 · GROUP BY: отчёт по группам</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Одна сумма на всю таблицу — это одна плитка на дашборде. Но менеджер спрашивает: «а сколько принёс <b>каждый</b> сотрудник?». Нужно разрезать таблицу на группы и посчитать агрегат <b>внутри каждой</b>.</p>
+  <div class="diagram">
+<pre> <span class="tn">payment</span> (51 061 строка)            GROUP BY staff_id              SUM(amount) в каждой группе
+ ┌──────────┬────────┐          ┌─────────────────────┐
+ │ staff_id │ amount │          │ группа staff_id = 1 │ ──────▶  1 | 85259.82
+ │    1     │  2.99  │ ───────▶ │ 25 522 строки       │
+ │    2     │  0.99  │          ├─────────────────────┤
+ │    1     │  5.99  │          │ группа staff_id = 2 │ ──────▶  2 | 85702.57
+ │   ...    │  ...   │          │ 25 539 строк        │
+ └──────────┴────────┘          └─────────────────────┘          одна строка на группу</pre>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 5. Выручка и число платежей по каждому сотруднику
+SELECT staff_id,
+       COUNT(*)    AS payments,
+       SUM(amount) AS revenue
+FROM payment
+GROUP BY staff_id
+ORDER BY staff_id;
+
+-- 6. Фильмы по рейтингам: сколько и какая средняя длина
+SELECT rating,
+       COUNT(*)              AS films,
+       ROUND(AVG(length), 1) AS avg_length
+FROM film
+GROUP BY rating
+ORDER BY films DESC;
+
+-- 7. Топ-5 клиентов по сумме платежей
+SELECT customer_id, SUM(amount) AS total
+FROM payment
+GROUP BY customer_id
+ORDER BY total DESC
+LIMIT 5;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- 5                                -- 6                                -- 7
+ staff_id | payments | revenue      rating | films | avg_length      customer_id | total
+----------+----------+----------   --------+-------+------------    -------------+--------
+        1 |    25522 | 85259.82     PG-13  |   223 |      120.4             526 | 358.12
+        2 |    25539 | 85702.57     NC-17  |   210 |      113.2             468 | 344.06
+                                    R      |   195 |      118.7             380 | 324.04
+                                    PG     |   194 |      112.0             368 | 323.17
+                                    G      |   178 |      111.1             295 | 322.12</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В JavaScript</th></tr></thead><tbody>
+      <tr><td><code>GROUP BY staff_id</code></td><td>разложить строки по «кучкам» с одинаковым <code>staff_id</code></td><td><code>Object.groupBy(payments, p =&gt; p.staff_id)</code></td></tr>
+      <tr><td><code>COUNT(*)</code>, <code>SUM(amount)</code> при <code>GROUP BY</code></td><td>считаются <b>внутри каждой кучки</b>, а не по всей таблице</td><td><code>Object.entries(groups).map(([id, rows]) =&gt; ...)</code></td></tr>
+      <tr><td><code>ORDER BY total DESC</code></td><td>сортировать можно по псевдониму агрегата</td><td><code>.sort((a, b) =&gt; b.total - a.total)</code></td></tr>
+      <tr><td><code>ORDER BY films DESC LIMIT 5</code></td><td>классический «топ-N»</td><td><code>.slice(0, 5)</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>Главная ошибка новичка</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span><span class="role">упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 8. Хочу рейтинг, количество И название фильма
+SELECT rating, title, COUNT(*)
+FROM film
+GROUP BY rating;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящая ошибка</span></figcaption>
+    <pre><code class="language-none">ERROR:  column "film.title" must appear in the GROUP BY clause or be used in an aggregate function</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ БАЗА ОТКАЗЫВАЕТСЯ</span>
+    <p>После группировки в группе <code>PG-13</code> — 223 фильма, а в результате для неё одна строка. Какое из 223 названий туда поставить? База не угадывает. Правило: в <code>SELECT</code> при <code>GROUP BY</code> можно писать только <b>колонки из <code>GROUP BY</code></b> и <b>агрегаты</b>. Хотите одно название на группу — скажите, какое: <code>MIN(title)</code> (первое по алфавиту), или используйте <code>DISTINCT ON</code> из прошлого урока. MySQL в старом режиме молча подставлял случайное значение — и это годами порождало «плавающие» баги в отчётах.</p>
+  </div></div>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: СВОДНАЯ ТАБЛИЦА</span>
+    <p>Если вы когда-нибудь делали в Excel «Сводную таблицу» (PivotTable) — вы делали <code>GROUP BY</code> мышкой. Сводные таблицы появились в Excel 5 в 1993 году и стали одной из самых любимых функций офисного мира. Бухгалтеры строят сводные по продажам каждый день — а бэкенд-разработчик пишет для них тот же <code>GROUP BY</code> в отчётах.</p>
+  </div></div>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ПОПРОБУЙТЕ САМИ (2 МИНУТЫ)</span>
+    <p>Сколько клиентов в каждом магазине (<code>customer.store_id</code>)? Ответ: магазин 1 — 526, магазин 2 — 473. А сколько разных клиентов вообще платили? Подсказка: <code>COUNT(DISTINCT customer_id)</code> — считает уникальные значения. Ответ: 997 (из 999 — двое не заплатили ни разу, найдём их в блоке 08).</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 04 HAVING -->
+<section id="having">
+  <div class="sec-head"><h2>04 · HAVING и порядок выполнения 2.0</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Задача от маркетинга: «найди клиентов, которые заплатили в сумме больше 300 — дадим им скидку». Пишем как слышим:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span><span class="role">первый запрос упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 9. Клиенты с суммой больше 300
+SELECT customer_id, SUM(amount) AS total
+FROM payment
+WHERE SUM(amount) &gt; 300          -- ошибка!
+GROUP BY customer_id;
+
+SELECT customer_id, SUM(amount) AS total
+FROM payment
+GROUP BY customer_id
+HAVING SUM(amount) &gt; 300         -- правильно
+ORDER BY total DESC;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">ERROR:  aggregate functions are not allowed in WHERE
+
+ customer_id | total
+-------------+--------
+         526 | 358.12
+         468 | 344.06
+         ...
+          80 | 301.14
+(20 rows)</code></pre>
+  </figure>
+
+  <h3>Порядок выполнения 2.0</h3>
+  <div class="diagram">
+<pre> пишем:        SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT
+
+ выполняется:  <span class="pk">1. FROM</span>  →  <span class="pk">2. WHERE</span>       →  <span class="tn">3. GROUP BY</span>  →  <span class="tn">4. HAVING</span>     →  5. SELECT  →  6. ORDER BY  →  7. LIMIT
+               таблица     фильтр СТРОК       кучки           фильтр ГРУПП      колонки,      сортировка     страница
+                           (сумм ещё нет)                     (суммы уже есть)  AS</pre>
+  </div>
+  <table class="cmp">
+    <thead><tr><th></th><th><code>WHERE</code></th><th><code>HAVING</code></th></tr></thead>
+    <tbody>
+      <tr><td>Когда работает</td><td><b>до</b> группировки</td><td><b>после</b> группировки</td></tr>
+      <tr><td>Что фильтрует</td><td>исходные строки («сырьё»)</td><td>готовые группы («отчёт»)</td></tr>
+      <tr><td>Агрегаты внутри</td><td>нельзя</td><td>можно и нужно</td></tr>
+      <tr><td>Пример</td><td><code>WHERE amount &gt;= 9</code> — только крупные платежи</td><td><code>HAVING COUNT(*) &gt;= 3</code> — где таких платежей хотя бы 3</td></tr>
+    </tbody>
+  </table>
+  <p>Их можно и нужно сочетать:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 10. Клиенты, у которых хотя бы 3 крупных платежа (от 9)
+SELECT customer_id, COUNT(*) AS big_payments
+FROM payment
+WHERE amount &gt;= 9              -- 1) оставили только крупные платежи
+GROUP BY customer_id           -- 2) сгруппировали по клиенту
+HAVING COUNT(*) &gt;= 3           -- 3) оставили клиентов, у кого таких 3+
+ORDER BY big_payments DESC, customer_id
+LIMIT 5;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> customer_id | big_payments
+-------------+--------------
+         285 |            4
+         436 |            4
+         459 |            4
+         550 |            4
+          13 |            3</code></pre>
+  </figure>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ПРАВИЛО ПРОИЗВОДИТЕЛЬНОСТИ</span>
+    <p>Всё, что можно отфильтровать в <code>WHERE</code>, фильтруйте в <code>WHERE</code>. Если написать <code>HAVING staff_id = 1</code> вместо <code>WHERE staff_id = 1</code>, результат будет тот же, но база сначала сгруппирует <b>все</b> строки, а потом выбросит половину групп. <code>WHERE</code> отбрасывает строки до тяжёлой работы.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 05 DATES -->
+<section id="dates">
+  <div class="sec-head"><h2>05 · Даты в отчётах</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <p>Почти любой график на дашборде — это «что-то по времени»: выручка по месяцам, регистрации по дням, нагрузка по часам. Для этого даты группируют.</p>
+  <table class="cmp">
+    <thead><tr><th>Тип</th><th>Пример</th><th>Для чего</th></tr></thead>
+    <tbody>
+      <tr><td><code>DATE</code></td><td><code>2026-05-29</code></td><td>день рождения, дата регистрации (<code>customer.create_date</code>)</td></tr>
+      <tr><td><code>TIMESTAMPTZ</code></td><td><code>2026-07-28 23:59:59+00</code></td><td>момент события: платёж, аренда. <b>Всегда этот тип</b> для событий</td></tr>
+      <tr><td><code>INTERVAL</code></td><td><code>3 days 20:46:00</code></td><td>промежуток: «сколько держали фильм»</td></tr>
+    </tbody>
+  </table>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 11. Выручка по месяцам 2026 года — данные для графика
+SELECT date_trunc('month', payment_date) AS month,
+       SUM(amount) AS revenue,
+       COUNT(*)    AS payments
+FROM payment
+WHERE payment_date &gt;= '2026-01-01'
+GROUP BY month
+ORDER BY month;
+
+-- 12. Выручка по годам
+SELECT EXTRACT(YEAR FROM payment_date) AS year,
+       SUM(amount) AS revenue
+FROM payment
+GROUP BY year
+ORDER BY year;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- 11                                            -- 12
+         month          | revenue | payments      year | revenue
+------------------------+---------+----------    ------+----------
+ 2026-01-01 00:00:00+00 | 2255.39 |      761      2022 | 76367.30
+ 2026-02-01 00:00:00+00 | 2059.00 |      700      2023 | 26292.31
+ 2026-03-01 00:00:00+00 | 2366.97 |      803      2024 | 26419.75
+ 2026-04-01 00:00:00+00 | 2051.04 |      696      2025 | 26254.84
+ 2026-05-01 00:00:00+00 | 2380.18 |      782      2026 | 15628.19
+ 2026-06-01 00:00:00+00 | 2105.73 |      727
+ 2026-07-01 00:00:00+00 | 2409.88 |      812</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Пример</th></tr></thead><tbody>
+      <tr><td><code>date_trunc('month', ts)</code></td><td>«обрезать» момент до начала месяца. Все платежи июля превращаются в <code>2026-07-01 00:00</code> — по ним и группируем</td><td>также <code>'day'</code>, <code>'week'</code>, <code>'hour'</code>, <code>'year'</code></td></tr>
+      <tr><td><code>EXTRACT(YEAR FROM ts)</code></td><td>достать <b>часть</b> даты числом</td><td><code>MONTH</code>, <code>DAY</code>, <code>HOUR</code>, <code>DOW</code> (день недели, 0 = воскресенье)</td></tr>
+      <tr><td><code>WHERE payment_date &gt;= '2026-01-01'</code></td><td>строка автоматически превращается в дату</td><td>диапазон месяца: <code>&gt;= '2026-07-01' AND &lt; '2026-08-01'</code></td></tr>
+      <tr><td><code>NOW() - INTERVAL '30 days'</code></td><td>«30 дней назад»</td><td>в Pagila данные заканчиваются июлем 2026 — с <code>NOW()</code> свежих платежей не найдётся</td></tr>
+      <tr><td><code>return_date - rental_date</code></td><td>разница двух моментов — <code>INTERVAL</code></td><td>аренда №2: <code>3 days 20:46:00</code></td></tr>
+    </tbody></table>
+    <p class="note"><code>date_trunc</code> и группировка по <code>month</code> вместе дают то, что фронтенд-библиотека графиков (Chart.js, Recharts) ждёт на оси X. Заметили, что в 2022 году выручка втрое больше? В 2022 году платежей вдвое больше и средний чек выше (4.00 против 2.96 — проверьте сами в домашке). Такие скачки в реальных отчётах и ищут глазами на графике, а потом выясняют причину запросами.</p>
+  </div>
+
+  <h3>Часовой пояс меняет ответ</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 13. В какие часы берут больше всего фильмов?
+SELECT EXTRACT(HOUR FROM rental_date) AS hour, COUNT(*) AS rentals
+FROM rental
+GROUP BY hour
+ORDER BY rentals DESC
+LIMIT 3;
+
+SET TIME ZONE 'Europe/Moscow';   -- а теперь то же самое для Москвы
+SELECT rental_date FROM rental WHERE rental_id = 1;
+-- и снова запрос 13
+
+SET TIME ZONE 'UTC';             -- вернуть как было</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- UTC                               -- Europe/Moscow
+ hour | rentals                       rental_date (аренда №1): 2022-05-25 00:53:30+03
+------+---------                      (в UTC было 2022-05-24 21:53:30+00 — другой ДЕНЬ!)
+   15 |    2321
+   20 |    2279                       hour | rentals
+    9 |    2217                      ------+---------
+                                        18 |    2321
+                                        23 |    2279
+                                        12 |    2217</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ТАК</span>
+    <p><code>TIMESTAMPTZ</code> хранит <b>момент</b> во времени (внутри — в UTC). При выводе и при <code>EXTRACT</code>/<code>date_trunc</code> база переводит его в часовой пояс сессии. Момент один и тот же, а «час» и даже «день» — разные. Правило из прошлого урока в действии: храним в <code>TIMESTAMPTZ</code> (UTC), а в локальное время переводим как можно позже — на клиенте через <code>Intl.DateTimeFormat</code> или в запросе явно, если отчёт «по московскому времени».</p>
+  </div></div>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ДАТЫ — ЭТО БОЛЬНО</span>
+    <p>31 декабря 2008 года все плееры Microsoft Zune 30 ГБ в мире одновременно зависли на сутки: в коде, считавшем дни года, не учли високосный год, и цикл стал бесконечным. Есть даже известный список «заблуждений программистов о времени»: «в сутках всегда 24 часа» (нет — переход на летнее время), «часовой пояс — это целое число часов» (нет — Индия +5:30, Непал +5:45). Мораль: даты не считаем руками — используем функции базы и библиотеки.</p>
+  </div></div>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — NULL, CASE, подзапросы и CTE. Сохраните <code>lesson2.sql</code>.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Логика и подзапросы</span><span class="bar"></span></div>
+
+<!-- 06 NULL -->
+<section id="null">
+  <div class="sec-head"><h2>06 · NULL, трёхзначная логика, COALESCE, NULLIF</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Вспомним прошлый урок: <code>NULL</code> — не ноль и не пустая строка, а <b>«не знаю»</b>.</p>
+  <table class="cmp">
+    <thead><tr><th>Значение</th><th>Смысл</th><th>Пример из Pagila</th></tr></thead>
+    <tbody>
+      <tr><td><code>0</code></td><td>число ноль, оно известно</td><td>24 платежа на сумму <code>0.00</code> — бесплатная аренда</td></tr>
+      <tr><td><code>''</code></td><td>пустая строка: поле заполнили, но пустотой</td><td><code>address.address2</code> у 999 адресов</td></tr>
+      <tr><td><code>NULL</code></td><td>значения нет / неизвестно</td><td><code>rental.return_date</code> — фильм ещё не вернули</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Трёхзначная логика</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 14. Сравнения с NULL
+SELECT 5 = 5       AS a,
+       5 = 4       AS b,
+       5 = NULL    AS c,
+       NULL = NULL AS d,
+       NULL IS NULL AS e;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий · в DBeaver пустые ячейки показаны как [NULL]</span></figcaption>
+    <pre><code class="language-none"> a | b | c | d | e
+---+---+---+---+---
+ t | f |   |   | t</code></pre>
+  </figure>
+  <p>В JavaScript сравнение даёт <code>true</code> или <code>false</code>. В SQL — <b>три</b> варианта: <code>TRUE</code>, <code>FALSE</code> и <code>NULL</code> («неизвестно»). «Равна ли неизвестная коробка неизвестной коробке?» — неизвестно. <code>WHERE</code> оставляет только строки, где условие точно <code>TRUE</code>, поэтому строки с «неизвестно» молча выпадают. Проверять пустоту можно только через <code>IS NULL</code> / <code>IS NOT NULL</code>.</p>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ОШИБКА НА МИЛЛИАРД ДОЛЛАРОВ</span>
+    <p>Тони Хоар, придумавший в 1965 году нулевую ссылку для языка ALGOL W, в 2009 году публично назвал её своей «ошибкой на миллиард долларов» — столько, по его оценке, стоили миру падения из-за <code>null</code>. А сам автор реляционной модели Эдгар Кодд позже предлагал ввести в SQL <b>два разных</b> NULL: «значение неприменимо» и «значение неизвестно». Не прижилось — и мы живём с одним, который означает всё сразу.</p>
+  </div></div>
+
+  <h3>COALESCE — это <code>??</code> из JavaScript</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 15. Фильмы, которые сейчас на руках, — красивый вывод
+SELECT rental_id,
+       COALESCE(return_date::text, 'ещё на руках') AS returned
+FROM rental
+WHERE rental_id IN (1, 2) OR return_date IS NULL
+ORDER BY rental_id
+LIMIT 4;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> rental_id |        returned
+-----------+------------------------
+         1 | 2022-05-26 21:04:30+00
+         2 | 2022-05-28 18:40:33+00
+     11496 | ещё на руках
+     11541 | ещё на руках</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В JavaScript</th></tr></thead><tbody>
+      <tr><td><code>COALESCE(a, b, c)</code></td><td>первое <b>не-NULL</b> значение из списка</td><td><code>a ?? b ?? c</code></td></tr>
+      <tr><td><code>return_date::text</code></td><td>привести дату к тексту. <code>::</code> — приведение типа в PostgreSQL</td><td><code>String(date)</code></td></tr>
+      <tr><td>зачем <code>::text</code></td><td>все аргументы <code>COALESCE</code> должны быть одного типа: дату и строку «ещё на руках» смешать нельзя</td><td>в JS смешать можно — в SQL нет</td></tr>
+      <tr><td><code>COALESCE(SUM(amount), 0)</code></td><td>лечение ловушки «SUM от пустоты = NULL» из блока 02</td><td><code>total ?? 0</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>NULLIF — обратная операция</h3>
+  <p><code>NULLIF(a, b)</code> возвращает <code>NULL</code>, если <code>a = b</code>, иначе <code>a</code>. Два главных применения:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span><span class="role">первый запрос упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 16. Защита от деления на ноль
+SELECT 10 / 0;              -- ERROR: division by zero
+SELECT 10 / NULLIF(0, 0);   -- NULL, без ошибки
+
+-- 17. Пустую строку считаем «нет значения», и показываем прочерк
+SELECT address,
+       COALESCE(NULLIF(address2, ''), '—') AS address2
+FROM address
+ORDER BY address_id
+LIMIT 3;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">ERROR:  division by zero
+
+ ?column?
+----------
+ [NULL]
+
+      address       | address2
+--------------------+----------
+ 47 MySakila Drive  | —
+ 28 MySQL Boulevard | —
+ 23 Workhaven Lane  | —</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ГДЕ ДЕЛЕНИЕ НА НОЛЬ ВСТРЕЧАЕТСЯ ПО-НАСТОЯЩЕМУ</span>
+    <p>Дашборд считает «конверсию» = покупки / визиты. У нового магазина визитов 0 — и весь отчёт падает с ошибкой из-за одной строки. <code>покупки / NULLIF(визиты, 0)</code> даст для этого магазина <code>NULL</code>, а остальные строки посчитаются. А <code>COALESCE(NULLIF(address2, ''), '—')</code> — частый приём «чистки» данных: в старых базах «пусто» записано то как <code>NULL</code>, то как <code>''</code>. В Pagila: у 4 адресов <code>address2</code> = <code>NULL</code>, у 999 — пустая строка.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 07 CASE -->
+<section id="case">
+  <div class="sec-head"><h2>07 · CASE: if/else прямо в запросе</h2><span class="tag practice">live-coding</span><span class="tag time">~13 мин</span></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">общая форма</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-sql">CASE
+    WHEN условие1 THEN результат1   -- проверяются сверху вниз,
+    WHEN условие2 THEN результат2   -- срабатывает ПЕРВОЕ истинное
+    ELSE результат_по_умолчанию     -- если ELSE нет и ничего не подошло — NULL
+END</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 18. Категория по длительности — бейджик для карточки фильма
+SELECT title, length,
+       CASE
+           WHEN length &lt; 60  THEN 'Короткий'
+           WHEN length &lt; 120 THEN 'Средний'
+           ELSE 'Длинный'
+       END AS duration_category
+FROM film
+ORDER BY film_id
+LIMIT 5;
+
+-- 19. А теперь сгруппируем по этой категории
+SELECT CASE
+           WHEN length &lt; 60  THEN 'Короткий'
+           WHEN length &lt; 120 THEN 'Средний'
+           ELSE 'Длинный'
+       END AS duration_category,
+       COUNT(*)
+FROM film
+GROUP BY duration_category
+ORDER BY COUNT(*) DESC;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- 18                                          -- 19
+      title       | length | duration_category    duration_category | count
+------------------+--------+-------------------  -------------------+-------
+ ACADEMY DINOSAUR |     86 | Средний              Длинный           |   466
+ ACE GOLDFINGER   |     48 | Короткий             Средний           |   438
+ ADAPTATION HOLES |     50 | Короткий             Короткий          |    96
+ AFFAIR PREJUDICE |    117 | Средний
+ AFRICAN EGG      |    130 | Длинный</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В JavaScript</th></tr></thead><tbody>
+      <tr><td><code>CASE WHEN ... THEN ... END</code></td><td>выражение, которое возвращает значение — можно ставить везде, где можно поставить колонку</td><td>тернарник: <code>len &lt; 60 ? 'Короткий' : len &lt; 120 ? 'Средний' : 'Длинный'</code></td></tr>
+      <tr><td>второй <code>WHEN length &lt; 120</code></td><td>фильм длиной 50 сюда не дойдёт — первое условие уже сработало</td><td>как <code>if / else if</code></td></tr>
+      <tr><td><code>GROUP BY duration_category</code></td><td>группировать по вычисленной колонке. PostgreSQL разрешает ссылаться на псевдоним из <code>SELECT</code> в <code>GROUP BY</code></td><td>—</td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>CASE внутри агрегата: значения в колонки</h3>
+  <p>Дизайнер рисует плитку: «G: 178 · PG: 194 · PG-13: 223 · R: 195 · NC-17: 210». Фронтенду удобнее <b>одна строка</b> с колонками, а не пять строк. Это «разворот» таблицы (pivot):</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 20. Количество фильмов каждого рейтинга — в одну строку
+SELECT SUM(CASE WHEN rating = 'G'     THEN 1 ELSE 0 END) AS "G",
+       SUM(CASE WHEN rating = 'PG'    THEN 1 ELSE 0 END) AS "PG",
+       SUM(CASE WHEN rating = 'PG-13' THEN 1 ELSE 0 END) AS "PG-13",
+       SUM(CASE WHEN rating = 'R'     THEN 1 ELSE 0 END) AS "R",
+       SUM(CASE WHEN rating = 'NC-17' THEN 1 ELSE 0 END) AS "NC-17",
+       COUNT(*) AS "Всего"
+FROM film;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">  G  | PG  | PG-13 |  R  | NC-17 | Всего
+-----+-----+-------+-----+-------+-------
+ 178 | 194 |   223 | 195 |   210 |  1000</code></pre>
+  </figure>
+  <p>Как это работает: для каждого фильма <code>CASE</code> даёт 1, если рейтинг совпал, и 0, если нет. <code>SUM</code> складывает единицы — получается количество. Псевдонимы в двойных кавычках — потому что <code>"PG-13"</code> с дефисом и заглавными (правило кавычек из урока 1).</p>
+
+  <h3>FILTER — то же самое по-человечески (только PostgreSQL)</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 21. Платежи каждого сотрудника по годам — таблица для отчёта
+SELECT EXTRACT(YEAR FROM payment_date)         AS year,
+       COUNT(*) FILTER (WHERE staff_id = 1)    AS staff_1,
+       COUNT(*) FILTER (WHERE staff_id = 2)    AS staff_2,
+       SUM(amount) FILTER (WHERE amount &gt;= 5)  AS big_revenue
+FROM payment
+GROUP BY year
+ORDER BY year;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> year | staff_1 | staff_2 | big_revenue
+------+---------+---------+-------------
+ 2022 |    9547 |    9523 |    29237.28
+ 2023 |    4417 |    4452 |      [NULL]
+ 2024 |    4437 |    4488 |      [NULL]
+ 2025 |    4482 |    4434 |      [NULL]
+ 2026 |    2639 |    2642 |      [NULL]</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ВИДИТЕ NULL? ЭТО ЛОВУШКА ИЗ БЛОКА 02</span>
+    <p>С 2023 года в Pagila нет платежей от 5 (максимум — 4.99). <code>SUM</code> по пустому набору — <code>NULL</code>, а не 0. Исправьте сами: <code>COALESCE(SUM(amount) FILTER (WHERE amount &gt;= 5), 0)</code> — и в колонке появятся нули. <code>COUNT(*) FILTER (...)</code> — то же, что <code>SUM(CASE WHEN ... THEN 1 ELSE 0 END)</code>, только короче и понятнее. В MySQL и SQL Server <code>FILTER</code> нет — там пишут через <code>CASE</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 SUBQUERIES -->
+<section id="subq">
+  <div class="sec-head"><h2>08 · Подзапросы: IN, EXISTS и ловушка NOT IN</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <div class="oneliner">Подзапрос — запрос в скобках внутри другого запроса. Задача решается в два шага: сначала узнать одно, потом использовать.</div>
+  <table class="cmp">
+    <thead><tr><th>Вид</th><th>Возвращает</th><th>Где использовать</th></tr></thead>
+    <tbody>
+      <tr><td>скалярный</td><td>одно значение (1 строка × 1 колонка)</td><td>в сравнении: <code>length &gt; (SELECT AVG(length) ...)</code></td></tr>
+      <tr><td>списочный</td><td>одну колонку, много строк</td><td><code>film_id IN (SELECT film_id ...)</code></td></tr>
+      <tr><td>табличный</td><td>целую таблицу</td><td>в <code>FROM (...) AS t</code> или через <code>WITH</code> (блок 09)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Скалярный</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 22. Сколько фильмов длиннее среднего?
+SELECT COUNT(*)
+FROM film
+WHERE length &gt; (SELECT AVG(length) FROM film);   -- средняя: 115.27
+
+-- 23. Самые длинные фильмы
+SELECT title, length
+FROM film
+WHERE length = (SELECT MAX(length) FROM film)
+ORDER BY title;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> count          title       | length
+-------        ---------------+--------
+   489          CHICAGO NORTH  |    185
+                CONTROL ANTHEM |    185
+                ... ещё 8 фильмов по 185 минут (10 rows)</code></pre>
+  </figure>
+  <p>Почему не <code>WHERE length &gt; AVG(length)</code>? Мы уже знаем ответ: агрегаты в <code>WHERE</code> нельзя, ведь <code>WHERE</code> работает до подсчёта. Подзапрос посчитает среднее заранее, отдельно. А вариант <code>ORDER BY length DESC LIMIT 1</code> для «самого длинного» вернул бы <b>один</b> фильм из десяти — молча потеряв остальные девять.</p>
+
+  <h3>IN — «входит в список, который вернул подзапрос»</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 24. Фильмы с актрисой PENELOPE GUINESS (actor_id = 1)
+SELECT title
+FROM film
+WHERE film_id IN (
+    SELECT film_id FROM film_actor WHERE actor_id = 1   -- шаг 1: id её фильмов
+)
+ORDER BY title
+LIMIT 5;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий · всего 19 фильмов</span></figcaption>
+    <pre><code class="language-none">         title
+-----------------------
+ ACADEMY DINOSAUR
+ ANACONDA CONFESSIONS
+ ANGELS LIFE
+ BULWORTH COMMANDMENTS
+ CHEAPER CLYDE</code></pre>
+  </figure>
+  <p><code>film_actor</code> — таблица связей «какой актёр в каком фильме»: в ней нет названий, только пары id. Подзапрос достаёт id, внешний запрос по ним — названия. Соединять таблицы удобнее через <code>JOIN</code> — это тема следующего урока, а сегодня мы решаем задачу подзапросом.</p>
+
+  <h3>EXISTS — «есть ли хоть одна строка»</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 25. Клиенты, у которых был хотя бы один платёж больше 10
+SELECT first_name, last_name
+FROM customer c
+WHERE EXISTS (
+    SELECT 1
+    FROM payment p
+    WHERE p.customer_id = c.customer_id   -- связь с внешним запросом!
+      AND p.amount &gt; 10
+)
+ORDER BY last_name
+LIMIT 3;
+
+-- 26. Клиенты, которые НИ РАЗУ не платили
+SELECT COUNT(*)
+FROM customer c
+WHERE NOT EXISTS (SELECT 1 FROM payment p WHERE p.customer_id = c.customer_id);</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие · по запросу 25 всего 107 клиентов</span></figcaption>
+    <pre><code class="language-none"> first_name | last_name         count
+------------+-----------       -------
+ GORDON     | ALLARD               2
+ CHARLENE   | ALVAREZ
+ KENT       | ARSENAULT</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В JavaScript</th></tr></thead><tbody>
+      <tr><td><code>FROM customer c</code></td><td><code>c</code> — короткое имя (алиас) таблицы</td><td>как имя переменной в цикле</td></tr>
+      <tr><td><code>WHERE p.customer_id = c.customer_id</code></td><td>подзапрос <b>ссылается на внешний</b> — это <b>коррелированный</b> подзапрос: он «выполняется» для каждого клиента</td><td><code>customers.filter(c =&gt; payments.some(p =&gt; p.customer_id === c.customer_id &amp;&amp; p.amount &gt; 10))</code></td></tr>
+      <tr><td><code>SELECT 1</code></td><td>что выбирать — не важно, <code>EXISTS</code> смотрит только «есть строка или нет»</td><td><code>.some()</code> возвращает <code>true/false</code></td></tr>
+      <tr><td><code>NOT EXISTS</code></td><td>«нет ни одной строки»</td><td><code>!payments.some(...)</code></td></tr>
+    </tbody></table>
+    <p class="note">Как и <code>.some()</code>, <code>EXISTS</code> останавливается на первом совпадении: не нужно перебирать все платежи клиента.</p>
+  </div>
+
+  <h3>Ловушка NOT IN — разбираем на настоящих данных</h3>
+  <p>Задача: «на каких языках не снят ни один фильм как на языке оригинала?». В <code>film</code> есть колонка <code>original_language_id</code>. Пишем через <code>NOT IN</code> и, для проверки, через <code>NOT EXISTS</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 27. Языки, которые ни разу не были языком оригинала
+SELECT name FROM language
+WHERE language_id NOT IN (SELECT original_language_id FROM film);
+
+SELECT name FROM language l
+WHERE NOT EXISTS (
+    SELECT 1 FROM film f WHERE f.original_language_id = l.language_id
+);</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- NOT IN          -- NOT EXISTS
+ name               name
+------             ----------
+(0 rows)            German
+                    Italian
+                    French
+                    Mandarin
+                    English
+                    Japanese
+                   (6 rows)</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОЧЕМУ NOT IN ВЕРНУЛ ПУСТОТУ</span>
+    <p>У всех 1000 фильмов <code>original_language_id</code> = <code>NULL</code>. Значит, подзапрос вернул список, где есть <code>NULL</code>. <code>1 NOT IN (NULL, NULL, ...)</code> раскрывается в <code>1 &lt;&gt; NULL AND 1 &lt;&gt; NULL AND ...</code>, а каждое <code>&lt;&gt; NULL</code> — это «неизвестно». Итог — «неизвестно» для <b>каждого</b> языка, и <code>WHERE</code> не пропускает ни один. Достаточно <b>одного</b> <code>NULL</code> в подзапросе, чтобы <code>NOT IN</code> сломался целиком, без всякой ошибки. Правило: для «нет такого» используйте <code>NOT EXISTS</code>. Если очень нужен <code>NOT IN</code> — добавьте в подзапрос <code>WHERE ... IS NOT NULL</code>. Это любимый вопрос на собеседовании.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 09 CTE -->
+<section id="cte">
+  <div class="sec-head"><h2>09 · CTE: пишем сложный запрос по шагам</h2><span class="tag practice">live-coding</span><span class="tag time">~9 мин</span></div>
+
+  <p>Подзапросы в подзапросах быстро превращаются в «матрёшку», которую никто не может прочитать:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">как НЕ надо</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-sql">SELECT ... FROM (
+    SELECT ... FROM (
+        SELECT ... FROM payment GROUP BY ...   -- читать приходится изнутри наружу
+    ) AS t1 WHERE ...
+) AS t2 GROUP BY ...;</code></pre>
+  </figure>
+  <p><b>CTE</b> (Common Table Expression, «общее табличное выражение») — именованный подзапрос, объявленный <b>перед</b> основным запросом словом <code>WITH</code>. Как <code>const</code> в JavaScript: сначала дали имя промежуточному результату, потом используем.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 28. Месяцы с 2025 года, где выручка выше средней за месяц
+WITH monthly AS (
+    -- шаг 1: выручка по месяцам
+    SELECT date_trunc('month', payment_date) AS month,
+           SUM(amount) AS revenue
+    FROM payment
+    WHERE payment_date &gt;= '2025-01-01'
+    GROUP BY month
+)
+-- шаг 2: сравниваем каждый месяц со средним по тем же месяцам
+SELECT month, revenue
+FROM monthly
+WHERE revenue &gt; (SELECT AVG(revenue) FROM monthly)
+ORDER BY month;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий · 10 месяцев</span></figcaption>
+    <pre><code class="language-none">         month          | revenue
+------------------------+---------
+ 2025-03-01 00:00:00+00 | 2235.49
+ 2025-05-01 00:00:00+00 | 2222.02
+ ...
+ 2026-07-01 00:00:00+00 | 2409.88</code></pre>
+  </figure>
+  <p>Обратите внимание: <code>monthly</code> используется <b>дважды</b> — и в <code>FROM</code>, и в подзапросе со средним. Без CTE пришлось бы дважды переписывать один и тот же подзапрос.</p>
+
+  <h3>Финал урока: сегментация клиентов</h3>
+  <p>Маркетинг просит график «сколько у нас VIP, постоянных и обычных клиентов и сколько денег приносит каждая группа». Собираем из всего, что прошли сегодня:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson2.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 29. Сегменты клиентов для дашборда
+WITH customer_totals AS (            -- шаг 1: сколько заплатил каждый клиент
+    SELECT customer_id,
+           SUM(amount) AS total
+    FROM payment
+    GROUP BY customer_id
+),
+segments AS (                        -- шаг 2: присваиваем сегмент
+    SELECT customer_id,
+           total,
+           CASE
+               WHEN total &gt;= 250 THEN 'VIP'
+               WHEN total &gt;= 150 THEN 'Постоянный'
+               ELSE 'Обычный'
+           END AS segment
+    FROM customer_totals
+)
+SELECT segment,                      -- шаг 3: отчёт по сегментам
+       COUNT(*)              AS customers,
+       ROUND(AVG(total), 2)  AS avg_total,
+       SUM(total)            AS revenue
+FROM segments
+GROUP BY segment
+ORDER BY revenue DESC;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">  segment   | customers | avg_total | revenue
+------------+-----------+-----------+----------
+ Постоянный |       394 |    215.73 | 84998.17
+ VIP        |       219 |    272.85 | 59754.39
+ Обычный    |       384 |     68.25 | 26209.83</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В JavaScript</th></tr></thead><tbody>
+      <tr><td><code>WITH customer_totals AS (...)</code></td><td>объявить временную «таблицу» на время этого запроса</td><td><code>const customerTotals = ...</code></td></tr>
+      <tr><td><code>, segments AS (...)</code></td><td>следующий CTE через запятую. Он может читать предыдущий</td><td><code>const segments = customerTotals.map(...)</code></td></tr>
+      <tr><td>финальный <code>SELECT</code></td><td>использует последний CTE как обычную таблицу</td><td><code>return ...</code></td></tr>
+      <tr><td>время жизни</td><td>CTE существует только внутри этого запроса — в базе ничего не создаётся</td><td>локальная переменная функции</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ПОЧЕМУ ЭТО НРАВИТСЯ НА КОД-РЕВЬЮ</span>
+    <p>Запрос читается сверху вниз, как обычный код: шаг 1, шаг 2, шаг 3. Каждый шаг можно отладить отдельно: выделите в DBeaver только <code>SELECT</code> внутри первого CTE и нажмите Ctrl+Enter — увидите промежуточный результат. <code>WITH</code> появился в стандарте SQL:1999. До PostgreSQL 12 CTE всегда выполнялся отдельно и иногда тормозил; с версии 12 база сама встраивает простые CTE в запрос, так что о скорости можно не беспокоиться.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 10 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>10 · Игра «Найди баг», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~8 мин</span></div>
+
+  <details class="quiz"><summary><code>SELECT customer_id, SUM(amount) FROM payment WHERE SUM(amount) &gt; 300 GROUP BY customer_id;</code></summary><div class="ans"><b>Агрегат в <code>WHERE</code></b>. Фильтр групп — <code>HAVING SUM(amount) &gt; 300</code>.</div></details>
+  <details class="quiz"><summary><code>SELECT rating, title, COUNT(*) FROM film GROUP BY rating;</code></summary><div class="ans"><b><code>title</code> не в <code>GROUP BY</code> и не в агрегате</b>. Убрать <code>title</code>, добавить в <code>GROUP BY</code> или взять <code>MIN(title)</code>.</div></details>
+  <details class="quiz"><summary>Средняя оценка в отчёте «слишком хорошая»: <code>AVG(rating)</code>, а у половины товаров оценок нет.</summary><div class="ans"><b>AVG пропускает NULL</b>: считается только по оценённым. Если «нет оценки» должно значить 0 — <code>AVG(COALESCE(rating, 0))</code>. Но обычно правильнее показать рядом <code>COUNT(rating)</code>.</div></details>
+  <details class="quiz"><summary>Плитка «Выручка за сегодня» показывает «NaN ₽», когда продаж ещё не было.</summary><div class="ans"><b><code>SUM</code> по пустому набору — <code>NULL</code></b>. <code>COALESCE(SUM(amount), 0)</code>.</div></details>
+  <details class="quiz"><summary><code>WHERE id NOT IN (SELECT manager_id FROM employees)</code> всегда возвращает 0 строк.</summary><div class="ans"><b>В подзапросе есть <code>NULL</code></b> (у директора нет менеджера). Использовать <code>NOT EXISTS</code> или <code>WHERE manager_id IS NOT NULL</code> в подзапросе.</div></details>
+  <details class="quiz"><summary>Отчёт «по дням» у коллеги из Алматы и у вас в Москве даёт разные суммы.</summary><div class="ans"><b>Часовой пояс сессии</b>: <code>date_trunc('day', ...)</code> режет сутки по поясу сессии. Явно задать <code>SET TIME ZONE</code> или <code>date_trunc('day', ts, 'Europe/Moscow')</code>.</div></details>
+  <details class="quiz"><summary><code>SELECT COUNT(*) FROM ...</code> — на фронтенде <code>count + 1</code> даёт <code>"5061"</code> вместо <code>507</code>.</summary><div class="ans"><b><code>COUNT</code> — это <code>bigint</code></b>, драйвер Node.js отдаёт его строкой, и <code>"506" + 1</code> склеивает строки. <code>Number(count)</code> или <code>COUNT(*)::int</code>.</div></details>
+  <details class="quiz"><summary><code>CASE WHEN length &lt; 120 THEN 'Средний' WHEN length &lt; 60 THEN 'Короткий' ELSE 'Длинный' END</code> — коротких фильмов 0.</summary><div class="ans"><b>Порядок условий</b>: фильм длиной 50 уже подошёл под <code>&lt; 120</code>. Узкие условия — выше.</div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Нужно</th><th>SQL</th></tr></thead>
+    <tbody>
+      <tr><td>сколько строк / заполненных / уникальных</td><td><code>COUNT(*)</code> · <code>COUNT(col)</code> · <code>COUNT(DISTINCT col)</code></td></tr>
+      <tr><td>сумма, среднее, мин, макс</td><td><code>SUM</code> · <code>ROUND(AVG(x), 2)</code> · <code>MIN</code> · <code>MAX</code> (пропускают NULL)</td></tr>
+      <tr><td>отчёт по группам</td><td><code>SELECT g, SUM(x) FROM t GROUP BY g</code></td></tr>
+      <tr><td>фильтр строк / групп</td><td><code>WHERE</code> (до группировки) · <code>HAVING SUM(x) &gt; 100</code> (после)</td></tr>
+      <tr><td>порядок выполнения</td><td><code>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</code></td></tr>
+      <tr><td>по месяцам / часть даты</td><td><code>date_trunc('month', ts)</code> · <code>EXTRACT(HOUR FROM ts)</code></td></tr>
+      <tr><td>интервал</td><td><code>NOW() - INTERVAL '7 days'</code> · <code>ts2 - ts1</code></td></tr>
+      <tr><td>NULL → значение / значение → NULL</td><td><code>COALESCE(x, 0)</code> · <code>NULLIF(x, 0)</code></td></tr>
+      <tr><td>if / else</td><td><code>CASE WHEN ... THEN ... ELSE ... END</code></td></tr>
+      <tr><td>значения в колонки</td><td><code>COUNT(*) FILTER (WHERE ...)</code> · <code>SUM(CASE WHEN ... THEN 1 ELSE 0 END)</code></td></tr>
+      <tr><td>подзапросы</td><td><code>x &gt; (SELECT AVG ...)</code> · <code>IN (SELECT ...)</code> · <code>EXISTS (SELECT 1 ...)</code></td></tr>
+      <tr><td>«нет такого»</td><td><code>NOT EXISTS</code>, а не <code>NOT IN</code></td></tr>
+      <tr><td>читаемые шаги</td><td><code>WITH a AS (...), b AS (...) SELECT ... FROM b</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание (Pagila)</h3>
+  <p>Решения — в файл <code>homework2.sql</code>. Не забудьте <code>SET TIME ZONE 'UTC';</code> в начале. Проверочные цифры — для свежей Pagila (999 клиентов).</p>
+  <ol>
+    <li>Для каждого рейтинга фильмов: количество, средняя длина и средняя стоимость замены (<code>replacement_cost</code>), округлённые. Оставить только рейтинги, где больше 200 фильмов. <i>Проверка: PG-13 (223) и NC-17 (210).</i></li>
+    <li>Выручка по годам: число платежей, сумма и средний чек. Объясните, что видно в 2022 году. <i>Проверка: средний чек 2022 — 4.00, потом ~2.96.</i></li>
+    <li>Сколько <b>разных</b> клиентов сейчас держат фильмы на руках (<code>return_date IS NULL</code>)? <i>Проверка: 201.</i></li>
+    <li>Сегментация по активности: посчитайте для каждого клиента число аренд (таблица <code>rental</code>), затем через <code>CASE</code> — «Киноман» (60+), «Регулярный» (40–59), «Иногда заходит» (меньше 40) и сколько клиентов в каждом сегменте. Используйте CTE. <i>Проверка: 540 / 137 / 320.</i></li>
+    <li>Сколько фильмов нет ни в одном магазине (нет записей в <code>inventory</code>)? Решите двумя способами: <code>NOT EXISTS</code> и <code>NOT IN</code>. Почему здесь оба способа дают одинаковый ответ, а в запросе 27 — нет? <i>Проверка: 42.</i></li>
+    <li>Месяцы <b>2025 года</b>, в которых выручка выше средней по 2025 году. Выведите рядом и само среднее. <i>Проверка: 8 месяцев, среднее 2187.90.</i></li>
+    <li>Таблица «выручка по годам × сотрудник»: строки — годы, колонки <code>staff_1</code> и <code>staff_2</code> с суммой платежей (<code>FILTER</code>). <i>Проверка: 2022 — 37896.57 и 38470.73.</i></li>
+    <li><b>Со звёздочкой:</b> средняя длительность аренды (<code>return_date - rental_date</code>). Почему <code>AVG</code> выдаёт странное <code>4 days 26:49:00</code>? Найдите в документации функцию, которая это исправит.</li>
+  </ol>
+  <details class="classic"><summary>Ответы для преподавателя</summary><div class="ans">
+    <pre><code class="language-sql">-- 1
+SELECT rating, COUNT(*) AS films, ROUND(AVG(length), 1) AS avg_length,
+       ROUND(AVG(replacement_cost), 2) AS avg_cost
+FROM film GROUP BY rating HAVING COUNT(*) &gt; 200 ORDER BY films DESC;
+-- 2
+SELECT EXTRACT(YEAR FROM payment_date) AS year, COUNT(*) AS payments,
+       SUM(amount) AS revenue, ROUND(AVG(amount), 2) AS avg_check
+FROM payment GROUP BY year ORDER BY year;
+-- 3
+SELECT COUNT(DISTINCT customer_id) FROM rental WHERE return_date IS NULL;
+-- 4
+WITH rentals_per_customer AS (
+    SELECT customer_id, COUNT(*) AS rentals FROM rental GROUP BY customer_id
+)
+SELECT CASE WHEN rentals &gt;= 60 THEN 'Киноман'
+            WHEN rentals &gt;= 40 THEN 'Регулярный'
+            ELSE 'Иногда заходит' END AS segment,
+       COUNT(*) AS customers
+FROM rentals_per_customer GROUP BY segment ORDER BY customers DESC;
+-- 5 (inventory.film_id не бывает NULL, поэтому NOT IN здесь безопасен)
+SELECT COUNT(*) FROM film f
+WHERE NOT EXISTS (SELECT 1 FROM inventory i WHERE i.film_id = f.film_id);
+SELECT COUNT(*) FROM film WHERE film_id NOT IN (SELECT film_id FROM inventory);
+-- 6
+WITH monthly AS (
+    SELECT date_trunc('month', payment_date) AS month, SUM(amount) AS revenue
+    FROM payment
+    WHERE payment_date &gt;= '2025-01-01' AND payment_date &lt; '2026-01-01'
+    GROUP BY month
+)
+SELECT month, revenue, ROUND((SELECT AVG(revenue) FROM monthly), 2) AS avg_month
+FROM monthly WHERE revenue &gt; (SELECT AVG(revenue) FROM monthly) ORDER BY month;
+-- 7
+SELECT EXTRACT(YEAR FROM payment_date) AS year,
+       SUM(amount) FILTER (WHERE staff_id = 1) AS staff_1,
+       SUM(amount) FILTER (WHERE staff_id = 2) AS staff_2
+FROM payment GROUP BY year ORDER BY year;
+-- 8: интервал не переводит 24+ часа в дни сам. justify_interval → 5 days 02:49:00.74
+SELECT justify_interval(AVG(return_date - rental_date)) FROM rental;</code></pre>
+  </div></details>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю, почему агрегировать нужно в базе, а не в JavaScript.</li>
+    <li>☐ Различаю <code>COUNT(*)</code>, <code>COUNT(col)</code>, <code>COUNT(DISTINCT col)</code>; знаю, что агрегаты пропускают NULL, а <code>SUM</code> от пустоты — NULL.</li>
+    <li>☐ Пишу <code>GROUP BY</code> и понимаю ошибку «must appear in the GROUP BY clause».</li>
+    <li>☐ Различаю <code>WHERE</code> и <code>HAVING</code>, знаю порядок выполнения 2.0.</li>
+    <li>☐ Группирую по месяцам и часам, понимаю, как часовой пояс меняет результат.</li>
+    <li>☐ Знаю трёхзначную логику; использую <code>COALESCE</code> и <code>NULLIF</code>.</li>
+    <li>☐ Пишу <code>CASE</code> и разворачиваю значения в колонки через <code>FILTER</code>.</li>
+    <li>☐ Пишу скалярные подзапросы, <code>IN</code>, <code>EXISTS</code>; объясняю ловушку <code>NOT IN</code>.</li>
+    <li>☐ Разбиваю сложный запрос на шаги через <code>WITH</code>.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://www.postgresql.org/docs/current/functions-aggregate.html" target="_blank" rel="noopener">PostgreSQL: агрегатные функции</a></li>
+    <li><a href="https://www.postgresql.org/docs/current/functions-datetime.html" target="_blank" rel="noopener">PostgreSQL: функции для дат</a> — <code>date_trunc</code>, <code>EXTRACT</code>, <code>justify_interval</code>.</li>
+    <li><a href="https://www.postgresql.org/docs/current/queries-with.html" target="_blank" rel="noopener">PostgreSQL: WITH-запросы (CTE)</a></li>
+    <li><a href="https://pgexercises.com/" target="_blank" rel="noopener">PostgreSQL Exercises</a> — задачи в браузере, разделы Aggregation и Dates ровно по теме урока.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · SQL, урок 2 · COUNT/SUM/AVG/MIN/MAX, агрегаты и NULL, типы результатов в Node.js, GROUP BY, HAVING, порядок выполнения, date_trunc/EXTRACT/INTERVAL, часовые пояса, трёхзначная логика, COALESCE, NULLIF, CASE, FILTER, подзапросы, IN, EXISTS, NOT IN и NULL, CTE, Pagila</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

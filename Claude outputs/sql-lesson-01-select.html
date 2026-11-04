@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL · Урок 1 — Введение в SQL и SELECT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>SQL</div>
+  <p class="lead">Модуль Backend · SQL · Урок 1</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и подготовка</a>
+    <div class="grp">Часть 1 · Где живут данные</div>
+    <a href="#why"><span class="n theory-dot">01</span>Зачем база, если есть JSON</a>
+    <a href="#model"><span class="n theory-dot">02</span>Таблицы, строки, типы</a>
+    <a href="#declarative"><span class="n theory-dot">03</span>«Что», а не «как». Диалекты</a>
+    <div class="grp">Часть 2 · Первые запросы</div>
+    <a href="#setup"><span class="n practice-dot">04</span>PostgreSQL, DBeaver, данные</a>
+    <a href="#select"><span class="n practice-dot">05</span>SELECT и стиль</a>
+    <a href="#where"><span class="n practice-dot">06</span>WHERE, AND/OR, NULL</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 3 · Каталог PizzaHub</div>
+    <a href="#distinct"><span class="n practice-dot">07</span>DISTINCT и DISTINCT ON</a>
+    <a href="#order"><span class="n practice-dot">08</span>ORDER BY</a>
+    <a href="#limit"><span class="n practice-dot">09</span>LIMIT, OFFSET, пагинация</a>
+    <a href="#alias"><span class="n practice-dot">10</span>Порядок выполнения, AS, кавычки</a>
+    <a href="#like"><span class="n practice-dot">11</span>Поиск: LIKE и ILIKE</a>
+    <a href="#final"><span class="n practice-dot">12</span>Запрос для каталога</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">13</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · SQL · Урок 1 · 2 часа с перерывом · для фронтенд-разработчиков</p>
+  <h1>Введение в SQL и SELECT</h1>
+  <p class="lead-p">Два урока PizzaHub брал меню из файла <code>data/pizzas.json</code> через «фейковый бэкенд». Сегодня заглянем туда, где данные живут по-настоящему, — в базу данных PostgreSQL. Научимся задавать ей вопросы на SQL и к концу урока соберём одним запросом всё, что в проекте сейчас делают три файла: фильтр, пагинатор и адаптер.</p>
+
+  <div class="hero">
+    <h3>ЧТО СДЕЛАЕМ ЗА УРОК</h3>
+    <ul>
+      <li><b>Поймём, зачем базы данных</b>, если есть JSON-файлы, и что такое СУБД, таблица, строка, колонка и тип.</li>
+      <li><b>Разберёмся с философией SQL</b>: почему он «как React, а не как jQuery».</li>
+      <li><b>Поставим PostgreSQL и DBeaver</b>, загрузим меню и заказы PizzaHub в настоящую базу.</li>
+      <li><b>Напишем запросы для каталога</b>: <code>SELECT</code>, <code>WHERE</code>, <code>AND/OR</code>, <code>NULL</code>, <code>DISTINCT</code>, <code>DISTINCT ON</code>, <code>ORDER BY</code>, <code>LIMIT/OFFSET</code>, <code>AS</code>, <code>LIKE/ILIKE</code>.</li>
+      <li><b>Соберём финальный запрос</b> «страница каталога»: категория + сортировка + страница + поля сразу в формате TypeScript-типа <code>Pizza</code>.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Зачем база, если есть JSON. СУБД, немного истории</td><td>теория</td></tr>
+      <tr><td class="t">0:10</td><td>Реляционная модель: таблица = массив объектов, типы</td><td>теория</td></tr>
+      <tr><td class="t">0:18</td><td>Декларативный SQL против императивного JS, диалекты</td><td>теория</td></tr>
+      <tr><td class="t">0:25</td><td>PostgreSQL + DBeaver, база <code>pizzahub</code>, загрузка данных</td><td>практика</td></tr>
+      <tr><td class="t">0:37</td><td><code>SELECT</code>, стиль запросов, почему не <code>SELECT *</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:45</td><td><code>WHERE</code>, <code>AND/OR</code> и ловушка приоритета, <code>NULL</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:57</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:07</td><td><code>DISTINCT</code> и фишка PostgreSQL <code>DISTINCT ON</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:17</td><td><code>ORDER BY</code>: по нескольким колонкам, где прячется <code>NULL</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:23</td><td><code>LIMIT/OFFSET</code>: пагинация как в <code>paginate.ts</code>, только в базе</td><td>live-coding</td></tr>
+      <tr><td class="t">1:31</td><td>Порядок выполнения, псевдонимы <code>AS</code>, правило кавычек</td><td>live-coding</td></tr>
+      <tr><td class="t">1:41</td><td>Поиск по сайту: <code>LIKE</code> и <code>ILIKE</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:48</td><td>Финальный запрос каталога, игра, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОДГОТОВКА — ОТПРАВЬТЕ ГРУППЕ ЗА ДЕНЬ</span>
+    <p>Установка PostgreSQL на уроке «съедает» 20 минут и обязательно у кого-то ломается. Попросите заранее:</p>
+    <p>1. Установить <strong>PostgreSQL 17</strong> (или новее) с <a href="https://www.postgresql.org/download/" target="_blank" rel="noopener">postgresql.org/download</a>. На Mac проще всего <a href="https://postgresapp.com/" target="_blank" rel="noopener">Postgres.app</a> — скачал, перетащил, нажал Initialize. На Windows — установщик EDB: пароль для пользователя <code>postgres</code> <strong>записать на бумажку</strong>, порт оставить 5432, Stack Builder в конце можно пропустить.<br>
+    2. Установить <a href="https://dbeaver.io/download/" target="_blank" rel="noopener">DBeaver Community</a> (бесплатный) и проверить, что он подключается к локальному серверу.<br>
+    3. Скачать архив <code>pizzahub-sql-start.zip</code> — это PizzaHub после урока 2 по паттернам плюс папка <code>sql/</code> со стартовыми данными и учебной базой Pagila для домашки.</p>
+  </div></div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">КАК ЧИТАТЬ БЛОКИ КОДА</span>
+    <p>Все запросы урока студенты пишут в <strong>один файл</strong> <code>pizzahub/sql/01_menu.sql</code>, каждый новый — в конец файла, с комментарием-номером. В заголовке блока написано, где его вводить. Блоки «👀 только посмотреть» вводить не нужно. Под запросами — зелёный «разбор синтаксиса» и <strong>настоящий результат</strong>: все запросы урока я выполнил на PostgreSQL на тех же данных, что в архиве.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Где живут данные</span><span class="bar"></span></div>
+
+<!-- 01 WHY -->
+<section id="why">
+  <div class="sec-head"><h2>01 · Зачем база данных, если есть JSON?</h2><span class="tag theory">теория</span><span class="tag time">~10 мин</span></div>
+
+  <div class="oneliner">База данных — хранилище, СУБД — программа-«библиотекарь», которая этим хранилищем управляет. А SQL — язык, на котором мы с библиотекарем разговариваем.</div>
+
+  <h3>Начнём с нашего проекта</h3>
+  <p>Сейчас меню PizzaHub лежит в файле <code>data/pizzas.json</code>, а <code>fake-backend.ts</code> читает его целиком. Для четырёх пицц — идеально. Теперь представьте настоящую доставку:</p>
+  <table class="cmp">
+    <thead><tr><th>Ситуация</th><th>JSON-файл</th><th>База данных</th></tr></thead>
+    <tbody>
+      <tr><td>В меню 4 пиццы</td><td>отлично</td><td>отлично</td></tr>
+      <tr><td>2 миллиона заказов, нужен заказ №1 873 004</td><td>прочитать весь файл (гигабайты) в память и искать циклом</td><td>найдёт за миллисекунды по индексу</td></tr>
+      <tr><td>Два оператора одновременно меняют один заказ</td><td>кто последний сохранил файл, тот и прав. Изменения первого молча пропали</td><td>транзакции и блокировки: ничего не потеряется</td></tr>
+      <tr><td>Сервер выключился посреди записи</td><td>«битый» JSON, приложение не стартует</td><td>журнал изменений, база восстановится</td></tr>
+      <tr><td>Кто-то записал цену <code>"дорого"</code> вместо числа</td><td>файл примет что угодно</td><td>колонка с типом INTEGER не пустит</td></tr>
+    </tbody>
+  </table>
+
+  <h3>База данных и СУБД — не одно и то же</h3>
+  <ul>
+    <li><b>База данных (БД)</b> — сами данные, организованные по правилам. Книги на полках.</li>
+    <li><b>СУБД</b> (система управления базами данных, англ. DBMS) — программа, которая хранит, ищет, защищает и меняет эти данные. Библиотекарь. PostgreSQL, MySQL, SQLite, Oracle — это СУБД.</li>
+  </ul>
+  <div class="diagram">
+<pre> <span class="tn">вы / бэкенд</span>                       <span class="pk">СУБД (PostgreSQL)</span>               диск
+ ┌──────────────┐  1. SQL-запрос    ┌────────────────────┐  3.  ┌──────────┐
+ │ SELECT ...   │ ────────────────▶ │ разобрать запрос,  │ ───▶ │ 💾 файлы │
+ │ FROM pizzas  │                   │ выбрать план,      │      │ базы     │
+ │              │ ◀──────────────── │ проверить права    │ ◀─── │          │
+ └──────────────┘  4. таблица-ответ └────────────────────┘      └──────────┘</pre>
+  </div>
+  <p>Мы никогда не трогаем файлы базы руками. Мы вежливо просим библиотекаря на SQL, а он сам решает, на какую полку идти. Как <code>fetch</code> во фронтенде: вы не знаете, как сервер устроен внутри, вы отправляете запрос и получаете ответ.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: КАК SQL ПОЯВИЛСЯ И ПОЧЕМУ ORACLE НАЧИНАЛСЯ С ВЕРСИИ 2</span>
+    <p>1970 год. Математик из IBM Эдгар Кодд публикует статью «Реляционная модель данных для больших банков данных»: храните всё в простых таблицах и спрашивайте декларативно. Сама IBM не торопится — она хорошо зарабатывает на старой иерархической базе IMS. Её инженеры делают прототип и язык <b>SEQUEL</b>, но название приходится сменить на <b>SQL</b>: «Sequel» уже было торговой маркой британской авиастроительной компании.</p>
+    <p>Статьи IBM внимательно читает молодой программист Ларри Эллисон. Вместе с друзьями он выпускает коммерческую SQL-базу раньше самой IBM и называет её <b>Oracle Version 2</b>. Версии 1 не было никогда: «вторая версия» звучала надёжнее для покупателей. Так появилась одна из крупнейших компаний мира. А SQL с тех пор почти не изменился в основе: запросы из этого урока поняла бы и база 1990-х.</p>
+  </div></div>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПРО СЛОНА</span>
+    <p>PostgreSQL вырос из университетского проекта Postgres («после Ingres») Майкла Стоунбрейкера в Беркли в 1986 году; позже Стоунбрейкер получил премию Тьюринга. Талисман — слон <b>Slonik</b> (да, это русское слово: так его назвали в сообществе). Слон — потому что «слоны ничего не забывают». Официально название произносится «пост-грес-кью-эл», в жизни все говорят «постгрес» или просто «постгря».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 MODEL -->
+<section id="model">
+  <div class="sec-head"><h2>02 · Реляционная модель: таблицы, строки, типы</h2><span class="tag theory">теория</span><span class="tag time">~8 мин</span></div>
+
+  <p><b>Реляционная</b> (от <i>relation</i> — отношение) — значит, данные лежат в <b>таблицах</b>, которые можно связывать между собой. Ментальная модель: база — папка, таблицы — Excel-файлы в ней. Но есть одно главное отличие от Excel: у каждой колонки <b>строгий тип</b>.</p>
+
+  <p>Вот как будет выглядеть меню PizzaHub в базе (первые строки таблицы <code>pizzas</code>):</p>
+  <div class="diagram">
+<pre>                       <span class="tn">таблица pizzas</span>                     ← колонки (имя + тип)
+ ┌──────────┬─────────────┬──────────┬───────────────┬──────────┬─────────────┐
+ │ <span class="pk">pizza_id</span> │ pizza_name  │ category │ price_kopecks │ is_vegan │ description │
+ │ INTEGER  │ TEXT        │ TEXT     │ INTEGER       │ BOOLEAN  │ TEXT        │
+ ├──────────┼─────────────┼──────────┼───────────────┼──────────┼─────────────┤
+ │ 1        │ Маргарита   │ classic  │ 49900         │ true     │ Томаты, ... │ ← строка = одна пицца
+ │ 2        │ Пепперони   │ meat     │ 59900         │ false    │ Пикантная…  │
+ │ 8        │ Сырный цыпл.│ cheese   │ 62900         │ false    │ <span class="fk">NULL</span>        │ ← описания нет
+ └──────────┴─────────────┴──────────┴───────────────┴──────────┴─────────────┘</pre>
+  </div>
+
+  <h4>От таблицы к TypeScript</h4>
+  <p>Сравните с тем, что уже есть в проекте, — интерфейс <code>ApiPizza</code> в <code>src/api/fake-backend.ts</code>:</p>
+  <table class="cmp">
+    <thead><tr><th>В базе</th><th>В TypeScript (PizzaHub)</th><th>Пример</th></tr></thead>
+    <tbody>
+      <tr><td>таблица</td><td>массив объектов <code>ApiPizza[]</code></td><td><code>pizzas</code></td></tr>
+      <tr><td>строка (запись)</td><td>один объект</td><td><code>{ pizza_id: 1, pizza_name: 'Маргарита', ... }</code></td></tr>
+      <tr><td>колонка (поле)</td><td>ключ объекта + его тип в <code>interface</code></td><td><code>price_kopecks: number</code></td></tr>
+      <tr><td><code>INTEGER</code> / <code>NUMERIC</code></td><td><code>number</code></td><td>49900</td></tr>
+      <tr><td><code>TEXT</code></td><td><code>string</code></td><td>'Маргарита'</td></tr>
+      <tr><td><code>BOOLEAN</code></td><td><code>boolean</code></td><td>true</td></tr>
+      <tr><td><code>TIMESTAMPTZ</code></td><td><code>Date</code> (строка ISO в JSON)</td><td>2026-09-01 13:00+03</td></tr>
+      <tr><td><code>NULL</code></td><td><code>null</code> — «значения нет»</td><td>описание не заполнено</td></tr>
+    </tbody>
+  </table>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ЦЕНА В КОПЕЙКАХ</span>
+    <p>Посмотрите в <code>data/pizzas.json</code>: там тоже <code>price_kopecks: 49900</code>, а адаптер делит на 100. Это не прихоть. Дробные числа в компьютере хранятся приблизительно: в JS <code>0.1 + 0.2 === 0.30000000000000004</code>. Для денег это недопустимо, поэтому их хранят целыми числами в минимальных единицах (копейках, центах). Так делают Stripe, ЮKassa и почти все платёжные API.</p>
+  </div></div>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ГЛАВНОЕ ОТЛИЧИЕ ОТ TYPESCRIPT</span>
+    <p>Типы TypeScript живут только при компиляции: в рантайме в объект можно положить что угодно. Типы в базе проверяются <b>при каждой записи</b>. Попробуйте записать в <code>price_kopecks</code> строку <code>'дорого'</code> — база ответит ошибкой и ничего не сохранит. Это последняя линия обороны данных.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 DECLARATIVE -->
+<section id="declarative">
+  <div class="sec-head"><h2>03 · «Что», а не «как». Диалекты SQL</h2><span class="tag theory">теория</span><span class="tag time">~7 мин</span></div>
+
+  <p>Главное, что нужно перестроить в голове: SQL — <b>декларативный</b> язык. Вы описываете <b>результат</b>, а не шаги.</p>
+  <p>Задача: найти пиццы дешевле 500 ₽. Вот как это выглядит на TypeScript:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">императивно · TypeScript</span><span class="role">👀 только посмотреть — в проект не пишем</span></figcaption>
+    <pre><code class="language-typescript">// Говорим КАК: создай массив, пройди циклом, сравни, положи
+const result: ApiPizza[] = [];
+for (const pizza of pizzas) {
+  if (pizza.price_kopecks &lt; 50000) {
+    result.push(pizza);
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР TS (для тех, кто пишет на Python)</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>На Python</th></tr></thead><tbody>
+      <tr><td><code>const result: ApiPizza[] = []</code></td><td>константа-массив, элементы типа <code>ApiPizza</code></td><td><code>result: list[ApiPizza] = []</code></td></tr>
+      <tr><td><code>for (const pizza of pizzas)</code></td><td>цикл по элементам массива</td><td><code>for pizza in pizzas:</code></td></tr>
+      <tr><td><code>result.push(pizza)</code></td><td>добавить в конец массива</td><td><code>result.append(pizza)</code></td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">декларативно · SQL</span><span class="role">👀 только посмотреть — скоро напишем сами</span></figcaption>
+    <pre><code class="language-sql">-- Говорим ЧТО: верни пиццы, у которых цена меньше 500 ₽
+SELECT pizza_name FROM pizzas WHERE price_kopecks &lt; 50000;</code></pre>
+  </figure>
+  <p>Как именно база это найдёт — прочитает всю таблицу или воспользуется индексом, в каком порядке, сколько памяти взять — решает она сама. У неё есть специальный «планировщик», который выбирает самый быстрый путь.</p>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ФРОНТЕНДЕРАМ ЭТО УЖЕ ЗНАКОМО</span>
+    <p>HTML и CSS — декларативные: вы пишете <code>display: flex</code>, а не вычисляете координаты каждого блока. React — декларативный: вы описываете, <i>как должен выглядеть</i> интерфейс при таком состоянии, а React сам решает, какие DOM-узлы поменять. jQuery — императивный: «найди элемент, поменяй класс, добавь узел». SQL для данных — то же, что React для интерфейса.</p>
+  </div></div>
+
+  <h3>Диалекты</h3>
+  <p>SQL — стандарт (ANSI/ISO), но каждая СУБД добавляет свои возможности. Так появляются <b>диалекты</b>:</p>
+  <table class="cmp">
+    <thead><tr><th>СУБД</th><th>Где встретите</th><th>Расширение языка</th></tr></thead>
+    <tbody>
+      <tr><td>PostgreSQL</td><td>большинство новых проектов, Supabase, Neon</td><td>PL/pgSQL</td></tr>
+      <tr><td>MySQL / MariaDB</td><td>WordPress, старые PHP-проекты</td><td>—</td></tr>
+      <tr><td>SQLite</td><td>мобильные приложения, браузеры, Electron. Одна база = один файл</td><td>—</td></tr>
+      <tr><td>Microsoft SQL Server</td><td>корпоративный мир .NET</td><td>T-SQL</td></tr>
+      <tr><td>Oracle</td><td>банки, госсектор</td><td>PL/SQL</td></tr>
+    </tbody>
+  </table>
+  <p>Ядро — <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>JOIN</code>, транзакции — одинаково везде (стандарт SQL-92). Мы учим PostgreSQL, и примерно 95% знаний пригодятся в любой другой базе. Две «фишки только PostgreSQL» из этого урока — <code>DISTINCT ON</code> и <code>ILIKE</code> — я отмечу отдельно.</p>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Первые запросы</span><span class="bar"></span></div>
+
+<!-- 04 SETUP -->
+<section id="setup">
+  <div class="sec-head"><h2>04 · PostgreSQL, DBeaver и данные PizzaHub</h2><span class="tag practice">практика</span><span class="tag time">~12 мин</span></div>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">ЧТО ЧЕМ ЯВЛЯЕТСЯ</span>
+    <p><b>PostgreSQL</b> — сервер, работает в фоне и слушает порт <code>5432</code> (как dev-сервер Vite слушает 5173). <b>DBeaver</b> — клиент с окнами и таблицами, через который мы отправляем запросы. Сервер без клиента работает, но «смотреть» в него неудобно. Клиент без сервера бесполезен.</p>
+  </div></div>
+
+  <h3><span class="step">Шаг 1</span> Распаковать проект</h3>
+  <p>Распакуйте <code>pizzahub-sql-start.zip</code>. Нас интересует новая папка:</p>
+  <div class="diagram">
+<pre>pizzahub/
+├── src/ ...               ← код с уроков по паттернам, сегодня не трогаем
+├── data/pizzas.json       ← «старое» меню из файла
+└── <span class="tn">sql/</span>
+    ├── 00_seed.sql        ← создаёт таблицы pizzas и orders с данными (готовый)
+    ├── <span class="pk">01_menu.sql</span>        ← СОЗДАДИМ сейчас: сюда пишем все запросы урока
+    └── pagila/            ← учебная база видеопроката, для домашки</pre>
+  </div>
+
+  <h3><span class="step">Шаг 2</span> Подключиться и создать базу</h3>
+  <ol>
+    <li>DBeaver → кнопка <b>«Новое соединение»</b> (вилка с плюсом) → <b>PostgreSQL</b>.</li>
+    <li>Host <code>localhost</code>, Port <code>5432</code>, Database <code>postgres</code>, Username <code>postgres</code>, Password — тот самый, с бумажки (в Postgres.app пароль пустой, а пользователь — ваше имя в системе). Если DBeaver предложит скачать драйвер — соглашаемся.</li>
+    <li>В соединении правой кнопкой <b>Databases → Create New Database</b> → имя <code>pizzahub</code>.</li>
+  </ol>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ВОПРОС №1 НА ЛЮБОМ УРОКЕ ПО БАЗАМ</span>
+    <p>«Какой пароль я придумал при установке?» Если не помните — на Windows проще всего переустановить PostgreSQL, на Mac перейти на Postgres.app. Пароль у локальной учебной базы может быть простым, но на сервере — никогда.</p>
+  </div></div>
+
+  <h3><span class="step">Шаг 3</span> Загрузить данные</h3>
+  <p>В DBeaver: <b>File → Open File…</b> → <code>pizzahub/sql/00_seed.sql</code>. Сверху над редактором выберите активное соединение и базу <b>pizzahub</b> (иначе таблицы создадутся в базе <code>postgres</code> — самая частая ошибка). Запустите весь скрипт: <b>Alt+X</b> или кнопка «Выполнить скрипт» слева от редактора.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/00_seed.sql · начало файла</span><span class="role">👀 файл уже в архиве — ничего не пишем, только запускаем</span></figcaption>
+    <pre><code class="language-sql">-- PizzaHub · стартовые данные для урока по SQL.
+-- Этот файл мы НЕ пишем руками, а просто запускаем целиком.
+-- CREATE TABLE и INSERT подробно разберём на следующем уроке.
+
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS pizzas;
+
+CREATE TABLE pizzas (
+    pizza_id      INTEGER PRIMARY KEY,
+    pizza_name    TEXT        NOT NULL,
+    category      TEXT        NOT NULL,          -- classic / meat / cheese / veggie
+    price_kopecks INTEGER     NOT NULL,          -- цена в копейках, размер M
+    is_vegan      BOOLEAN     NOT NULL,
+    is_spicy      BOOLEAN     NOT NULL,
+    weight_g      INTEGER     NOT NULL,
+    description   TEXT,                          -- может быть пустым (NULL)
+    created_at    TIMESTAMPTZ NOT NULL
+);
+
+INSERT INTO pizzas VALUES
+( 1, 'Маргарита',          'classic', 49900, true,  false, 450, 'Томаты, моцарелла, базилик',         '2026-09-01 10:00+00'),
+( 2, 'Пепперони',          'meat',    59900, false, true,  480, 'Пикантная пепперони и моцарелла',    '2026-09-05 10:00+00'),
+( 3, 'Четыре сыра',        'cheese',  64900, false, false, 470, 'Моцарелла, чеддер, пармезан, дорблю', '2026-09-10 10:00+00'),
+( 4, 'Овощная',            'veggie',  45900, true,  false, 500, 'Перец, томаты, шампиньоны, лук',     '2026-09-12 10:00+00'),
+-- ... дальше ещё 12 пицц и таблица orders с 18 заказами</code></pre>
+  </figure>
+  <p>Здесь пока незнакомые <code>CREATE TABLE</code> и <code>INSERT</code> — они создают таблицу и кладут в неё строки. Подробно разберём их на следующем уроке. Сегодня тема — <b>чтение</b> данных. Главное, что видно уже сейчас: каждая колонка объявлена с типом, а <code>NOT NULL</code> значит «обязательное поле» (как поле без <code>?</code> в TypeScript-интерфейсе). У <code>description</code> нет <code>NOT NULL</code> — описание может отсутствовать.</p>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЗАПАСНЫЕ ВАРИАНТЫ</span>
+    <p>Любители терминала: <code>psql -U postgres -d pizzahub -f sql/00_seed.sql</code> из папки pizzahub. Если у студента не установилось ничего — откройте <a href="https://www.db-fiddle.com/" target="_blank" rel="noopener">db-fiddle.com</a>, выберите PostgreSQL, вставьте содержимое <code>00_seed.sql</code> в левое окно, а запросы урока пишите в правое. Для этого урока хватит.</p>
+  </div></div>
+
+  <h3><span class="step">Шаг 4</span> Создать файл для запросов</h3>
+  <div class="fileinfo"><span class="k">создаём</span><code>pizzahub/sql/01_menu.sql</code><span class="k">роль</span><span>Все запросы урока. В DBeaver: <b>File → New File</b> (или откройте пустой файл из папки), сохраните как <code>sql/01_menu.sql</code> и выберите базу <b>pizzahub</b> сверху. Выполнить один запрос, на котором стоит курсор, — <b>Ctrl+Enter</b> (на Mac — Cmd+Enter) или кнопка ▶.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · pizzahub/sql/01_menu.sql</span></figcaption>
+    <pre><code class="language-sql">-- PizzaHub · запросы для каталога (урок 1 по SQL)
+
+-- 1. Всё меню целиком
+SELECT * FROM pizzas;</code></pre>
+  </figure>
+  <div class="expect"><b>Ожидаем:</b> внизу DBeaver таблица из 16 строк — от «Маргариты» до «Цезаря». У трёх пицц в колонке <code>description</code> написано <code>[NULL]</code>. Если видите ошибку <code>relation "pizzas" does not exist</code> — запрос выполняется не в той базе: переключите на <b>pizzahub</b> сверху.</div>
+</section>
+
+<hr>
+
+<!-- 05 SELECT -->
+<section id="select">
+  <div class="sec-head"><h2>05 · SELECT и стиль запросов</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <div class="oneliner"><code>SELECT</code> — «покажи мне». Главная команда SQL: с неё начинается любое чтение данных.</div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">общая форма</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-sql">SELECT колонка1, колонка2      -- ЧТО показать
+FROM таблица;                  -- ОТКУДА взять</code></pre>
+  </figure>
+
+  <h3>Почему <code>SELECT *</code> — антипаттерн</h3>
+  <p>Звёздочка значит «все колонки». Для того чтобы посмотреть на таблицу, — нормально. В коде приложения — нет:</p>
+  <ol>
+    <li><b>Лишняя работа и трафик.</b> Нужны название и цена, а база читает и гонит по сети ещё описания, даты, веса. Для карточки в каталоге это килобайты мусора на каждую строку.</li>
+    <li><b>Утечки.</b> Классический баг: в таблице <code>users</code> есть <code>password_hash</code>, бэкенд делает <code>SELECT *</code> и отдаёт результат на фронт «как есть». Хеш пароля теперь виден во вкладке Network у любого пользователя.</li>
+    <li><b>Хрупкость.</b> Кто-то добавил в таблицу колонку — и ответ API внезапно изменился.</li>
+  </ol>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 2. Только то, что нужно для карточки: название и цена
+SELECT pizza_name, price_kopecks
+FROM pizzas;
+
+-- 3. Можно считать прямо в запросе: цена в рублях
+SELECT pizza_name, price_kopecks / 100 AS price_rub
+FROM pizzas;</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР СИНТАКСИСА</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В TypeScript</th></tr></thead><tbody>
+      <tr><td><code>SELECT pizza_name, price_kopecks</code></td><td>какие колонки вернуть, через запятую. Порядок в ответе — как в запросе</td><td><code>pizzas.map(p =&gt; ({ pizza_name: p.pizza_name, ... }))</code></td></tr>
+      <tr><td><code>FROM pizzas</code></td><td>из какой таблицы</td><td>массив <code>pizzas</code></td></tr>
+      <tr><td><code>price_kopecks / 100</code></td><td>выражение: в <code>SELECT</code> можно не только колонки, но и арифметику</td><td><code>p.price_kopecks / 100</code></td></tr>
+      <tr><td><code>AS price_rub</code></td><td>имя для вычисленной колонки (подробно в блоке 10)</td><td>ключ объекта</td></tr>
+      <tr><td><code>;</code></td><td>конец запроса. В файле с несколькими запросами — обязательно</td><td>—</td></tr>
+      <tr><td><code>-- 2. ...</code></td><td>комментарий до конца строки</td><td><code>// ...</code></td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат запроса 3 (первые строки)</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> pizza_name  | price_rub
+-------------+-----------
+ Маргарита   |       499
+ Пепперони   |       599
+ Четыре сыра |       649
+ ...
+(16 rows)</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЛОВУШКА: ЦЕЛОЧИСЛЕННОЕ ДЕЛЕНИЕ</span>
+    <p>Если обе части деления — целые числа, PostgreSQL отбрасывает дробную часть: <code>SELECT 49950 / 100</code> вернёт <code>499</code>, а не 499.5. В JS такого нет, там <code>49950 / 100 === 499.5</code>. Чтобы получить дробь, сделайте одно из чисел дробным: <code>49950 / 100.0</code> → <code>499.5000000000000000</code>. У нас все цены кратны 100, поэтому сейчас не заметно, но баг «пропали 50 копеек» — классика.</p>
+  </div></div>
+
+  <h3>SQL Style Guide</h3>
+  <p>Базе всё равно, как вы пишете: <code>select pizza_name from pizzas</code> сработает так же. Стиль нужен людям, которые будут читать запрос в код-ревью.</p>
+  <div class="twocol">
+    <div class="box bad"><h5>Так себе</h5><code>select pizza_name, price_kopecks from pizzas where category = 'meat' order by price_kopecks;</code></div>
+    <div class="box good"><h5>Хорошо</h5><code>SELECT pizza_name, price_kopecks<br>FROM pizzas<br>WHERE category = 'meat'<br>ORDER BY price_kopecks;</code></div>
+  </div>
+  <ol>
+    <li><b>Ключевые слова — ЗАГЛАВНЫМИ</b>: <code>SELECT</code>, <code>FROM</code>, <code>WHERE</code>. Сразу видно, где команда, а где данные.</li>
+    <li><b>Имена таблиц и колонок — snake_case</b>: <code>pizza_name</code>, <code>price_kopecks</code>. Почему не camelCase — узнаем в блоке 10.</li>
+    <li><b>Каждая часть запроса — с новой строки.</b> Как Prettier для SQL. Подробнее — <a href="https://www.sqlstyle.guide/" target="_blank" rel="noopener">sqlstyle.guide</a> (есть переводы, в том числе на русский).</li>
+  </ol>
+</section>
+
+<hr>
+
+<!-- 06 WHERE -->
+<section id="where">
+  <div class="sec-head"><h2>06 · WHERE, AND/OR и коварный NULL</h2><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <div class="oneliner"><code>WHERE</code> — фильтр. База проверяет условие для каждой строки и оставляет только те, где оно истинно.<small>Это <code>.filter()</code> из JavaScript.</small></div>
+
+  <table class="cmp">
+    <thead><tr><th>Оператор SQL</th><th>Значит</th><th>В JS</th></tr></thead>
+    <tbody>
+      <tr><td><code>=</code></td><td>равно (один знак!)</td><td><code>===</code></td></tr>
+      <tr><td><code>&lt;&gt;</code> или <code>!=</code></td><td>не равно</td><td><code>!==</code></td></tr>
+      <tr><td><code>&gt;</code> <code>&lt;</code> <code>&gt;=</code> <code>&lt;=</code></td><td>больше, меньше, больше или равно, меньше или равно</td><td>так же</td></tr>
+      <tr><td><code>AND</code> / <code>OR</code> / <code>NOT</code></td><td>и / или / не</td><td><code>&amp;&amp;</code> / <code>||</code> / <code>!</code></td></tr>
+      <tr><td><code>IN ('a', 'b')</code></td><td>равно одному из списка</td><td><code>['a','b'].includes(x)</code></td></tr>
+      <tr><td><code>BETWEEN 1 AND 5</code></td><td>от и до, <b>включая обе границы</b></td><td><code>x &gt;= 1 &amp;&amp; x &lt;= 5</code></td></tr>
+      <tr><td><code>IS NULL</code> / <code>IS NOT NULL</code></td><td>значения нет / есть</td><td><code>x === null</code></td></tr>
+    </tbody>
+  </table>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 4. Бюджетные пиццы: дешевле 500 ₽
+SELECT pizza_name, price_kopecks
+FROM pizzas
+WHERE price_kopecks &lt; 50000;
+
+-- 5. Фильтр по категории (текст — в одинарных кавычках!)
+SELECT pizza_name, category
+FROM pizzas
+WHERE category = 'meat';
+
+-- 6. Веганские И острые
+SELECT pizza_name
+FROM pizzas
+WHERE is_vegan = true
+  AND is_spicy = true;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты запросов 4, 5, 6</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">-- 4                          -- 5                         -- 6
+ pizza_name | price_kopecks    pizza_name   | category      pizza_name
+------------+---------------  --------------+----------    ------------------
+ Маргарита  |         49900    Пепперони    | meat           Острая веганская
+ Овощная    |         45900    Мясной пир   | meat          (1 row)
+ Сырная     |         47900    Дьябло       | meat
+(3 rows)                       Барбекю      | meat
+                               Мексиканская | meat
+                              (5 rows)</code></pre>
+  </figure>
+  <p>Для булевой колонки можно короче: <code>WHERE is_vegan</code> — то же самое, что <code>WHERE is_vegan = true</code>, как <code>if (isVegan)</code> в JS.</p>
+
+  <h3>Ловушка приоритета: веганская пицца с колбасой</h3>
+  <p>Задача от продакт-менеджера: «Кнопка <b>Острое без мяса</b> — показать веганские пиццы, где в названии или описании есть слово „остр“». Пишем «как слышим»:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span><span class="role">пишем специально с ошибкой</span></figcaption>
+    <pre><code class="language-sql">-- 7. Острое без мяса — ВЕРСИЯ С БАГОМ
+SELECT pizza_name
+FROM pizzas
+WHERE is_vegan AND pizza_name ILIKE '%остр%' OR description ILIKE '%остр%';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">    pizza_name
+------------------
+ Дьябло              ← острая колбаса, халапеньо, чили. Не веганская!
+ Острая веганская
+(2 rows)</code></pre>
+  </figure>
+  <p>(<code>ILIKE '%остр%'</code> — «содержит „остр“ в любом регистре», подробно в блоке 11.) Почему попало «Дьябло»? У <code>AND</code> приоритет выше, чем у <code>OR</code>, как у умножения над сложением. База прочитала условие так:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">как поняла база</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-sql">WHERE (is_vegan AND pizza_name ILIKE '%остр%')   -- веганская с «остр» в названии
+   OR description ILIKE '%остр%'                 -- ИЛИ ЛЮБАЯ с «остр» в описании</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · исправляем запрос 7</span></figcaption>
+    <pre><code class="language-sql">-- 7. Острое без мяса — ИСПРАВЛЕНО: скобки вокруг OR
+SELECT pizza_name
+FROM pizzas
+WHERE is_vegan
+  AND (pizza_name ILIKE '%остр%' OR description ILIKE '%остр%');</code></pre>
+  </figure>
+  <div class="expect"><b>Теперь:</b> одна строка — «Острая веганская». Правило: <b>смешиваете <code>AND</code> и <code>OR</code> — ставьте скобки всегда</b>, даже если уверены. В JS с <code>&amp;&amp;</code> и <code>||</code> ровно та же ловушка.</div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 8. IN и BETWEEN — короткие записи частых условий
+SELECT pizza_name, category, price_kopecks
+FROM pizzas
+WHERE category IN ('veggie', 'cheese')
+  AND price_kopecks BETWEEN 45000 AND 50000;</code></pre>
+  </figure>
+  <div class="expect"><b>Ожидаем:</b> «Овощная» (veggie, 45900) и «Сырная» (cheese, 47900). <code>IN (...)</code> заменяет цепочку <code>category = 'veggie' OR category = 'cheese'</code> — и заодно избавляет от ловушки со скобками.</div>
+
+  <h3>NULL — «значение неизвестно»</h3>
+  <p>У трёх пицц нет описания. Найдём их «очевидным» способом:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 9. Пиццы без описания
+SELECT pizza_name FROM pizzas WHERE description = NULL;   -- 0 строк!
+SELECT pizza_name FROM pizzas WHERE description IS NULL;  -- правильно</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> pizza_name          pizza_name
+------------       -----------------
+(0 rows)            Сырный цыплёнок
+                    Мексиканская
+                    Цезарь
+                   (3 rows)</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ = NULL НЕ РАБОТАЕТ</span>
+    <p><code>NULL</code> в SQL — не «пусто», а «<b>неизвестно</b>». Равно ли неизвестное описание неизвестному? Неизвестно. Любое сравнение с <code>NULL</code> через <code>=</code>, <code>&lt;&gt;</code>, <code>&gt;</code> даёт не <code>true</code> и не <code>false</code>, а снова <code>NULL</code>, и <code>WHERE</code> такую строку отбрасывает. Отсюда второй подвох: <code>WHERE description &lt;&gt; 'xxx'</code> вернёт 13 пицц, а не 16 — строки с <code>NULL</code> молча выпадут. Для проверки на «пустоту» есть только <code>IS NULL</code> и <code>IS NOT NULL</code>.</p>
+  </div></div>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ЧЕЛОВЕК ПО ФАМИЛИИ NULL</span>
+    <p>Американский журналист Кристофер Null написал в Wired, как живёт с такой фамилией: сайты авиакомпаний не дают купить билет, формы пишут «поле фамилии не заполнено», письма теряются. А исследователь безопасности Джозеф Тартаро ради шутки взял автомобильный номер <b>NULL</b> — и получил тысячи чужих штрафов: система штрафов складывала к нему все нарушения, у которых номер машины был «не заполнен». Мораль: <code>NULL</code> и строка <code>'NULL'</code> — разные вещи, и путать их опасно.</p>
+  </div></div>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва собираем каталог: уникальные значения, сортировка, пагинация, поиск. Проверьте, что файл <code>01_menu.sql</code> сохранён.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 3 · Каталог PizzaHub</span><span class="bar"></span></div>
+
+<!-- 07 DISTINCT -->
+<section id="distinct">
+  <div class="sec-head"><h2>07 · DISTINCT и фишка PostgreSQL DISTINCT ON</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Дизайнер рисует фильтр-«чипсы» над каталогом: «Классика · Мясные · Сырные · Овощные». Откуда фронтенду взять список категорий? Не хардкодить же — завтра добавят «Десерты». Спросим у базы:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 10. Список категорий для фильтра
+SELECT category FROM pizzas;            -- 16 строк с повторами
+SELECT DISTINCT category FROM pizzas;   -- только уникальные
+
+-- 11. Какие статусы заказов вообще встречаются
+SELECT DISTINCT status FROM orders;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> category        category        status
+----------      ----------      ------------
+ classic         meat            delivered
+ meat            classic         delivering
+ cheese          veggie          cancelled
+ veggie          cheese          cooking
+ classic        (4 rows)         paid
+ meat                            new
+ ... ещё 10                     (6 rows)
+(16 rows)</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В TypeScript</th></tr></thead><tbody>
+      <tr><td><code>SELECT DISTINCT category</code></td><td>убрать повторяющиеся строки результата</td><td><code>[...new Set(pizzas.map(p =&gt; p.category))]</code></td></tr>
+      <tr><td><code>SELECT DISTINCT category, is_spicy</code></td><td>уникальны <b>комбинации</b> колонок, а не каждая колонка отдельно. Здесь будет 6 строк: (veggie, острая), (veggie, не острая), (meat, острая)...</td><td>Set из пар</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОРЯДОК НЕ ГАРАНТИРОВАН</span>
+    <p>Заметили, что после <code>DISTINCT</code> категории пришли в «случайном» порядке: meat, classic, veggie, cheese? Без <code>ORDER BY</code> база отдаёт строки в том порядке, в каком ей удобнее, и он может поменяться после обновления данных или версии PostgreSQL. Нужен порядок — просите его явно (блок 08). Если фронтенд-тест завязан на порядок без <code>ORDER BY</code> — однажды он «сам собой» упадёт.</p>
+  </div></div>
+
+  <h3>DISTINCT ON — только в PostgreSQL</h3>
+  <p>Задача из админки PizzaHub: «Покажи <b>последний заказ каждого клиента</b>» — чтобы оператор видел, у кого что сейчас готовится. Обычный <code>DISTINCT</code> не поможет: он убирает полностью одинаковые строки, а заказы у клиента разные. В PostgreSQL есть <code>DISTINCT ON</code>: «оставь по <b>одной</b> строке на каждое значение колонки, а какую именно — реши сортировкой».</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 12. Последний заказ каждого клиента
+SELECT DISTINCT ON (customer_phone)
+    customer_name,
+    status,
+    total_kopecks,
+    created_at
+FROM orders
+ORDER BY customer_phone, created_at DESC;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий · 18 заказов → 7 клиентов</span></figcaption>
+    <pre><code class="language-none"> customer_name |   status   | total_kopecks |       created_at
+---------------+------------+---------------+------------------------
+ Анна          | delivering |         61900 | 2026-10-20 19:55:00+03
+ Борис         | delivered  |        129800 | 2026-10-15 20:05:00+03
+ Вика          | paid       |         47900 | 2026-10-20 20:12:00+03
+ Гоша          | delivered  |         74900 | 2026-10-12 19:10:00+03
+ Даша          | delivered  |        103800 | 2026-10-14 14:25:00+03
+ Егор          | cooking    |         66900 | 2026-10-20 20:10:00+03
+ Женя          | new        |        113800 | 2026-10-20 20:15:00+03
+(7 rows)</code></pre>
+  </figure>
+  <p>Что делает база по шагам:</p>
+  <ol>
+    <li>Сортирует все заказы по <code>customer_phone</code>, а внутри одного клиента — по дате, свежие сверху (<code>DESC</code>).</li>
+    <li>Для каждого телефона берёт <b>первую</b> строку и выбрасывает остальные. Первая — самая свежая.</li>
+  </ol>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Подвох</th></tr></thead><tbody>
+      <tr><td><code>DISTINCT ON (customer_phone)</code></td><td>одна строка на каждый телефон. В скобках — «по чему группировать»</td><td>колонку в скобках не обязательно выводить в <code>SELECT</code></td></tr>
+      <tr><td><code>ORDER BY customer_phone, created_at DESC</code></td><td>решает, <b>какая</b> строка станет первой</td><td><code>ORDER BY</code> обязан <b>начинаться</b> с тех же колонок, что в <code>ON (...)</code>, иначе ошибка</td></tr>
+    </tbody></table>
+    <p class="note">Почему группируем по телефону, а не по имени? Имя — не уникально: двух «Ань» база склеила бы в одну. Телефон однозначно определяет клиента.</p>
+  </div>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ПОПРОБУЙТЕ САМИ (1 МИНУТА)</span>
+    <p>Самая дорогая пицца в каждой категории — для баннера «Хит категории». Подсказка: <code>DISTINCT ON (category)</code> и сортировка по цене. Ответ: «Четыре сыра», «Цезарь», «Мясной пир», «Песто».</p>
+  </div></div>
+  <details class="classic"><summary>Показать решение</summary><div class="ans">
+    <pre><code class="language-sql">SELECT DISTINCT ON (category) category, pizza_name, price_kopecks
+FROM pizzas
+ORDER BY category, price_kopecks DESC;</code></pre>
+    <p>В других базах (MySQL, SQL Server) ту же задачу решают подзапросом или оконной функцией <code>ROW_NUMBER()</code> — в 3–4 раза длиннее. Оконные функции будут в следующих уроках.</p>
+  </div></details>
+</section>
+
+<hr>
+
+<!-- 08 ORDER -->
+<section id="order">
+  <div class="sec-head"><h2>08 · ORDER BY: сортировка</h2><span class="tag practice">live-coding</span><span class="tag time">~6 мин</span></div>
+
+  <p>Селект «Сортировка» в каталоге: «Сначала дорогие», «Сначала дешёвые», «Сначала веганские». Каждый пункт — это <code>ORDER BY</code>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 13. Сначала дорогие
+SELECT pizza_name, price_kopecks
+FROM pizzas
+ORDER BY price_kopecks DESC;
+
+-- 14. Сначала веганские, а внутри — от дешёвых к дорогим
+SELECT pizza_name, is_vegan, price_kopecks
+FROM pizzas
+ORDER BY is_vegan DESC, price_kopecks ASC;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат запроса 14 (первые 6 строк)</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">    pizza_name    | is_vegan | price_kopecks
+------------------+----------+---------------
+ Овощная          | t        |         45900   ┐
+ Маргарита        | t        |         49900   │ сначала все веганские (true выше false при DESC),
+ Грибная          | t        |         51900   │ внутри — по возрастанию цены
+ Острая веганская | t        |         55900   │
+ Песто            | t        |         57900   ┘
+ Сырная           | f        |         47900   ← потом не веганские, тоже по цене
+ ...</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В TypeScript</th></tr></thead><tbody>
+      <tr><td><code>ORDER BY price_kopecks DESC</code></td><td><b>DESC</b>ending — по убыванию (Я→А, 9→0)</td><td><code>.sort((a, b) =&gt; b.price - a.price)</code></td></tr>
+      <tr><td><code>ASC</code></td><td><b>ASC</b>ending — по возрастанию. Это значение по умолчанию, его можно не писать</td><td><code>a.price - b.price</code></td></tr>
+      <tr><td><code>ORDER BY is_vegan DESC, price_kopecks</code></td><td>сначала по первой колонке; при равенстве — по второй. Направление у каждой колонки своё</td><td>компаратор «если равны, сравни дальше»</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ГДЕ ПРЯЧЕТСЯ NULL ПРИ СОРТИРОВКЕ</span>
+    <p>В PostgreSQL <code>NULL</code> считается «больше всех»: при <code>ORDER BY description DESC</code> три пиццы без описания окажутся <b>в самом верху</b> списка. Если это мешает, скажите явно: <code>ORDER BY description DESC NULLS LAST</code> (или <code>NULLS FIRST</code>). В MySQL наоборот — <code>NULL</code> «меньше всех». Ещё одно место, где диалекты расходятся.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 09 LIMIT -->
+<section id="limit">
+  <div class="sec-head"><h2>09 · LIMIT, OFFSET и пагинация</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <p>В таблице заказов настоящей доставки — миллионы строк. Отдать их фронтенду разом нельзя: браузер повиснет, мобильный трафик закончится. Нужна <b>пагинация</b> — постраничная выдача, как кнопка «Показать ещё» или бесконечная прокрутка.</p>
+
+  <h4>Вспомним, как пагинация сделана сейчас</h4>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/src/lib/paginate.ts · из урока 2 по паттернам</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-typescript">export function* paginate&lt;T&gt;(items: T[], pageSize: number): Generator&lt;T[]&gt; {
+  for (let start = 0; start &lt; items.length; start += pageSize) {
+    yield items.slice(start, start + pageSize);
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР TS</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>На Python</th></tr></thead><tbody>
+      <tr><td><code>function*</code> + <code>yield</code></td><td>генератор: отдаёт по странице за раз</td><td><code>def ...: yield ...</code></td></tr>
+      <tr><td><code>items.slice(start, start + pageSize)</code></td><td>кусок массива с <code>start</code> длиной <code>pageSize</code></td><td><code>items[start:start + page_size]</code></td></tr>
+    </tbody></table>
+    <p class="note">Проблема: <code>items</code> — это <b>весь</b> массив, который уже пришёл с сервера целиком. Мы режем на страницы то, что уже скачали. Правильнее, чтобы база сразу отдала только нужный кусок.</p>
+  </div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 15. Каталог по 5 пицц на страницу
+SELECT pizza_name FROM pizzas ORDER BY pizza_id LIMIT 5 OFFSET 0;    -- страница 1
+SELECT pizza_name FROM pizzas ORDER BY pizza_id LIMIT 5 OFFSET 5;    -- страница 2
+SELECT pizza_name FROM pizzas ORDER BY pizza_id LIMIT 5 OFFSET 15;   -- страница 4 (последняя)</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> страница 1      страница 2         страница 4
+-------------   -----------------  ------------
+ Маргарита       Мясной пир         Цезарь
+ Пепперони       Дьябло            (1 row)    ← на последней странице может быть меньше
+ Четыре сыра     Сырный цыплёнок
+ Овощная         Грибная
+ Гавайская       Барбекю
+(5 rows)        (5 rows)</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР И ФОРМУЛА</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В <code>paginate.ts</code></th></tr></thead><tbody>
+      <tr><td><code>LIMIT 5</code></td><td>вернуть не больше 5 строк — размер страницы</td><td><code>pageSize</code></td></tr>
+      <tr><td><code>OFFSET 5</code></td><td>сначала пропустить 5 строк</td><td><code>start</code></td></tr>
+      <tr><td>страница <code>N</code>, размер <code>size</code></td><td><code>LIMIT size OFFSET (N - 1) * size</code></td><td><code>slice((N-1)*size, N*size)</code></td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">БЕЗ ORDER BY ПАГИНАЦИЯ ЛОМАЕТСЯ</span>
+    <p>Мы помним из блока 07: без <code>ORDER BY</code> порядок не гарантирован. Значит, одна и та же пицца может попасть и на первую, и на вторую страницу, а другая — ни на одну. Пользователь видит дубли в ленте и «потерянные» товары. Второй подвох: сортировка только по цене, если у двух пицц одинаковая цена — их порядок снова случайный. Поэтому в конец <code>ORDER BY</code> добавляют уникальную колонку: <code>ORDER BY price_kopecks, pizza_id</code>.</p>
+  </div></div>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПОЧЕМУ НИКТО НЕ ДОЛИСТЫВАЕТ ДО СТРАНИЦЫ 50 000</span>
+    <p><code>OFFSET 1000000</code> не «прыгает» к миллионной строке: база честно отсчитывает и выбрасывает миллион строк, прежде чем отдать вам 20. Чем дальше страница, тем медленнее. Поэтому в бесконечных лентах (Instagram, X) используют другой приём — «курсорную» пагинацию: «дай 20 записей, которые идут после записи с id = 4573». Её разберём в уроке про индексы.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 10 ALIAS -->
+<section id="alias">
+  <div class="sec-head"><h2>10 · Порядок выполнения, псевдонимы AS и правило кавычек</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <h3>Пишем в одном порядке — выполняется в другом</h3>
+  <div class="diagram">
+<pre> как пишем:     SELECT  →  FROM  →  WHERE  →  ORDER BY  →  LIMIT
+
+ как выполняет: <span class="pk">1. FROM</span>  →  <span class="pk">2. WHERE</span>  →  <span class="tn">3. SELECT</span>  →  4. ORDER BY  →  5. LIMIT
+                взять       отфильтровать   оставить       отсортировать   отрезать
+                таблицу     строки          колонки,       результат       страницу
+                                            посчитать AS</pre>
+  </div>
+  <p>Это не теория ради теории — из порядка следует настоящая ошибка, на которую натыкаются все:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span><span class="role">первый запрос упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 16. Псевдоним в WHERE — ошибка, в ORDER BY — можно
+SELECT pizza_name, price_kopecks / 100 AS price
+FROM pizzas
+WHERE price &lt; 500;            -- ERROR: column "price" does not exist
+
+SELECT pizza_name, price_kopecks / 100 AS price
+FROM pizzas
+ORDER BY price DESC           -- работает
+LIMIT 2;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">ERROR:  column "price" does not exist
+LINE 3: WHERE price &lt; 500;
+
+ pizza_name | price
+------------+-------
+ Мясной пир |   749
+ Дьябло     |   699</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ТАК</span>
+    <p><code>WHERE</code> выполняется на шаге 2, а псевдоним <code>price</code> появляется только на шаге 3, в <code>SELECT</code>. Когда база фильтрует строки, колонки <code>price</code> ещё не существует. <code>ORDER BY</code> работает на шаге 4 — к этому моменту <code>price</code> уже есть. Как в JS: нельзя использовать <code>const</code> до строки, где он объявлен. В <code>WHERE</code> пишем полное выражение: <code>WHERE price_kopecks &lt; 50000</code>.</p>
+  </div></div>
+
+  <h3>Псевдонимы: snake_case → camelCase прямо в запросе</h3>
+  <p>В базе принят <code>snake_case</code> (<code>is_vegan</code>), а в TypeScript — <code>camelCase</code> (<code>isVegan</code>). Сейчас в PizzaHub переводом занимается адаптер <code>src/api/pizza.adapter.ts</code>. Часть его работы можно сделать в SQL:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 17. Сразу в формате TypeScript-типа Pizza
+SELECT pizza_id      AS id,
+       pizza_name    AS name,
+       is_vegan      AS isVegan,      -- без кавычек: сломается регистр
+       created_at    AS "createdAt"   -- в кавычках: регистр сохранится
+FROM pizzas
+LIMIT 2;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> id |   name    | isvegan |       createdAt
+----+-----------+---------+------------------------
+  1 | Маргарита | t       | 2026-09-01 13:00:00+03
+  2 | Пепперони | f       | 2026-09-05 13:00:00+03</code></pre>
+  </figure>
+  <p>Видите <code>isvegan</code> маленькими буквами? PostgreSQL приводит все имена без кавычек к нижнему регистру. Фронтенд ждёт <code>pizza.isVegan</code>, получит <code>undefined</code>, и фильтр «Веганские» молча перестанет работать. Чтобы сохранить заглавные буквы, имя пишут в <b>двойных кавычках</b>: <code>AS "isVegan"</code>. Исправьте строку в запросе 17.</p>
+  <p>Отсюда и правило из блока 05: колонки в базе называют в <code>snake_case</code>, чтобы не таскать кавычки по всем запросам.</p>
+
+  <h3>Правило кавычек — главная ошибка JS-разработчиков</h3>
+  <p>В JS <code>'Маргарита'</code> и <code>"Маргарита"</code> — одно и то же. В SQL — две совершенно разные вещи:</p>
+  <table class="cmp">
+    <thead><tr><th>Кавычки</th><th>Что это</th><th>Пример</th></tr></thead>
+    <tbody>
+      <tr><td><b>одинарные</b> <code>'...'</code></td><td><b>данные</b>: текст, даты</td><td><code>WHERE pizza_name = 'Маргарита'</code></td></tr>
+      <tr><td><b>двойные</b> <code>"..."</code></td><td><b>имена</b> (идентификаторы): колонки, таблицы, псевдонимы с заглавными буквами или пробелами</td><td><code>AS "isVegan"</code>, <code>AS "Название пиццы"</code></td></tr>
+    </tbody>
+  </table>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span><span class="role">первый запрос упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 18. Кавычки
+SELECT pizza_name FROM pizzas WHERE pizza_name = "Маргарита";  -- ошибка
+SELECT pizza_name FROM pizzas WHERE pizza_name = 'Маргарита';  -- правильно</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат первого запроса</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">ERROR:  column "Маргарита" does not exist</code></pre>
+  </figure>
+  <p>База увидела двойные кавычки и честно стала искать <b>колонку</b> с именем «Маргарита». Запомните ошибку в лицо: встретив <code>column "..." does not exist</code> со значением вместо имени колонки, сразу проверяйте кавычки.</p>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: МАЛЕНЬКИЙ БОББИ ТЕЙБЛС</span>
+    <p>Знаменитый комикс xkcd №327: из школы звонят маме — «у нас пропала вся база учеников, вы правда назвали сына <code>Robert'); DROP TABLE Students;--</code>?». Мама отвечает: «Мы зовём его Маленький Бобби Тейблс. Надеюсь, вы научились проверять ввод». Шутка в том, что одинарная кавычка в имени <b>закрывает строку</b>, и остаток имени база выполняет как команду. Это <b>SQL-инъекция</b> — одна из самых известных уязвимостей. Поэтому никогда не склеивайте запрос из того, что ввёл пользователь, вида <code>`... = '${name}'`</code>. Как делать правильно (параметры запроса), разберём, когда будем подключать базу к Node.js.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 11 LIKE -->
+<section id="like">
+  <div class="sec-head"><h2>11 · Поиск по сайту: LIKE и ILIKE</h2><span class="tag practice">live-coding</span><span class="tag time">~7 мин</span></div>
+
+  <p>В шапке PizzaHub появляется строка поиска. Пользователь вводит «сыр» — нужно найти всё, где это слово встречается. Оператор <code>=</code> ищет только точное совпадение. Для частичного есть <code>LIKE</code> и шаблоны:</p>
+  <table class="cmp">
+    <thead><tr><th>Символ шаблона</th><th>Значит</th><th>Пример</th></tr></thead>
+    <tbody>
+      <tr><td><code>%</code></td><td>любое количество любых символов (и ноль тоже)</td><td><code>'С%'</code> — начинается на «С»; <code>'%сыр%'</code> — содержит «сыр»</td></tr>
+      <tr><td><code>_</code></td><td>ровно один любой символ</td><td><code>'_ыр%'</code> — «сыр», «Сыр», «пыр»...</td></tr>
+    </tbody>
+  </table>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 19. Поиск
+SELECT pizza_name FROM pizzas WHERE pizza_name LIKE 'С%';       -- начинается на «С»
+SELECT pizza_name FROM pizzas WHERE pizza_name LIKE '%сыр%';    -- содержит «сыр»
+SELECT pizza_name FROM pizzas WHERE pizza_name ILIKE '%сыр%';   -- то же, без учёта регистра</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> LIKE 'С%'          LIKE '%сыр%'      ILIKE '%сыр%'
+-----------------  ---------------   -----------------
+ Сырный цыплёнок    Четыре сыра       Четыре сыра
+ Сырная            (1 row)            Сырный цыплёнок
+(2 rows)                              Сырная
+                                     (3 rows)</code></pre>
+  </figure>
+  <p><code>LIKE</code> чувствителен к регистру: «сыр» и «Сыр» для него разные строки, поэтому «Сырная» не нашлась. Пользователь не обязан угадывать, с какой буквы мы написали название. Для поиска нужен <code>ILIKE</code> — <b>I</b>nsensitive LIKE, нечувствительный к регистру. Это <b>фишка PostgreSQL</b>: в стандарте его нет, в других базах пишут <code>LOWER(pizza_name) LIKE '%сыр%'</code>.</p>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В TypeScript</th></tr></thead><tbody>
+      <tr><td><code>LIKE 'С%'</code></td><td>начинается с «С»</td><td><code>name.startsWith('С')</code></td></tr>
+      <tr><td><code>LIKE '%сыр%'</code></td><td>содержит «сыр», регистр важен</td><td><code>name.includes('сыр')</code></td></tr>
+      <tr><td><code>ILIKE '%сыр%'</code></td><td>содержит «сыр» в любом регистре</td><td><code>name.toLowerCase().includes('сыр')</code></td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ЧЕСТНО ПРО ПОИСК</span>
+    <p><code>ILIKE '%...%'</code> отлично подходит для меню на 16 пицц и для админок. На миллионе товаров он медленный (обычный индекс с <code>%</code> в начале не помогает) и не понимает словоформ: по запросу «сырный» не найдёт «сыр». Для настоящего поиска в PostgreSQL есть полнотекстовый поиск, а крупные магазины используют Elasticsearch или Meilisearch. Но 90% поисков в админках по-прежнему сделаны на <code>ILIKE</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 12 FINAL -->
+<section id="final">
+  <div class="sec-head"><h2>12 · Финал: страница каталога одним запросом</h2><span class="tag practice">live-coding</span><span class="tag time">~6 мин</span></div>
+
+  <p>Собираем всё вместе. Пользователь открыл каталог, выбрал «Мясные» и «Сырные», сортировку «Сначала дешёвые» и листает по 3 пиццы. Ответ должен быть сразу в формате TypeScript-типа <code>Pizza</code> из <code>src/types.ts</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pizzahub/sql/01_menu.sql · + в конец файла</span></figcaption>
+    <pre><code class="language-sql">-- 20. Страница каталога: фильтр + сортировка + пагинация + формат для фронтенда
+SELECT pizza_id                    AS id,
+       pizza_name                  AS name,
+       ROUND(price_kopecks / 100.0, 2) AS price,
+       is_vegan                    AS "isVegan",
+       created_at                  AS "createdAt"
+FROM pizzas
+WHERE category IN ('meat', 'cheese')
+ORDER BY price_kopecks, pizza_id
+LIMIT 3 OFFSET 0;   -- страница 1; для страницы 2 — OFFSET 3</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат: страница 1 и страница 2</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> id |      name       | price  | isVegan |       createdAt
+----+-----------------+--------+---------+------------------------
+ 14 | Сырная          | 479.00 | f       | 2026-10-05 13:00:00+03
+  2 | Пепперони       | 599.00 | f       | 2026-09-05 13:00:00+03
+  8 | Сырный цыплёнок | 629.00 | f       | 2026-09-20 13:00:00+03
+
+ id |     name     | price  | isVegan |       createdAt          ← OFFSET 3
+----+--------------+--------+---------+------------------------
+  3 | Четыре сыра  | 649.00 | f       | 2026-09-10 13:00:00+03
+ 12 | Мексиканская | 669.00 | f       | 2026-10-01 13:00:00+03
+ 10 | Барбекю      | 679.00 | f       | 2026-09-25 13:00:00+03</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР НОВОГО</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>В TypeScript</th></tr></thead><tbody>
+      <tr><td><code>ROUND(price_kopecks / 100.0, 2)</code></td><td>функция округления: делим на 100.0 (дробное деление, блок 05) и оставляем 2 знака после запятой</td><td><code>(p / 100).toFixed(2)</code></td></tr>
+      <tr><td><code>ORDER BY price_kopecks, pizza_id</code></td><td>сортируем по исходной колонке, а <code>pizza_id</code> — для стабильной пагинации (блок 09)</td><td>—</td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>Что этот запрос заменил в PizzaHub</h3>
+  <table class="cmp">
+    <thead><tr><th>Сейчас в проекте (JS, на клиенте)</th><th>В запросе (в базе)</th></tr></thead>
+    <tbody>
+      <tr><td><code>fake-backend.ts</code> читает <b>весь</b> <code>pizzas.json</code></td><td><code>FROM pizzas</code> + <code>LIMIT</code>: по сети идут только 3 строки</td></tr>
+      <tr><td>фильтр <code>.filter(...)</code></td><td><code>WHERE category IN (...)</code></td></tr>
+      <tr><td>сортировка <code>.sort(...)</code></td><td><code>ORDER BY</code></td></tr>
+      <tr><td><code>paginate.ts</code> режет массив</td><td><code>LIMIT 3 OFFSET 0</code></td></tr>
+      <tr><td><code>pizza.adapter.ts</code>: <code>pizza_name → name</code>, копейки → рубли</td><td><code>AS name</code>, <code>AS "isVegan"</code>, <code>ROUND(... / 100.0, 2)</code></td></tr>
+    </tbody>
+  </table>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ АДАПТЕР ВСЁ РАВНО ОСТАНЕТСЯ</span>
+    <p>Когда мы подключим базу к Node.js, драйвер <code>pg</code> вернёт <code>createdAt</code> уже как объект <code>Date</code>, а вот <code>price</code> придёт <b>строкой</b> <code>"479.00"</code>: тип <code>NUMERIC</code> драйвер не превращает в JS-число, чтобы не потерять точность. Так что маленький адаптер на границе «база → приложение» никуда не денется, просто станет тоньше. Принцип из урока по паттернам тот же: одно место в коде знает про формат хранения.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 13 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>13 · Игра «Найди баг», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~6 мин</span></div>
+
+  <p>Показываем запрос — группа за 15 секунд называет, что не так.</p>
+  <details class="quiz"><summary><code>SELECT pizza_name FROM pizzas WHERE category = "meat";</code></summary><div class="ans"><b>Двойные кавычки</b> — база ищет колонку <code>meat</code>. Нужно <code>'meat'</code>.</div></details>
+  <details class="quiz"><summary><code>SELECT pizza_name FROM pizzas WHERE description = NULL;</code> — пусто, хотя пиццы без описания есть.</summary><div class="ans"><b><code>IS NULL</code></b>. Сравнение с <code>NULL</code> через <code>=</code> всегда даёт «неизвестно».</div></details>
+  <details class="quiz"><summary><code>SELECT price_kopecks / 100 AS price FROM pizzas WHERE price &gt; 600;</code></summary><div class="ans"><b>Псевдоним в <code>WHERE</code></b>: <code>WHERE</code> выполняется раньше <code>SELECT</code>. Пишем <code>WHERE price_kopecks &gt; 60000</code>.</div></details>
+  <details class="quiz"><summary><code>... WHERE is_vegan AND category = 'veggie' OR category = 'classic'</code> — в выдаче «Карбонара» с беконом.</summary><div class="ans"><b>Нет скобок</b>: <code>AND</code> сильнее <code>OR</code>. Нужно <code>is_vegan AND category IN ('veggie', 'classic')</code>.</div></details>
+  <details class="quiz"><summary><code>SELECT pizza_name FROM pizzas LIMIT 5 OFFSET 5;</code> — на второй странице иногда дубли с первой.</summary><div class="ans"><b>Нет <code>ORDER BY</code></b>. Без него порядок не гарантирован. Добавить <code>ORDER BY pizza_id</code>.</div></details>
+  <details class="quiz"><summary>Фронтенд: <code>pizza.isVegan</code> всегда <code>undefined</code>. В запросе <code>is_vegan AS isVegan</code>.</summary><div class="ans"><b>Регистр без кавычек</b>: PostgreSQL вернул <code>isvegan</code>. Нужно <code>AS "isVegan"</code>.</div></details>
+  <details class="quiz"><summary>Поиск <code>WHERE pizza_name LIKE '%маргарита%'</code> ничего не находит.</summary><div class="ans"><b>Регистр</b>: в базе «Маргарита» с заглавной. Использовать <code>ILIKE</code>.</div></details>
+  <details class="quiz"><summary>Для страницы 3 по 10 товаров написали <code>LIMIT 10 OFFSET 30</code>.</summary><div class="ans"><b>Формула</b> <code>(N − 1) × size</code> = 20. <code>OFFSET 30</code> — это уже страница 4.</div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Нужно</th><th>SQL</th></tr></thead>
+    <tbody>
+      <tr><td>нужные колонки (не <code>*</code>)</td><td><code>SELECT pizza_name, price_kopecks FROM pizzas</code></td></tr>
+      <tr><td>фильтр</td><td><code>WHERE price_kopecks &lt; 50000 AND (a OR b)</code></td></tr>
+      <tr><td>одно из списка / диапазон</td><td><code>IN ('meat', 'cheese')</code> · <code>BETWEEN 45000 AND 50000</code></td></tr>
+      <tr><td>пусто / не пусто</td><td><code>IS NULL</code> · <code>IS NOT NULL</code></td></tr>
+      <tr><td>уникальные значения</td><td><code>SELECT DISTINCT category</code></td></tr>
+      <tr><td>одна строка на группу (PostgreSQL)</td><td><code>DISTINCT ON (customer_phone) ... ORDER BY customer_phone, created_at DESC</code></td></tr>
+      <tr><td>сортировка</td><td><code>ORDER BY price_kopecks DESC, pizza_id</code> · <code>NULLS LAST</code></td></tr>
+      <tr><td>страница N по size</td><td><code>LIMIT size OFFSET (N - 1) * size</code> + обязательно <code>ORDER BY</code></td></tr>
+      <tr><td>переименовать колонку</td><td><code>AS name</code> · <code>AS "isVegan"</code></td></tr>
+      <tr><td>поиск</td><td><code>ILIKE '%сыр%'</code> (PostgreSQL) · <code>LIKE</code> — с учётом регистра</td></tr>
+      <tr><td>порядок выполнения</td><td><code>FROM → WHERE → SELECT → ORDER BY → LIMIT</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание: база видеопроката Pagila</h3>
+  <p>Pagila — учебная база сети видеопроката: 1000 фильмов, 200 актёров, 599 клиентов, 16 049 платежей. На ней все запросы «оживают»: данных много, и ошибки сразу видны.</p>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">КАК ЗАГРУЗИТЬ — И ОДНА ЛОВУШКА</span>
+    <p>1. В DBeaver создайте базу <code>pagila</code>. 2. Выберите её и выполните как скрипт (Alt+X) файл <code>sql/pagila/pagila-schema.sql</code>, затем <code>sql/pagila/pagila-insert-data.sql</code> — это 46 тысяч строк <code>INSERT</code>, DBeaver будет работать несколько минут, это нормально. Через терминал быстрее: <code>psql -U postgres -d pagila -f pagila-schema.sql</code>, затем <code>-f pagila-data.sql</code>.</p>
+    <p><b>Ловушка:</b> в архиве — версия Pagila 3.1.0. Свежая версия с GitHub требует PostgreSQL 18 (функция <code>uuidv7()</code>, расширение <code>vector</code>) и на PostgreSQL 17 падает с десятками ошибок. Я проверил: версия из архива загружается без единой ошибки.</p>
+  </div></div>
+  <p>Таблицы для заданий: <code>film</code> (<code>title</code>, <code>rating</code>, <code>length</code> — минуты, <code>rental_rate</code>, <code>rental_duration</code>), <code>actor</code> (<code>first_name</code>, <code>last_name</code>), <code>payment</code> (<code>customer_id</code>, <code>amount</code>, <code>payment_date</code>), <code>address</code> (<code>address2</code>). Решения пишите в новый файл <code>sql/02_homework.sql</code>.</p>
+  <ol>
+    <li>Фильмы с рейтингом <code>'R'</code> длиннее 180 минут: название и длина, самые длинные сверху. <i>Проверка: 9 фильмов, первые три — по 185 минут.</i></li>
+    <li>Какие сроки аренды (<code>rental_duration</code>) вообще бывают? По возрастанию. <i>Проверка: 3, 4, 5, 6, 7.</i></li>
+    <li>Вторая страница актёров по 10, отсортированных по фамилии, затем по имени. Колонки назвать <code>"firstName"</code> и <code>"lastName"</code>. <i>Проверка: начинается с HARRISON BALE.</i></li>
+    <li>Фильмы, в названии которых есть «air» в любом регистре. <i>Проверка: 7 фильмов. Подумайте, почему <code>LIKE '%air%'</code> не находит ни одного.</i></li>
+    <li>Самый большой платёж каждого клиента — первые 5 клиентов. <i>Подсказка: <code>DISTINCT ON</code>.</i></li>
+    <li>Короткие (меньше часа) дешёвые (<code>rental_rate = 0.99</code>) фильмы для детей (рейтинг <code>'G'</code> или <code>'PG'</code>), от коротких к длинным. <i>Проверка: 17 фильмов.</i></li>
+    <li>Сколько адресов без второй строки адреса? Сравните результаты <code>WHERE address2 IS NULL</code> и <code>WHERE address2 = ''</code>. Объясните разницу. <i>Подсказка: <code>SELECT count(*) FROM ...</code> возвращает количество строк.</i></li>
+    <li><b>Со звёздочкой:</b> в задании 1 у трёх фильмов одинаковая длина. Сделайте порядок стабильным и объясните, зачем.</li>
+  </ol>
+  <details class="classic"><summary>Ответы для преподавателя</summary><div class="ans">
+    <pre><code class="language-sql">-- 1
+SELECT title, length FROM film
+WHERE rating = 'R' AND length &gt; 180
+ORDER BY length DESC, title;
+-- 2
+SELECT DISTINCT rental_duration FROM film ORDER BY rental_duration;
+-- 3
+SELECT first_name AS "firstName", last_name AS "lastName"
+FROM actor
+ORDER BY last_name, first_name
+LIMIT 10 OFFSET 10;
+-- 4 (в Pagila все названия ЗАГЛАВНЫМИ: AIRPORT POLLOCK — поэтому LIKE '%air%' ничего не находит)
+SELECT title FROM film WHERE title ILIKE '%air%' ORDER BY title;
+-- 5
+SELECT DISTINCT ON (customer_id) customer_id, amount, payment_date
+FROM payment
+ORDER BY customer_id, amount DESC, payment_date
+LIMIT 5;
+-- 6
+SELECT title, rating, rental_rate, length FROM film
+WHERE rating IN ('G', 'PG') AND rental_rate = 0.99 AND length &lt; 60
+ORDER BY length, title;
+-- 7: IS NULL → 4, = '' → 599 (из 603). NULL («неизвестно») и пустая строка — разные значения
+SELECT count(*) FROM address WHERE address2 IS NULL;
+SELECT count(*) FROM address WHERE address2 = '';</code></pre>
+    <p>Задание 5, проверка: клиенты 1–5 → 9.99, 10.99, 10.99, 8.99, 9.99.</p>
+  </div></details>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю разницу между базой данных и СУБД, и зачем база, если есть JSON.</li>
+    <li>☐ Понимаю таблицу как массив объектов со строгими типами; знаю, почему деньги хранят в копейках.</li>
+    <li>☐ Объясняю, чем декларативный SQL отличается от императивного кода.</li>
+    <li>☐ Подключаюсь к PostgreSQL через DBeaver и выполняю запросы из файла.</li>
+    <li>☐ Пишу <code>SELECT</code> с нужными колонками и выражениями, знаю ловушку целочисленного деления.</li>
+    <li>☐ Фильтрую через <code>WHERE</code>, ставлю скобки при <code>AND</code> + <code>OR</code>, проверяю <code>NULL</code> только через <code>IS NULL</code>.</li>
+    <li>☐ Использую <code>DISTINCT</code> и <code>DISTINCT ON</code>.</li>
+    <li>☐ Сортирую по нескольким колонкам и делаю стабильную пагинацию <code>LIMIT/OFFSET</code>.</li>
+    <li>☐ Знаю порядок выполнения запроса и почему псевдоним нельзя использовать в <code>WHERE</code>.</li>
+    <li>☐ Не путаю одинарные и двойные кавычки; ищу через <code>ILIKE</code>.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://www.postgresql.org/docs/current/queries.html" target="_blank" rel="noopener">Документация PostgreSQL: Queries</a> — всё про <code>SELECT</code> из первых рук.</li>
+    <li><a href="https://www.sqlstyle.guide/" target="_blank" rel="noopener">SQL Style Guide</a> — правила оформления запросов.</li>
+    <li><a href="https://sqlbolt.com/" target="_blank" rel="noopener">SQLBolt</a> — интерактивные упражнения прямо в браузере, первые уроки ровно по нашей теме.</li>
+    <li><a href="https://xkcd.com/327/" target="_blank" rel="noopener">xkcd 327 «Exploits of a Mom»</a> — тот самый Бобби Тейблс.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · SQL, урок 1 · БД и СУБД, реляционная модель и типы, декларативность, диалекты, PostgreSQL и DBeaver, SELECT, WHERE, AND/OR, NULL, IN, BETWEEN, DISTINCT, DISTINCT ON, ORDER BY, LIMIT/OFFSET, порядок выполнения, AS, кавычки, LIKE/ILIKE, Pagila</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

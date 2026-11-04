@@ -14,6 +14,7 @@ from app.repositories.profile_repo import ProfileRepo
 from app.repositories.tag_repo import TagRepo
 from app.repositories.user_repo import UserRepo
 from app.shemas.token import TokenPayload
+from app.broker.rabbit import EventPublisher, get_publisher
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -35,6 +36,7 @@ def get_user_repo(session: SessionDep) -> UserRepo:
 
 UserRepoDep = Annotated[UserRepo, Depends(get_user_repo)]
 
+PublisherDep = Annotated[EventPublisher, Depends(get_publisher)]
 
 def get_post_repo(session: SessionDep) -> PostRepo:
     return PostRepo(session)

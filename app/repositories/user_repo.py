@@ -57,7 +57,6 @@ class UserRepo():
         await self.session.commit()
         await self.session.refresh(user)
         return user
-
     async def update(self, username: str, email: str):
         user = await self.get_by_username(username)
         if user:

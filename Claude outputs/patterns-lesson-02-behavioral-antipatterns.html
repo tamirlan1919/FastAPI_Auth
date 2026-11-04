@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Паттерны · Урок 2 — Поведенческие и антипаттерны</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+  .tag.behav{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>Patterns</div>
+  <p class="lead">Модуль Backend · Урок 2 · live-coding</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и тайминг</a>
+    <a href="#warmup"><span class="n theory-dot">01</span>Разминка и шаг 0</a>
+    <div class="grp">Поведенческие · часть 1</div>
+    <a href="#observer"><span class="n practice-dot">02</span>Observer — события заказа</a>
+    <a href="#strategy"><span class="n practice-dot">03</span>Strategy — доставка</a>
+    <a href="#state"><span class="n practice-dot">04</span>State — статус заказа</a>
+    <a href="#command"><span class="n practice-dot">05</span>Command + Memento — Ctrl+Z</a>
+    <a href="#blitz1"><span class="n theory-dot">06</span>Блиц: Iterator, Template Method</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Поведенческие · часть 2</div>
+    <a href="#chain"><span class="n practice-dot">07</span>Chain of Responsibility</a>
+    <a href="#blitz2"><span class="n theory-dot">08</span>Блиц: Mediator, Visitor</a>
+    <a href="#final"><span class="n practice-dot">09</span>Финал: всё вместе</a>
+    <div class="grp">Как не надо</div>
+    <a href="#anti"><span class="n theory-dot">10</span>Антипаттерны</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">11</span>Игра «Угадай паттерн»</a>
+    <a href="#homework"><span class="n">12</span>Шпаргалка и домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · Урок 2 · 2 часа с перерывом · продолжаем PizzaHub</p>
+  <h1>Поведенческие паттерны и антипаттерны</h1>
+  <p class="lead-p">На прошлом уроке мы научились <em>создавать</em> объекты (порождающие паттерны) и <em>собирать</em> из них конструкции (структурные). Получился скелет PizzaHub. Сегодня оживляем его: <strong>поведенческие паттерны</strong> отвечают за то, как объекты <strong>общаются</strong> — кто кого вызывает, кто о чём узнаёт и в каком порядке. Если структурные паттерны — скелет, то поведенческие — нервная система. А в конце разберём <strong>антипаттерны</strong>: как писать не надо, если хотите, чтобы коллеги вас уважали.</p>
+
+  <div class="hero">
+    <h3>ЧТО ПОЯВИТСЯ В PIZZAHUB</h3>
+    <ul>
+      <li><b>Observer</b> — шина событий: оплатили заказ → уведомление, аналитика и SMS срабатывают сами.</li>
+      <li><b>Strategy</b> — курьер, экспресс или самовывоз: разные алгоритмы цены с одним интерфейсом.</li>
+      <li><b>State</b> — жизнь заказа <code>new → paid → cooking → delivering → delivered</code>, и никаких «невозможных» переходов.</li>
+      <li><b>Command + Memento</b> — корзина с историей действий и кнопкой Ctrl+Z.</li>
+      <li><b>Chain of Responsibility</b> — цепочка проверок перед оплатой: «ночью закрыто», «больше 20 пицц нельзя».</li>
+      <li><b>Блиц</b>: Iterator, Template Method, Mediator, Visitor. И <b>антипаттерны</b> — причём один найдём в нашем же коде.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Разминка: что было, что будет, шаг 0</td><td>теория + код</td></tr>
+      <tr><td class="t">0:09</td><td>Observer → <code>events/event-bus.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:21</td><td>Strategy → <code>delivery/delivery.strategies.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:31</td><td>State → <code>orders/order-status.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:43</td><td>Command + Memento → <code>cart/cart.commands.ts</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:55</td><td>Блиц: Iterator (генератор), Template Method</td><td>теория + 1 файл</td></tr>
+      <tr><td class="t">1:01</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:11</td><td>Chain of Responsibility → <code>checkout/checks/</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:23</td><td>Блиц: Mediator, Visitor</td><td>теория</td></tr>
+      <tr><td class="t">1:29</td><td>Финал: весь сценарий урока</td><td>запуск</td></tr>
+      <tr><td class="t">1:35</td><td>Антипаттерны</td><td>теория + рефакторинг</td></tr>
+      <tr><td class="t">1:50</td><td>Игра «Угадай паттерн»</td><td>интерактив</td></tr>
+      <tr><td class="t">1:56</td><td>Шпаргалка, домашка</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">ПОДГОТОВКА ПРЕПОДАВАТЕЛЯ</span>
+    <p>Урок самодостаточный: в шаге 0 есть <strong>весь код из урока 1, который нужен сегодня</strong> — 11 файлов плюс настройки. Ещё проще — заранее отправить группе <code>pizzahub-lesson2-start.zip</code>: распаковали, <code>npm i</code>, <code>npm run dev</code> — 3 минуты. Готовый результат этого урока — <code>pizzahub-lesson2.zip</code>: прогоните его перед занятием (<code>npm i</code> → <code>npm run dev</code>). Если live-coding отстаёт от тайминга, берите файлы оттуда целиком и объясняйте, а не набирайте. Как и в прошлый раз, под каждым кодом есть зелёный блок «Синтаксис: TS → Python», а UML-схемы можно показать в <a href="https://mermaid.live" target="_blank" rel="noopener">mermaid.live</a> — код для вставки лежит рядом с паттернами.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 01 WARMUP -->
+<section id="warmup">
+  <div class="sec-head"><h2>01 · Разминка и шаг 0</h2><span class="tag theory">теория + код</span><span class="tag time">~9 мин</span></div>
+
+  <h3>Минута повторения (вопросы группе)</h3>
+  <p>«Где в PizzaHub живёт Singleton? Чем Decorator отличается от Proxy? Что делает Facade?» Ответы: <code>cartStore</code>; декоратор добавляет поведение, прокси контролирует доступ; <code>checkout()</code> прячет корзину, строитель, оплату и уведомления за одной функцией. Сегодня мы будем развивать именно этот фасад — к концу урока внутри него будут работать ещё три паттерна.</p>
+
+  <div class="oneliner">Поведенческие паттерны отвечают на вопрос: как объекты общаются, не мешая друг другу?<small>Главная цель всех одиннадцати — уменьшить связанность: чтобы изменение в одном месте не ломало пять других.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ГОЛЛИВУДСКИЙ ПРИНЦИП</span>
+    <p>В Голливуде начинающим актёрам после кастинга говорят: <em>«Не звоните нам — мы сами вам позвоним»</em>. Так же устроены многие поведенческие паттерны: объект не опрашивает всех вокруг «ну что, уже?», а его <strong>вызывают</strong>, когда пришло время. Вы видели это сто раз: <code>addEventListener</code>, <code>useEffect</code>, <code>.then()</code> — вы отдаёте функцию, а вызовет её кто-то другой. Сегодня разберём, как это устроено внутри.</p>
+  </div></div>
+
+  <table class="cmp">
+    <thead><tr><th>Паттерн</th><th>Вопрос, на который отвечает</th><th>Вы уже видели</th></tr></thead>
+    <tbody>
+      <tr><td>Observer</td><td>как сообщить многим о событии?</td><td><code>addEventListener</code>, <code>store.subscribe</code></td></tr>
+      <tr><td>Strategy</td><td>как подменить алгоритм на лету?</td><td><code>arr.sort((a, b) =&gt; ...)</code></td></tr>
+      <tr><td>State</td><td>как поведение зависит от состояния?</td><td><code>idle → loading → success/error</code></td></tr>
+      <tr><td>Command</td><td>как превратить действие в объект?</td><td>Redux <code>dispatch({ type: ... })</code></td></tr>
+      <tr><td>Memento</td><td>как сохранить и откатить состояние?</td><td>Ctrl+Z, Redux DevTools</td></tr>
+      <tr><td>Chain of Responsibility</td><td>как пропустить запрос через цепочку обработчиков?</td><td>всплытие событий DOM, middleware</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Шаг 0: стартовый проект</h3>
+  <p>Сегодняшние паттерны опираются на код из урока 1: меню грузится через адаптер и декораторы, в корзину кладём через <code>cartStore</code>, заказ собирает <code>OrderBuilder</code>. Если у кого-то в группе проект из урока 1 недописан или его нет вовсе — не страшно: ниже <strong>все нужные файлы целиком</strong>. Новых паттернов в них нет, это фундамент. Подробный разбор каждого — в методичке урока 1.</p>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ТРИ ВАРИАНТА СТАРТА</span>
+    <p><strong>1. Быстро (рекомендую):</strong> раздать <code>pizzahub-lesson2-start.zip</code>, распаковать, <code>npm i</code>, <code>npm run dev</code>.</p>
+    <p><strong>2. Есть проект из урока 1:</strong> сверить его со списком файлов ниже, недостающие скопировать отсюда. Лишние файлы (<code>forms/</code>, <code>repeat-order.ts</code>, <code>cart-page.ts</code>) не мешают — пусть лежат. Файл <code>checkout.facade.ts</code> сегодня перепишем целиком, так что неважно, есть он или нет.</p>
+    <p><strong>3. Нет ничего:</strong> создать проект командами ниже и разложить файлы.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">только для варианта 3</span></figcaption>
+    <pre><code class="language-bash">mkdir pizzahub &amp;&amp; cd pizzahub
+npm init -y
+npm i -D typescript tsx @types/node
+mkdir -p data src/api src/lib src/store src/ui src/notifications src/orders src/checkout</code></pre>
+  </figure>
+
+  <h4>Что нужно из урока 1 и зачем</h4>
+  <table class="cmp">
+    <thead><tr><th>Файл</th><th>Паттерн урока 1</th><th>Зачем сегодня</th></tr></thead>
+    <tbody>
+      <tr><td><code>package.json</code>, <code>tsconfig.json</code></td><td>—</td><td>настройки проекта: ES-модули, скрипты <code>dev</code>/<code>typecheck</code>, строгий TypeScript</td></tr>
+      <tr><td><code>data/pizzas.json</code></td><td>—</td><td>«ответ бэкенда» — меню в формате сервера</td></tr>
+      <tr><td><code>src/types.ts</code></td><td>—</td><td>типы <code>Pizza</code>, <code>CartItem</code>, <code>Order</code> — нужны всем</td></tr>
+      <tr><td><code>src/pricing.ts</code></td><td>—</td><td>цены и промокоды: корзина, заказ, цепочка проверок</td></tr>
+      <tr><td><code>src/api/fake-backend.ts</code></td><td>—</td><td>имитация сервера</td></tr>
+      <tr><td><code>src/api/pizza.adapter.ts</code></td><td>Adapter</td><td>формат сервера → наш формат</td></tr>
+      <tr><td><code>src/lib/decorators.ts</code></td><td>Decorator</td><td>retry, кеш и лог для загрузки меню</td></tr>
+      <tr><td><code>src/api/pizza.api.ts</code></td><td>—</td><td><code>getMenu()</code> — меню для Command и Iterator</td></tr>
+      <tr><td><code>src/store/cart.store.ts</code></td><td>Singleton</td><td>корзина — сегодня научим её Ctrl+Z (Memento)</td></tr>
+      <tr><td><code>src/ui/header.ts</code></td><td>—</td><td>бейдж «в корзине N шт.»</td></tr>
+      <tr><td><code>src/notifications/toast.factory.ts</code></td><td>Factory</td><td><code>notify()</code> — уведомления в подписчиках и ошибках</td></tr>
+      <tr><td><code>src/orders/order.builder.ts</code></td><td>Builder</td><td>сборка заказа внутри <code>checkout()</code></td></tr>
+      <tr><td><code>src/checkout/payment.ts</code></td><td>—</td><td>имитация оплаты; в антипаттернах найдём в ней магические числа</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Файлы целиком (нажмите, чтобы раскрыть)</h4>
+  <details class="classic"><summary>📄 <code>package.json</code> — настройки</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Паспорт проекта. Главное — <code>"type": "module"</code> (работают <code>import</code>/<code>export</code>) и скрипты <code>npm run dev</code> / <code>npm run typecheck</code>. Версии в <code>devDependencies</code> у вас могут быть новее — это нормально.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">package.json</span></figcaption>
+  <pre><code class="language-json">{
+  "name": "pizzahub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>tsconfig.json</code> — настройки</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Настройки TypeScript: строгая проверка, импорты без расширения <code>.ts</code>, <code>tsc</code> только проверяет и ничего не собирает.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">tsconfig.json</span></figcaption>
+  <pre><code class="language-json">{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>data/pizzas.json</code> — данные</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Меню так, как его отдаёт «бэкенд на Python»: <code>snake_case</code>, цены в копейках, <code>0/1</code> вместо <code>true/false</code>.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">data/pizzas.json</span></figcaption>
+  <pre><code class="language-json">[
+  { "pizza_id": 1, "pizza_name": "Маргарита",   "price_kopecks": 49900, "is_vegan": 1, "created_at": "2026-09-01T10:00:00Z" },
+  { "pizza_id": 2, "pizza_name": "Пепперони",   "price_kopecks": 59900, "is_vegan": 0, "created_at": "2026-09-05T10:00:00Z" },
+  { "pizza_id": 3, "pizza_name": "Четыре сыра", "price_kopecks": 64900, "is_vegan": 0, "created_at": "2026-09-10T10:00:00Z" },
+  { "pizza_id": 4, "pizza_name": "Овощная",     "price_kopecks": 45900, "is_vegan": 1, "created_at": "2026-09-12T10:00:00Z" }
+]</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/types.ts</code> — типы</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>«Словарь» приложения: какие поля у пиццы, позиции корзины и заказа.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/types.ts</span></figcaption>
+  <pre><code class="language-typescript">// Общие типы приложения — «словарь» PizzaHub. Только описания, никакой логики.
+
+export interface Pizza {
+  id: number;
+  name: string;
+  price: number;      // рубли, для размера M
+  isVegan: boolean;
+  createdAt: Date;
+}
+
+export type Size = 'S' | 'M' | 'L';
+
+export interface CartItem {
+  pizza: Pizza;
+  size: Size;
+  qty: number;
+}
+
+export interface Order {
+  id: string;
+  items: CartItem[];
+  address: string;
+  phone: string;
+  comment: string;
+  contactless: boolean;
+  promoCode: string | null;
+  total: number;
+  createdAt: Date;
+}</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/pricing.ts</code> — цены</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Правила цен: множитель размера и промокоды.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/pricing.ts</span></figcaption>
+  <pre><code class="language-typescript">// Правила цен. Отвечает за ОДНО: посчитать, сколько стоит позиция и заказ.
+import type { CartItem, Size } from './types';
+
+const SIZE_MULTIPLIER: Record&lt;Size, number&gt; = { S: 0.8, M: 1, L: 1.3 };
+const PROMO_CODES: Record&lt;string, number&gt; = { PIZZA10: 0.1, HAPPY20: 0.2 };
+
+export const itemPrice = (item: CartItem): number =&gt;
+  Math.round(item.pizza.price * SIZE_MULTIPLIER[item.size]) * item.qty;
+
+export const calcTotal = (items: CartItem[], promoCode: string | null = null): number =&gt; {
+  const subtotal = items.reduce((sum, item) =&gt; sum + itemPrice(item), 0);
+  const discount = promoCode ? (PROMO_CODES[promoCode] ?? 0) : 0;
+  return Math.round(subtotal * (1 - discount));
+};</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/api/fake-backend.ts</code> — имитация сервера</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Притворяется сервером: задержка 300 мс и ошибка 503 в 30% запросов.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/api/fake-backend.ts</span></figcaption>
+  <pre><code class="language-typescript">// Имитация сервера. Отвечает за: отдать «сырые» данные так, как их отдал бы настоящий бэкенд —
+// в своём формате (snake_case, копейки), с задержкой сети и иногда с ошибкой.
+import { readFile } from 'node:fs/promises';
+
+export interface ApiPizza {
+  pizza_id: number;
+  pizza_name: string;
+  price_kopecks: number;
+  is_vegan: 0 | 1;
+  created_at: string;
+}
+
+const FAIL_RATE = 0.3;            // 30% запросов падают — как мобильный интернет в метро
+let requestCount = 0;
+
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export async function getPizzasFromServer(): Promise&lt;ApiPizza[]&gt; {
+  requestCount++;
+  await sleep(300);
+  if (Math.random() &lt; FAIL_RATE) {
+    throw new Error('503 Service Unavailable');
+  }
+  const file = new URL('../../data/pizzas.json', import.meta.url);
+  return JSON.parse(await readFile(file, 'utf-8'));
+}
+
+export const getRequestCount = () =&gt; requestCount;</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/api/pizza.adapter.ts</code> — Adapter</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Переводит пиццу из формата сервера в наш.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/api/pizza.adapter.ts</span></figcaption>
+  <pre><code class="language-typescript">// ADAPTER. Отвечает за: перевести пиццу из формата бэкенда в формат приложения.
+// Это ЕДИНСТВЕННОЕ место в проекте, которое знает про pizza_name и копейки.
+import type { Pizza } from '../types';
+import type { ApiPizza } from './fake-backend';
+
+export const toPizza = (raw: ApiPizza): Pizza =&gt; ({
+  id: raw.pizza_id,
+  name: raw.pizza_name,
+  price: raw.price_kopecks / 100,
+  isVegan: raw.is_vegan === 1,
+  createdAt: new Date(raw.created_at),
+});</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/lib/decorators.ts</code> — Decorator</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Обёртки для async-функций: повтор при ошибке, кеш, замер времени.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/lib/decorators.ts</span></figcaption>
+  <pre><code class="language-typescript">// DECORATOR. Отвечает за: добавлять функциям поведение (лог, повтор, кеш), не меняя их код.
+// Каждая обёртка принимает функцию и возвращает функцию С ТЕМ ЖЕ интерфейсом.
+
+type AsyncFn&lt;A extends unknown[], R&gt; = (...args: A) =&gt; Promise&lt;R&gt;;
+
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export const withLogging = &lt;A extends unknown[], R&gt;(fn: AsyncFn&lt;A, R&gt;, name: string): AsyncFn&lt;A, R&gt; =&gt;
+  async (...args) =&gt; {
+    const start = performance.now();
+    try {
+      return await fn(...args);
+    } finally {
+      console.log(`⏱  ${name}: ${Math.round(performance.now() - start)} мс`);
+    }
+  };
+
+export const withRetry = &lt;A extends unknown[], R&gt;(fn: AsyncFn&lt;A, R&gt;, attempts = 3): AsyncFn&lt;A, R&gt; =&gt;
+  async (...args) =&gt; {
+    let lastError: unknown;
+    for (let attempt = 1; attempt &lt;= attempts; attempt++) {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        lastError = error;
+        console.log(`↻  попытка ${attempt} не удалась: ${(error as Error).message}`);
+        if (attempt &lt; attempts) await sleep(200 * attempt);
+      }
+    }
+    throw lastError;
+  };
+
+export const withCache = &lt;A extends unknown[], R&gt;(fn: AsyncFn&lt;A, R&gt;, ttlMs: number): AsyncFn&lt;A, R&gt; =&gt; {
+  const cache = new Map&lt;string, { value: R; expiresAt: number }&gt;();
+  return async (...args) =&gt; {
+    const key = JSON.stringify(args);
+    const hit = cache.get(key);
+    if (hit &amp;&amp; hit.expiresAt &gt; Date.now()) return hit.value;
+    const value = await fn(...args);
+    cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+    return value;
+  };
+};</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/api/pizza.api.ts</code> — API</summary>
+  <div class="fileinfo"><span class="k">роль</span><span><code>fetchPizzas</code> — загрузка + адаптер; <code>getMenu</code> — та же функция в трёх декораторах.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/api/pizza.api.ts</span></figcaption>
+  <pre><code class="language-typescript">// Слой API. Отвечает за: получить пиццы с «сервера» и отдать приложению в НАШЕМ формате.
+import type { Pizza } from '../types';
+import { withCache, withLogging, withRetry } from '../lib/decorators';
+import { getPizzasFromServer } from './fake-backend';
+import { toPizza } from './pizza.adapter';
+
+// Шаг Adapter: просто загрузка + перевод формата
+export async function fetchPizzas(): Promise&lt;Pizza[]&gt; {
+  const raw = await getPizzasFromServer();
+  return raw.map(toPizza);
+}
+
+// Шаг Decorator: та же функция в трёх обёртках
+export const getMenu = withLogging(withCache(withRetry(fetchPizzas), 60_000), 'getMenu');</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/store/cart.store.ts</code> — Singleton</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Одна корзина на всё приложение. Сегодня в шаге 05 допишем в неё два метода.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/store/cart.store.ts</span></figcaption>
+  <pre><code class="language-typescript">// SINGLETON. Корзина покупателя — одна на всё приложение.
+// Отвечает за: хранить позиции корзины и отвечать «сколько штук» и «на какую сумму».
+import { calcTotal } from '../pricing';
+import type { CartItem, Pizza, Size } from '../types';
+
+class CartStore {
+  private items: CartItem[] = [];
+
+  add(pizza: Pizza, size: Size = 'M', qty = 1): void {
+    const same = this.items.find((i) =&gt; i.pizza.id === pizza.id &amp;&amp; i.size === size);
+    if (same) same.qty += qty;
+    else this.items.push({ pizza, size, qty });
+  }
+
+  getItems(): CartItem[] {
+    return structuredClone(this.items);   // отдаём копию, а не свой массив (почему — в шаге Prototype)
+  }
+
+  count(): number {
+    return this.items.reduce((sum, i) =&gt; sum + i.qty, 0);
+  }
+
+  total(): number {
+    return calcTotal(this.items);
+  }
+
+  clear(): void {
+    this.items = [];
+  }
+}
+
+// Экспортируем ЭКЗЕМПЛЯР, а не класс: модуль выполнится один раз,
+// и все, кто сделает import { cartStore }, получат один и тот же объект.
+export const cartStore = new CartStore();</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/ui/header.ts</code> — UI</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>«Компонент» шапки: печатает бейдж корзины.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/ui/header.ts</span></figcaption>
+  <pre><code class="language-typescript">// «Компонент» шапки сайта. Отвечает за: показать бейдж корзины.
+import { cartStore } from '../store/cart.store';
+
+export function renderHeader(): void {
+  console.log(`🛒 Шапка: в корзине ${cartStore.count()} шт.`);
+}</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/notifications/toast.factory.ts</code> — Factory</summary>
+  <div class="fileinfo"><span class="k">роль</span><span><code>notify(type, message)</code> — фабрика решает, какое уведомление создать.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/notifications/toast.factory.ts</span></figcaption>
+  <pre><code class="language-typescript">// FACTORY METHOD. Отвечает за: решить, КАКОЕ уведомление создать, в одном месте.
+// Остальной код говорит «покажи ошибку» и не знает про классы ErrorToast и т.п.
+
+export interface Toast {
+  show(): void;
+}
+
+class SuccessToast implements Toast {
+  constructor(private message: string) {}
+  show() { console.log(`✅ ${this.message}`); }
+}
+
+class ErrorToast implements Toast {
+  constructor(private message: string) {}
+  show() { console.error(`❌ ${this.message}`); }   // ошибки — в stderr
+}
+
+class InfoToast implements Toast {
+  constructor(private message: string) {}
+  show() { console.log(`ℹ️  ${this.message}`); }
+}
+
+export type ToastType = 'success' | 'error' | 'info';
+
+// Реестр «тип → как создать». Новый тип = одна строка здесь.
+// Record&lt;ToastType, ...&gt; заставит TypeScript проверить, что ни один тип не забыт.
+const registry: Record&lt;ToastType, (message: string) =&gt; Toast&gt; = {
+  success: (m) =&gt; new SuccessToast(m),
+  error: (m) =&gt; new ErrorToast(m),
+  info: (m) =&gt; new InfoToast(m),
+};
+
+export const createToast = (type: ToastType, message: string): Toast =&gt; registry[type](message);
+
+// Удобный шорткат: создать и сразу показать
+export const notify = (type: ToastType, message: string): void =&gt; createToast(type, message).show();</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/orders/order.builder.ts</code> — Builder</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>Пошаговая сборка заказа с проверкой в <code>build()</code>.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/orders/order.builder.ts</span></figcaption>
+  <pre><code class="language-typescript">// BUILDER. Отвечает за: пошагово собрать заказ и проверить его перед созданием.
+import { randomUUID } from 'node:crypto';
+import { calcTotal } from '../pricing';
+import type { CartItem, Order } from '../types';
+
+export const newOrderId = (): string =&gt; randomUUID().slice(0, 8);
+
+export class OrderBuilder {
+  private items: CartItem[] = [];
+  private address = '';
+  private phone = '';
+  private comment = '';
+  private contactless = false;
+  private promoCode: string | null = null;
+
+  // каждый шаг возвращает this — поэтому можно писать цепочкой
+  fromCart(items: CartItem[]) { this.items = items; return this; }
+  to(address: string) { this.address = address.trim(); return this; }
+  withPhone(phone: string) { this.phone = phone.replace(/[\s()-]/g, ''); return this; }
+  withComment(comment: string) { this.comment = comment; return this; }
+  contactlessDelivery() { this.contactless = true; return this; }
+  withPromo(code: string | null) { this.promoCode = code; return this; }
+
+  // build() — единственное место, где заказ может появиться. И только валидным.
+  build(): Order {
+    if (this.items.length === 0) throw new Error('Корзина пуста');
+    if (this.address.length &lt; 5) throw new Error('Не указан адрес доставки');
+    if (!/^\+7\d{10}$/.test(this.phone)) throw new Error('Телефон в формате +7XXXXXXXXXX');
+
+    return {
+      id: newOrderId(),
+      items: this.items,
+      address: this.address,
+      phone: this.phone,
+      comment: this.comment,
+      contactless: this.contactless,
+      promoCode: this.promoCode,
+      total: calcTotal(this.items, this.promoCode),
+      createdAt: new Date(),
+    };
+  }
+}</code></pre></figure>
+  </details>
+  <details class="classic"><summary>📄 <code>src/checkout/payment.ts</code> — имитация оплаты</summary>
+  <div class="fileinfo"><span class="k">роль</span><span>«Банк»: списывает деньги или отказывает. Магические числа в нём оставлены специально — для блока антипаттернов.</span></div>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">src/checkout/payment.ts</span></figcaption>
+  <pre><code class="language-typescript">// Имитация платёжного сервиса. Отвечает за: «списать» деньги или отказать.
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export async function payWithCard(amount: number): Promise&lt;string&gt; {
+  await sleep(200);
+  if (amount &gt; 5000) throw new Error('Банк отклонил платёж: недостаточно средств');
+  return `pay_${Date.now()}`;
+}</code></pre></figure>
+  </details>
+
+  <h4>Сценарий урока 2: main.ts</h4>
+  <p>Сегодняшний сценарий пишем с чистого листа (если в <code>main.ts</code> был сценарий урока 1 — заменяем). Начинаем с загрузки меню — она понадобится почти всем сегодняшним паттернам.</p>
+  <div class="fileinfo"><span class="k">заменяем</span><code>src/main.ts</code><span class="k">роль</span><span>Сценарий урока 2. Будем дописывать его по ходу урока.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">шаг 0</span></figcaption>
+    <pre><code class="language-typescript">// Сценарий урока 2: поведенческие паттерны в PizzaHub. Будем дописывать его по ходу урока.
+import { getMenu } from './api/pizza.api';
+
+console.log('🍕 PizzaHub · урок 2\n');
+const menu = await getMenu();</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const menu = await getMenu();</code></td><td>await прямо на верхнем уровне модуля (top-level await)</td><td>в Python только внутри async def + asyncio.run()</td></tr><tr><td><code>'...\n'</code></td><td>\n в строке — перевод строки</td><td><code>'...\n'</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span></figcaption>
+    <pre><code class="language-none">🍕 PizzaHub · урок 2
+
+⏱  getMenu: 303 мс</code></pre>
+  </figure>
+  <div class="expect"><b>Контрольная точка:</b> у всех печатается <code>⏱ getMenu: ~300 мс</code> — эту строчку пишет декоратор <code>withLogging</code>, значит адаптер, декораторы и «сервер» на месте. Если иногда падает <code>503 Service Unavailable</code> после трёх попыток — просто запустите ещё раз, «сервер» нестабилен специально. Проверьте ещё <code>npm run typecheck</code> — ошибок быть не должно. Пока не заработало у всех, дальше не идём.</div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">КАРТА НОВЫХ ФАЙЛОВ</span>
+    <p><code>src/events/</code> — Observer (шина и подписчики) · <code>src/delivery/</code> — Strategy · <code>src/orders/order-status.ts</code> — State · <code>src/cart/cart.commands.ts</code> — Command + Memento · <code>src/lib/paginate.ts</code> — Iterator · <code>src/checkout/checks/</code> — Chain of Responsibility. Принцип прежний: один паттерн — один файл, у файла одна ответственность.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Поведенческие паттерны · часть 1</span><span class="bar"></span></div>
+
+<!-- 02 OBSERVER -->
+<section id="observer">
+  <div class="sec-head"><h2>02 · Observer — события заказа</h2><span class="tag behav">поведенческий</span><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <div class="oneliner">Один объект кричит «у меня событие!», а все, кто подписался, реагируют.<small>Тот, кто кричит, не знает, кто его слушает. В этом весь смысл.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: КОЛОКОЛЬЧИК НА YOUTUBE</span>
+    <p>Вы подписались на канал и нажали колокольчик. Автор не звонит каждому подписчику лично — он просто публикует видео, а YouTube рассылает уведомления всем подписанным. Автор не знает, сколько вас и кто вы; вы можете отписаться в любой момент, и автору не нужно ничего менять. Это Observer, он же «издатель — подписчик» (publish/subscribe).</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Заказ оплачен. Что должно произойти? Показать уведомление. Отправить событие в аналитику. Отправить SMS. Завтра маркетинг попросит начислить бонусы, послезавтра — оповестить кухню. Если всё это писать прямо в фасаде <code>checkout()</code>, он превратится в свалку чужих забот и будет меняться при каждой новой хотелке.</p>
+  <div class="twocol">
+    <div class="box bad"><h5>Без Observer</h5><code>checkout()</code> сам вызывает <code>notify()</code>, <code>analytics.track()</code>, <code>sms.send()</code>, <code>bonus.add()</code>… Новая реакция → правим фасад.</div>
+    <div class="box good"><h5>С Observer</h5><code>checkout()</code> делает одно: <code>bus.emit('order:paid', ...)</code>. Новая реакция → новый подписчик, фасад не трогаем.</div>
+  </div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/events/event-bus.ts</code><span class="k">роль</span><span>Универсальный механизм подписки: <code>on</code> — подписаться, <code>off</code> — отписаться, <code>emit</code> — оповестить всех. Ничего не знает про пиццу — его можно унести в любой проект.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/events/event-bus.ts</span><span class="role">Observer</span></figcaption>
+    <pre><code class="language-typescript">// OBSERVER. Отвечает за: механизм подписки «сообщи всем, кому интересно».
+// Тот, кто кричит (emit), не знает, кто его слушает (on). И это главное.
+
+type Listener&lt;T&gt; = (payload: T) =&gt; void;
+
+export class EventBus&lt;Events extends Record&lt;string, unknown&gt;&gt; {
+  // для каждого события — свой список подписчиков
+  private listeners: { [K in keyof Events]?: Listener&lt;Events[K]&gt;[] } = {};
+
+  on&lt;K extends keyof Events&gt;(event: K, listener: Listener&lt;Events[K]&gt;): () =&gt; void {
+    (this.listeners[event] ??= []).push(listener);
+    return () =&gt; this.off(event, listener);          // функция «отписаться»
+  }
+
+  off&lt;K extends keyof Events&gt;(event: K, listener: Listener&lt;Events[K]&gt;): void {
+    this.listeners[event] = this.listeners[event]?.filter((l) =&gt; l !== listener);
+  }
+
+  emit&lt;K extends keyof Events&gt;(event: K, payload: Events[K]): void {
+    for (const listener of this.listeners[event] ?? []) {
+      listener(payload);
+    }
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>type Listener&lt;T&gt; = (payload: T) =&gt; void;</code></td><td>обобщённый тип функции-подписчика: принимает данные типа T, ничего не возвращает</td><td><code>Listener = Callable[[T], None]</code></td></tr><tr><td><code>class EventBus&lt;Events extends Record&lt;string, unknown&gt;&gt;</code></td><td>класс с параметром типа: Events — словарь «имя события → тип данных»</td><td><code>class EventBus(Generic[Events]): ...</code></td></tr><tr><td><code>{ [K in keyof Events]?: Listener&lt;Events[K]&gt;[] }</code></td><td>mapped type: для каждого имени события K — необязательный список подписчиков с ЕГО типом данных</td><td><code>dict[str, list[Callable]]  # но с проверкой по каждому ключу</code></td></tr><tr><td><code>on&lt;K extends keyof Events&gt;(event: K, ...)</code></td><td>метод-дженерик: K — одно из имён событий; по нему TS выводит тип payload</td><td>в Python так точно не выразить; ближе всего @overload на каждое событие</td></tr><tr><td><code>(this.listeners[event] ??= []).push(listener)</code></td><td>если списка нет — создать пустой, потом добавить в него</td><td><code>self._listeners.setdefault(event, []).append(listener)</code></td></tr><tr><td><code>return () =&gt; this.off(event, listener);</code></td><td>вернуть функцию, которая отпишет этого подписчика</td><td><code>return lambda: self.off(event, listener)</code></td></tr><tr><td><code>this.listeners[event]?.filter((l) =&gt; l !== listener)</code></td><td>?. — если слева undefined, дальше не идти и вернуть undefined; filter — оставить элементы по условию</td><td><code>[l for l in self._listeners.get(event, []) if l is not listener]</code></td></tr><tr><td><code>for (const listener of this.listeners[event] ?? [])</code></td><td>перебрать подписчиков; нет списка — перебрать пустой</td><td><code>for listener in self._listeners.get(event, []):</code></td></tr></tbody></table><p class="note"><b>Для питониста:</b> в Python тот же паттерн живёт в <code>blinker</code> (сигналы Flask), в сигналах Django (<code>post_save.connect(handler)</code>) и в <code>asyncio</code>-событиях.</p></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/events/app-events.ts</code><span class="k">роль</span><span>Каталог событий приложения: какие бывают и какие данные несут. Плюс одна общая шина <code>bus</code>. Пока одно событие — <code>order:paid</code>; второе добавим на шаге State.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/events/app-events.ts</span><span class="role">версия для этого шага</span></figcaption>
+    <pre><code class="language-typescript">// Каталог событий приложения: ИМЯ события → какие данные оно несёт.
+// Опечатка в имени события или в поле данных — ошибка TypeScript, а не тихий баг.
+import { EventBus } from './event-bus';
+
+export type AppEvents = {
+  'order:paid': { orderId: string; total: number; phone: string };
+};
+
+// одна шина на всё приложение — Singleton из урока 1
+export const bus = new EventBus&lt;AppEvents&gt;();</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>export type AppEvents = { 'order:paid': {...} };</code></td><td>тип-словарь: ключ — имя события (строка с двоеточием в кавычках), значение — форма данных</td><td><code>class AppEvents(TypedDict): ...  # ключи с ':' — через функциональный синтаксис TypedDict</code></td></tr><tr><td><code>new EventBus&lt;AppEvents&gt;()</code></td><td>создаём шину и явно указываем параметр типа</td><td><code>EventBus[AppEvents]()</code></td></tr></tbody></table><p class="note"><b>Ловушка TypeScript:</b> здесь именно <code>type</code>, а не <code>interface</code>. Интерфейс не подходит под ограничение <code>Record&lt;string, unknown&gt;</code> (ошибка TS2344: «Index signature for type 'string' is missing»). Псевдонимы типов подходят.</p></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/events/subscribers.ts</code><span class="k">роль</span><span>Все подписчики в одном месте. Каждый реагирует по-своему и не знает о существовании остальных.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/events/subscribers.ts</span><span class="role">версия для этого шага</span></figcaption>
+    <pre><code class="language-typescript">// Подписчики. Каждый реагирует на события по-своему и ничего не знает о других.
+import { notify } from '../notifications/toast.factory';
+import { bus } from './app-events';
+
+export function registerSubscribers(): void {
+  // 1. Уведомление покупателю
+  bus.on('order:paid', ({ orderId, total }) =&gt; {
+    notify('success', `Заказ №${orderId} оплачен: ${total} ₽`);
+  });
+
+  // 2. Аналитика
+  bus.on('order:paid', ({ total }) =&gt; {
+    console.log(`📊 analytics: purchase, revenue=${total}`);
+  });
+
+  // 3. SMS
+  bus.on('order:paid', ({ phone }) =&gt; {
+    console.log(`📱 SMS на ${phone}: «Спасибо! Готовим вашу пиццу»`);
+  });
+
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>bus.on('order:paid', ({ orderId, total }) =&gt; { ... })</code></td><td>подписка; деструктуризация параметра: из объекта сразу достаём нужные поля</td><td><code>@bus.on('order:paid')
+def handler(payload): order_id = payload['orderId'] ...</code></td></tr><tr><td><code>export function registerSubscribers(): void</code></td><td>функция, которую вызовут один раз при старте</td><td><code>def register_subscribers() -&gt; None:</code></td></tr></tbody></table></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>listeners</code></strong> — словарь «имя события → список функций». Подписка = добавить функцию в список, оповещение = вызвать по очереди всех из списка. Вот и весь паттерн.</li>
+    <li><strong><code>on</code> возвращает функцию отписки.</strong> Так сделано в Redux (<code>store.subscribe</code>), в RxJS и в <code>useEffect</code>, где вы возвращаете функцию очистки. Забыть отписаться — классическая утечка памяти во фронтенде.</li>
+    <li><strong>Дженерик <code>EventBus&lt;AppEvents&gt;</code></strong> — шина знает, какие события бывают. <code>bus.emit('order:payed', ...)</code> с опечаткой или без поля <code>total</code> не скомпилируется. В строковых EventEmitter из Node такая опечатка — тихий баг: событие улетает в пустоту.</li>
+    <li><strong><code>bus</code> — Singleton</strong> из урока 1: одна шина на всё приложение. Паттерны отлично комбинируются.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>src/main.ts</code><span class="k">куда</span><span>Импорты — наверх; <code>registerSubscribers()</code> — сразу после импортов; проверку — в конец.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорты</span></figcaption>
+    <pre><code class="language-typescript">import { bus } from './events/app-events';
+import { registerSubscribers } from './events/subscribers';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ после импортов</span></figcaption>
+    <pre><code class="language-typescript">registerSubscribers();        // подписываемся ОДИН раз, при старте приложения</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-typescript">// --- Observer: проверяем шину вручную ---
+bus.emit('order:paid', { orderId: 'test-1', total: 999, phone: '+79001234567' });</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки</span></figcaption>
+    <pre><code class="language-none">✅ Заказ №test-1 оплачен: 999 ₽
+📊 analytics: purchase, revenue=999
+📱 SMS на +79001234567: «Спасибо! Готовим вашу пиццу»</code></pre>
+  </figure>
+  <div class="expect"><b>Что видим:</b> одна строчка <code>emit</code> — три реакции. Тот, кто отправил событие, ни про одну из них не знает.</div>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">ЭКСПЕРИМЕНТ: ОТПИСКА</span>
+    <p>Допишите в конец <code>main.ts</code> и запустите — временный подписчик сработает на первое событие и промолчит на второе:</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">эксперимент, потом удалить</span></figcaption>
+    <pre><code class="language-typescript">const off = bus.on('order:paid', () =&gt; console.log('👀 временный подписчик'));
+bus.emit('order:paid', { orderId: 'test-2', total: 500, phone: '+79001234567' });  // 👀 есть
+off();                                                                               // отписались
+bus.emit('order:paid', { orderId: 'test-3', total: 500, phone: '+79001234567' });  // 👀 уже нет</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const off = bus.on(...);  off();</code></td><td>on вернул функцию; вызываем её, чтобы отписаться</td><td><code>off = bus.on(...); off()</code></td></tr></tbody></table></div>
+
+  <details class="classic"><summary>📊 UML для mermaid.live: Observer в PizzaHub</summary>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">вставить в mermaid.live</span></figcaption>
+  <pre><code class="language-none">classDiagram
+    direction LR
+    class EventBus {
+        -listeners
+        +on(event, listener) unsubscribe
+        +off(event, listener) void
+        +emit(event, payload) void
+    }
+    class checkout {
+        &lt;&lt;facade&gt;&gt;
+        emit order:paid
+    }
+    class notifySubscriber
+    class analyticsSubscriber
+    class smsSubscriber
+    checkout ..&gt; EventBus : emit()
+    notifySubscriber ..&gt; EventBus : on()
+    analyticsSubscriber ..&gt; EventBus : on()
+    smsSubscriber ..&gt; EventBus : on()</code></pre></figure>
+  <p>Стрелки <code>..&gt;</code> — «зависит от / использует». Все стрелки ведут <em>к</em> шине, а не друг к другу: подписчики и фасад не знают друг о друге.</p>
+  </details>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p><code>button.addEventListener('click', handler)</code> — кнопке всё равно, кто на неё подписан. <code>store.subscribe()</code> в Redux, <code>watch</code> во Vue, RxJS <code>Observable</code>, <code>EventEmitter</code> в Node. <strong>На бэкенде</strong> то же самое в масштабе системы: сервис заказов публикует событие в брокер сообщений (Kafka, RabbitMQ, Redis Pub/Sub), а сервисы почты, склада и аналитики подписываются. Это называется событийно-ориентированная архитектура.</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">КОГДА НЕ НАДО</span>
+    <p>Событий не должно быть слишком много. Когда «A кидает событие → B ловит и кидает своё → C ловит → снова A», отладка превращается в детектив: по коду не видно, кто кого вызвал. Если реакция одна и она обязательная, обычный вызов функции честнее события.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 STRATEGY -->
+<section id="strategy">
+  <div class="sec-head"><h2>03 · Strategy — способы доставки</h2><span class="tag behav">поведенческий</span><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <div class="oneliner">Семейство взаимозаменяемых алгоритмов с одинаковым интерфейсом.<small>Код, который пользуется алгоритмом, не знает, какой именно ему подсунули.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: НАВИГАТОР</span>
+    <p>Вы строите маршрут до пиццерии. Цель одна, а алгоритмы разные: пешком, на машине, на общественном транспорте. Навигатор не переписывают под каждый способ — вы переключаете вкладку, и он подставляет другую <strong>стратегию</strong> расчёта. Интерфейс тот же: «дай маршрут и время».</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">как НЕ надо</span></figcaption>
+    <pre><code class="language-typescript">function deliveryPrice(type: string, total: number, km: number) {
+  if (type === 'courier') return total &gt;= 1500 ? 0 : 150 + 20 * km;
+  else if (type === 'express') return (150 + 20 * km) * 2;
+  else if (type === 'pickup') return 0;
+  // ...завтра «дрон», послезавтра «такси», и для времени доставки — ещё один такой же if
+}</code></pre>
+  </figure>
+  <p>Каждый новый способ — правка этой функции (и функции времени доставки, и функции описания…). Плюс магические числа <code>1500</code>, <code>150</code>, <code>20</code> — о них поговорим в антипаттернах.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/delivery/delivery.strategies.ts</code><span class="k">роль</span><span>Каждый способ доставки — отдельный объект с одинаковым интерфейсом <code>DeliveryStrategy</code>. Функция <code>quote</code> пользуется любой стратегией, не зная, какой.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/delivery/delivery.strategies.ts</span><span class="role">Strategy</span></figcaption>
+    <pre><code class="language-typescript">// STRATEGY. Отвечает за: способы доставки — взаимозаменяемые алгоритмы с одним интерфейсом.
+
+export interface DeliveryStrategy {
+  readonly name: string;
+  price(orderTotal: number, distanceKm: number): number;
+  etaMinutes(distanceKm: number): number;
+}
+
+const FREE_DELIVERY_FROM = 1500;   // ₽ — с этой суммы курьер бесплатно
+const COURIER_BASE = 150;          // ₽ — базовая цена курьера
+const COURIER_PER_KM = 20;         // ₽ за километр
+const EXPRESS_MULTIPLIER = 2;      // экспресс вдвое дороже курьера
+
+export const courier: DeliveryStrategy = {
+  name: 'Курьер',
+  price: (total, km) =&gt; (total &gt;= FREE_DELIVERY_FROM ? 0 : COURIER_BASE + COURIER_PER_KM * km),
+  etaMinutes: (km) =&gt; 30 + 4 * km,
+};
+
+export const express: DeliveryStrategy = {
+  name: 'Экспресс',
+  price: (_total, km) =&gt; (COURIER_BASE + COURIER_PER_KM * km) * EXPRESS_MULTIPLIER,
+  etaMinutes: (km) =&gt; 15 + 2 * km,
+};
+
+export const pickup: DeliveryStrategy = {
+  name: 'Самовывоз',
+  price: () =&gt; 0,
+  etaMinutes: () =&gt; 20,
+};
+
+// «Контекст» — код, который ПОЛЬЗУЕТСЯ стратегией и не знает, какая она
+export function quote(strategy: DeliveryStrategy, orderTotal: number, distanceKm: number): string {
+  const price = strategy.price(orderTotal, distanceKm);
+  return `${strategy.name}: ${price === 0 ? 'бесплатно' : `${price} ₽`}, ~${strategy.etaMinutes(distanceKm)} мин`;
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>readonly name: string;</code></td><td>поле только для чтения: после создания менять нельзя</td><td><code>name: Final[str]  /  frozen dataclass</code></td></tr><tr><td><code>price(orderTotal: number, distanceKm: number): number;</code></td><td>сигнатура метода в интерфейсе — без тела</td><td><code>def price(self, order_total: float, distance_km: float) -&gt; float: ...</code></td></tr><tr><td><code>export const courier: DeliveryStrategy = { name: ..., price: (total, km) =&gt; ... }</code></td><td>объект, реализующий интерфейс; типы параметров TS берёт из интерфейса</td><td><code>courier = SimpleNamespace(name='Курьер', price=lambda total, km: ...)</code></td></tr><tr><td><code>(_total, km) =&gt; ...</code></td><td>_ в начале имени — договорённость «параметр не используется»</td><td><code>lambda _total, km: ...</code></td></tr><tr><td><code>`${price === 0 ? 'бесплатно' : `${price} ₽`}`</code></td><td>шаблонная строка внутри шаблонной строки</td><td><code>f"{'бесплатно' if price == 0 else f'{price} ₽'}"</code></td></tr></tbody></table><p class="note"><b>Для питониста:</b> стратегия в Python — часто просто функция: <code>sorted(pizzas, key=lambda p: p.price)</code>, <code>max(..., key=...)</code>. Классы-стратегии нужны, когда у алгоритма несколько методов, как у нас (<code>price</code> + <code>etaMinutes</code>).</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>interface DeliveryStrategy</code></strong> — контракт: у любой стратегии есть имя, цена и время. Новый способ (дрон!) — новый объект, <code>quote</code> и остальной код не меняются.</li>
+    <li><strong>Стратегии — объекты, а не классы.</strong> В Java здесь было бы три класса <code>CourierStrategy implements ...</code>. В TS достаточно объекта с функциями — это и есть «web-way».</li>
+    <li><strong>Константы с именами</strong> вместо голых чисел: <code>FREE_DELIVERY_FROM</code> сразу говорит, что это за 1500.</li>
+    <li><strong><code>_total</code></strong> — экспресс не зависит от суммы заказа, но интерфейс у всех стратегий одинаковый. Подчёркивание — договорённость «параметр намеренно не используется».</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорт</span></figcaption>
+    <pre><code class="language-typescript">import { courier, express, pickup, quote } from './delivery/delivery.strategies';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-typescript">// --- Strategy: способы доставки ---
+for (const strategy of [courier, express, pickup]) {
+  console.log(`🚚 ${quote(strategy, 900, 4)}`);
+}
+console.log(`🚚 ${quote(courier, 1900, 4)}   ← от 1500 ₽ курьер бесплатно`);</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>for (const strategy of [courier, express, pickup])</code></td><td>перебор массива, созданного на лету</td><td><code>for strategy in (courier, express, pickup):</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки</span></figcaption>
+    <pre><code class="language-none">🚚 Курьер: 230 ₽, ~46 мин
+🚚 Экспресс: 460 ₽, ~23 мин
+🚚 Самовывоз: бесплатно, ~20 мин
+🚚 Курьер: бесплатно, ~46 мин   ← от 1500 ₽ курьер бесплатно</code></pre>
+  </figure>
+
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">МИНИ-ЗАДАНИЕ НА 2 МИНУТЫ</span>
+    <p>Добавьте стратегию <code>drone</code>: 99 ₽ при любой сумме, если до клиента не больше 3 км (иначе <code>Infinity</code>), время — 10 минут. Добавьте её в массив в <code>main.ts</code>. Сколько строк в <code>quote</code> пришлось поменять? Ноль — в этом и смысл.</p>
+  </div></div>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p><code>products.sort((a, b) =&gt; a.price - b.price)</code> — вы передаёте в <code>sort</code> <strong>стратегию сравнения</strong>. Валидаторы форм, стратегии повтора в React Query (<code>retry</code>), разные провайдеры входа (Google / GitHub / пароль) в NextAuth и Passport.js. <strong>На бэкенде</strong>: способы оплаты, расчёт налогов по стране, стратегии кеширования. В Python то же самое — <code>sorted(items, key=lambda p: p.price)</code>.</p>
+  </div></div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">STRATEGY vs FACTORY</span>
+    <p>Их часто путают, потому что фабрика нередко <em>выбирает</em> стратегию. Разница в вопросе: Factory отвечает «<strong>какой объект создать</strong>», Strategy — «<strong>каким алгоритмом посчитать</strong>». В связке это выглядит как <code>const strategy = createDelivery(userChoice); quote(strategy, ...)</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 04 STATE -->
+<section id="state">
+  <div class="sec-head"><h2>04 · State — статус заказа</h2><span class="tag behav">поведенческий</span><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <div class="oneliner">Поведение объекта зависит от его состояния, а переходы между состояниями описаны явно.<small>Вместо россыпи флагов — конечный автомат: список состояний и разрешённых переходов.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: СВЕТОФОР</span>
+    <p>Светофор — идеальный конечный автомат. Состояний три, переходы строго определены: зелёный → жёлтый → красный → зелёный. Из зелёного сразу в красный — нельзя. «Зелёный и красный одновременно» — невозможно в принципе. Хочется, чтобы с заказами было так же.</p>
+  </div></div>
+
+  <h3>Боль: флаги</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">как НЕ надо</span></figcaption>
+    <pre><code class="language-typescript">const order = { isPaid: true, isCooking: false, isDelivered: true, isCancelled: true };
+// оплачен, не готовился, но доставлен — и при этом отменён?! 🤯</code></pre>
+  </figure>
+  <p>Четыре булевых флага дают 2⁴ = 16 комбинаций, а осмысленных из них — штук пять. Остальные одиннадцать — «невозможные состояния», которые рано или поздно возникнут из-за бага, и код будет вести себя непредсказуемо.</p>
+
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ДЕВИЗ</span>
+    <p>«Make impossible states impossible» — «сделайте невозможные состояния невозможными». Так назывался знаменитый доклад Ричарда Фельдмана на elm-conf 2016. Идея: не проверять «а вдруг заказ и доставлен, и отменён», а устроить типы так, чтобы такое нельзя было даже записать.</p>
+  </div></div>
+
+  <div class="diagram">
+<pre>          оплатили        кухня взяла       курьер забрал      доставлено
+ [ <span class="tn">new</span> ] ─────────▶ [ <span class="tn">paid</span> ] ─────────▶ [ <span class="tn">cooking</span> ] ─────────▶ [ <span class="tn">delivering</span> ] ─────────▶ [ <span class="pk">delivered</span> ]
+     │                   │
+     │ отменили          │ вернули деньги
+     ▼                   ▼
+ [ <span class="fk">cancelled</span> ] ◀──────────┘          из delivered и cancelled — никуда</pre>
+  </div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/orders/order-status.ts</code><span class="k">роль</span><span>Знает все статусы заказа и все разрешённые переходы. Запрещённый переход — понятная ошибка. Каждый удачный переход — событие на шине (Observer!).</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/orders/order-status.ts</span><span class="role">State</span></figcaption>
+    <pre><code class="language-typescript">// STATE. Отвечает за: жизненный цикл заказа. Какие статусы бывают и куда из какого можно перейти.
+import { bus } from '../events/app-events';
+
+export type OrderStatus = 'new' | 'paid' | 'cooking' | 'delivering' | 'delivered' | 'cancelled';
+
+// Таблица переходов — вся логика статусов в одном месте
+const TRANSITIONS: Record&lt;OrderStatus, OrderStatus[]&gt; = {
+  new: ['paid', 'cancelled'],
+  paid: ['cooking', 'cancelled'],
+  cooking: ['delivering'],
+  delivering: ['delivered'],
+  delivered: [],
+  cancelled: [],
+};
+
+export class OrderStateMachine {
+  constructor(
+    public readonly orderId: string,
+    private status: OrderStatus = 'new',
+  ) {}
+
+  get current(): OrderStatus {
+    return this.status;
+  }
+
+  can(next: OrderStatus): boolean {
+    return TRANSITIONS[this.status].includes(next);
+  }
+
+  transition(next: OrderStatus): void {
+    if (!this.can(next)) {
+      throw new Error(`Нельзя перейти из «${this.status}» в «${next}»`);
+    }
+    const from = this.status;
+    this.status = next;
+    bus.emit('order:status', { orderId: this.orderId, from, to: next });   // Observer!
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>type OrderStatus = 'new' | 'paid' | ...;</code></td><td>статус — ровно одно значение из списка</td><td><code>OrderStatus = Literal['new', 'paid', ...]  /  class OrderStatus(StrEnum)</code></td></tr><tr><td><code>Record&lt;OrderStatus, OrderStatus[]&gt;</code></td><td>словарь: для КАЖДОГО статуса — список разрешённых следующих</td><td><code>dict[OrderStatus, list[OrderStatus]]</code></td></tr><tr><td><code>constructor(public readonly orderId: string, private status: OrderStatus = 'new') {}</code></td><td>два поля прямо из параметров: публичное только для чтения и приватное со значением по умолчанию</td><td><code>def __init__(self, order_id: str, status: OrderStatus = 'new'):
+    self.order_id = order_id; self._status = status</code></td></tr><tr><td><code>get current(): OrderStatus { ... }</code></td><td>геттер: читается как поле order.current, но вычисляется методом</td><td><code>@property
+def current(self) -&gt; OrderStatus: ...</code></td></tr><tr><td><code>TRANSITIONS[this.status].includes(next)</code></td><td>есть ли элемент в массиве</td><td><code>next_ in TRANSITIONS[self._status]</code></td></tr></tbody></table></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>type OrderStatus = 'new' | 'paid' | ...</code></strong> — у заказа <em>ровно одно</em> поле статуса вместо четырёх флагов. «Оплачен и отменён одновременно» записать невозможно физически.</li>
+    <li><strong><code>TRANSITIONS</code></strong> — вся логика переходов в одной таблице. Это и документация («куда можно из paid?»), и защита. <code>Record&lt;OrderStatus, ...&gt;</code> не даст забыть новый статус.</li>
+    <li><strong><code>transition()</code></strong> — единственный способ сменить статус (поле <code>private</code>). Он проверяет таблицу и сообщает всем через шину.</li>
+    <li><strong><code>get current()</code></strong> — читать статус можно, менять напрямую нельзя.</li>
+  </ul>
+
+  <div class="fileinfo"><span class="k">меняем</span><code>src/events/app-events.ts</code><span class="k">что</span><span>Добавляем событие <code>order:status</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/events/app-events.ts</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-typescript">// Каталог событий приложения: ИМЯ события → какие данные оно несёт.
+// Опечатка в имени события или в поле данных — ошибка TypeScript, а не тихий баг.
+import type { OrderStatus } from '../orders/order-status';
+import { EventBus } from './event-bus';
+
+export type AppEvents = {
+  'order:paid': { orderId: string; total: number; phone: string };
+  'order:status': { orderId: string; from: OrderStatus; to: OrderStatus };
+};
+
+// одна шина на всё приложение — Singleton из урока 1
+export const bus = new EventBus&lt;AppEvents&gt;();</code></pre>
+  </figure>
+  <div class="fileinfo"><span class="k">дописываем</span><code>src/events/subscribers.ts</code><span class="k">что</span><span>Четвёртый подписчик — внутрь <code>registerSubscribers()</code>, после SMS.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/events/subscribers.ts</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-typescript">// Подписчики. Каждый реагирует на события по-своему и ничего не знает о других.
+import { notify } from '../notifications/toast.factory';
+import { bus } from './app-events';
+
+export function registerSubscribers(): void {
+  // 1. Уведомление покупателю
+  bus.on('order:paid', ({ orderId, total }) =&gt; {
+    notify('success', `Заказ №${orderId} оплачен: ${total} ₽`);
+  });
+
+  // 2. Аналитика
+  bus.on('order:paid', ({ total }) =&gt; {
+    console.log(`📊 analytics: purchase, revenue=${total}`);
+  });
+
+  // 3. SMS
+  bus.on('order:paid', ({ phone }) =&gt; {
+    console.log(`📱 SMS на ${phone}: «Спасибо! Готовим вашу пиццу»`);
+  });
+
+  // 4. Смена статуса заказа
+  bus.on('order:status', ({ orderId, from, to }) =&gt; {
+    console.log(`🔔 Заказ №${orderId}: ${from} → ${to}`);
+  });
+}</code></pre>
+  </figure>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорты</span></figcaption>
+    <pre><code class="language-typescript">import { notify } from './notifications/toast.factory';
+import { OrderStateMachine } from './orders/order-status';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-typescript">// --- State: жизнь заказа ---
+const demo = new OrderStateMachine('demo-1');
+demo.transition('paid');
+demo.transition('cooking');
+try {
+  demo.transition('new');                 // назад в «new» из «cooking»? нельзя
+} catch (error) {
+  notify('error', (error as Error).message);
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>try { ... } catch (error) { notify('error', (error as Error).message); }</code></td><td>перехват ошибки; as Error — подсказка типа для компилятора</td><td><code>try: ...
+except Exception as error: notify('error', str(error))</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки</span></figcaption>
+    <pre><code class="language-none">🔔 Заказ №demo-1: new → paid
+🔔 Заказ №demo-1: paid → cooking
+❌ Нельзя перейти из «cooking» в «new»</code></pre>
+  </figure>
+  <div class="expect"><b>Что видим:</b> разрешённые переходы прошли, и о каждом сообщил подписчик. Запрещённый остановлен с понятной ошибкой — а не тихо записан в базу.</div>
+
+  <details class="classic"><summary>📊 UML для mermaid.live: диаграмма состояний заказа</summary>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">вставить в mermaid.live</span></figcaption>
+  <pre><code class="language-none">stateDiagram-v2
+    [*] --&gt; new
+    new --&gt; paid : оплатили
+    new --&gt; cancelled : отменили
+    paid --&gt; cooking : кухня взяла
+    paid --&gt; cancelled : вернули деньги
+    cooking --&gt; delivering : курьер забрал
+    delivering --&gt; delivered : доставлено
+    delivered --&gt; [*]
+    cancelled --&gt; [*]</code></pre></figure>
+  <p>Отличная демонстрация для группы: такие диаграммы рисуют аналитики, и по ним сразу видно, каких переходов не хватает. Спросите: «Что, если курьер не дозвонился до клиента?» — и добавьте статус <code>returned</code> прямо в редакторе.</p>
+  </details>
+
+  <details class="classic"><summary>📕 Как в книжке: класс на каждое состояние</summary>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">classic State</span></figcaption>
+  <pre><code class="language-typescript">interface State { pay(o: Order): void; cancel(o: Order): void; }
+
+class NewState implements State {
+  pay(o: Order) { o.setState(new PaidState()); }
+  cancel(o: Order) { o.setState(new CancelledState()); }
+}
+class DeliveredState implements State {
+  pay() { throw new Error('Уже оплачен'); }
+  cancel() { throw new Error('Доставленный заказ не отменить'); }
+}
+// Order делегирует действия текущему объекту-состоянию: this.state.pay(this)</code></pre></figure>
+  <p>Так делают, когда у каждого состояния много <em>разного поведения</em>. Если различаются только разрешённые переходы, таблица компактнее и нагляднее.</p>
+  </details>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p>Статус запроса в React Query: <code>'pending' | 'error' | 'success'</code> вместо <code>isLoading</code> + <code>isError</code>. Редьюсеры с <code>switch (state.status)</code>. Библиотека <strong>XState</strong> — честные конечные автоматы для UI. <strong>На бэкенде</strong> статусы заказа, платежа, тикета в поддержке — везде таблица переходов, а в базе одна колонка <code>status</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 05 COMMAND -->
+<section id="command">
+  <div class="sec-head"><h2>05 · Command + Memento — Ctrl+Z для корзины</h2><span class="tag behav">поведенческий</span><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <div class="oneliner"><strong>Command</strong>: действие превращается в объект — его можно сохранить, отложить, записать в историю. <strong>Memento</strong>: снимок состояния, к которому можно откатиться.<small>Вместе они дают кнопку «Отменить».</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ОФИЦИАНТ И СОХРАНЕНИЕ В ИГРЕ</span>
+    <p><strong>Command.</strong> Официант не бежит на кухню жарить стейк сам — он записывает заказ на листок. Листок — это и есть команда: его можно положить в очередь, передать другому повару, а если гость передумал — порвать. Тот, кто попросил (гость), отделён от того, кто делает (повар).</p>
+    <p><strong>Memento.</strong> «Сохранись перед боссом» — каждый геймер знает этот паттерн. Сейв — это снимок мира игры. Проиграли — загрузились, и мир такой же, как был.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Пользователь случайно нажал «Очистить корзину» — пять пицц, выбранных за 10 минут, пропали. Хочется кнопку «Отменить». Для этого нужно (1) помнить, <em>какие действия</em> были сделаны, и (2) уметь <em>вернуть корзину</em> в прошлое состояние.</p>
+
+  <div class="fileinfo"><span class="k">дописываем</span><code>src/store/cart.store.ts</code><span class="k">что</span><span>Два метода внутрь класса <code>CartStore</code> (перед закрывающей скобкой класса) и тип снимка после класса. Остальное — как в стартовом проекте (шаг 0).</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/store/cart.store.ts</span><span class="role">+ Memento</span></figcaption>
+    <pre><code class="language-typescript">  // --- MEMENTO: снимок состояния и восстановление из снимка ---
+  snapshot(): CartMemento {
+    return structuredClone(this.items);
+  }
+
+  restore(memento: CartMemento): void {
+    this.items = structuredClone(memento) as CartItem[];
+  }
+}
+
+// Снимок корзины. readonly — снимок нельзя менять, только восстановить из него
+export type CartMemento = readonly CartItem[];</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>export type CartMemento = readonly CartItem[];</code></td><td>массив только для чтения: push и присваивание по индексу запрещены компилятором</td><td><code>CartMemento = tuple[CartItem, ...]</code></td></tr><tr><td><code>structuredClone(memento) as CartItem[]</code></td><td>глубокая копия; as снимает readonly, потому что копия уже наша и её можно менять</td><td><code>copy.deepcopy(memento)</code></td></tr></tbody></table></div>
+  <p><strong>Почему <code>structuredClone</code> и тут, и там.</strong> Помните баг поверхностной копии из Prototype? Если отдать в снимок сам массив <code>this.items</code>, следующее изменение корзины испортит и снимок — «сейв» изменится вместе с игрой. Глубокая копия при сохранении и при восстановлении делает снимок неприкосновенным.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/cart/cart.commands.ts</code><span class="k">роль</span><span>Действия с корзиной в виде объектов-команд и история с отменой.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/cart/cart.commands.ts</span><span class="role">Command + Memento</span></figcaption>
+    <pre><code class="language-typescript">// COMMAND + MEMENTO. Отвечает за: действия с корзиной как ОБЪЕКТЫ — их можно
+// выполнить, записать в историю и отменить (Ctrl+Z).
+import { cartStore, type CartMemento } from '../store/cart.store';
+import type { Pizza, Size } from '../types';
+
+export interface Command {
+  readonly label: string;   // человекочитаемое название — для истории и логов
+  execute(): void;
+}
+
+// --- фабрики команд: создают объект-команду, но НЕ выполняют её ---
+export const addPizza = (pizza: Pizza, size: Size = 'M', qty = 1): Command =&gt; ({
+  label: `Добавить ${pizza.name} (${size}) × ${qty}`,
+  execute: () =&gt; cartStore.add(pizza, size, qty),
+});
+
+export const clearCart = (): Command =&gt; ({
+  label: 'Очистить корзину',
+  execute: () =&gt; cartStore.clear(),
+});
+
+// --- исполнитель с историей ---
+export class CommandHistory {
+  private done: { command: Command; before: CartMemento }[] = [];
+
+  run(command: Command): void {
+    const before = cartStore.snapshot();   // MEMENTO: запомнили, как было
+    command.execute();
+    this.done.push({ command, before });
+    console.log(`▶  ${command.label}`);
+  }
+
+  undo(): boolean {
+    const last = this.done.pop();
+    if (!last) return false;               // отменять нечего
+    cartStore.restore(last.before);        // вернули как было
+    console.log(`↩  Отменено: ${last.command.label}`);
+    return true;
+  }
+
+  get labels(): string[] {
+    return this.done.map((entry) =&gt; entry.command.label);
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>import { cartStore, type CartMemento } from '...';</code></td><td>в одном импорте: значение и тип (type — импорт только для проверки типов)</td><td><code>from ..store.cart_store import cart_store, CartMemento</code></td></tr><tr><td><code>export const addPizza = (pizza, size = 'M', qty = 1): Command =&gt; ({ ... });</code></td><td>функция возвращает объект-команду; круглые скобки вокруг { } — чтобы вернуть объект</td><td><code>def add_pizza(pizza, size='M', qty=1) -&gt; Command: return Command(...)</code></td></tr><tr><td><code>execute: () =&gt; cartStore.add(pizza, size, qty)</code></td><td>функция-замыкание: помнит pizza, size, qty и выполнит действие позже</td><td><code>execute=lambda: cart_store.add(pizza, size, qty)</code></td></tr><tr><td><code>private done: { command: Command; before: CartMemento }[] = [];</code></td><td>список объектов заданной формы — стек истории</td><td><code>self._done: list[tuple[Command, CartMemento]] = []</code></td></tr><tr><td><code>const last = this.done.pop();</code></td><td>снять последний элемент; если список пуст — undefined</td><td><code>last = self._done.pop() if self._done else None</code></td></tr><tr><td><code>get labels(): string[] { return this.done.map((e) =&gt; e.command.label); }</code></td><td>геттер + map</td><td><code>@property
+def labels(self): return [e.command.label for e in self._done]</code></td></tr></tbody></table><p class="note"><b>Ловушка для питониста:</b> <code>pop()</code> на пустом массиве в JS не бросает исключение, а возвращает <code>undefined</code>. Поэтому сразу после него стоит <code>if (!last) return false</code>. В Python <code>[].pop()</code> упал бы с <code>IndexError</code>.</p></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong><code>addPizza(...)</code> не добавляет пиццу</strong> — она <em>создаёт команду</em>, которая умеет добавить. Выполнит её тот, кто вызовет <code>execute()</code>. Это ключевое разделение: «кто просит» и «когда и как выполняется» — разные места.</li>
+    <li><strong><code>CommandHistory.run()</code></strong> — перед выполнением делает снимок (Memento), потом выполняет команду и кладёт пару «команда + снимок до неё» в стек.</li>
+    <li><strong><code>undo()</code></strong> — берёт последнюю запись со стека и восстанавливает снимок. Отменить можно несколько раз подряд — пока стек не пуст.</li>
+    <li><strong><code>label</code></strong> — команды можно показать пользователю («Отменено: Очистить корзину») и записать в лог. С прямым вызовом <code>cartStore.clear()</code> такое не получится.</li>
+  </ul>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорты</span></figcaption>
+    <pre><code class="language-typescript">import { addPizza, clearCart, CommandHistory } from './cart/cart.commands';
+import { renderHeader } from './ui/header';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ в конец</span></figcaption>
+    <pre><code class="language-typescript">// --- Command + Memento: корзина с отменой ---
+const history = new CommandHistory();
+history.run(addPizza(menu[0], 'L', 2));
+history.run(addPizza(menu[1]));
+history.run(clearCart());                 // «ой, промахнулся мимо кнопки»
+renderHeader();
+history.undo();                           // Ctrl+Z
+renderHeader();
+console.log(history.labels);</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки</span></figcaption>
+    <pre><code class="language-none">▶  Добавить Маргарита (L) × 2
+▶  Добавить Пепперони (M) × 1
+▶  Очистить корзину
+🛒 Шапка: в корзине 0 шт.
+↩  Отменено: Очистить корзину
+🛒 Шапка: в корзине 3 шт.
+[ 'Добавить Маргарита (L) × 2', 'Добавить Пепперони (M) × 1' ]</code></pre>
+  </figure>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ДВА СПОСОБА СДЕЛАТЬ UNDO</span>
+    <p><strong>1. Снимки (как у нас)</strong> — перед каждой командой сохраняем всё состояние. Просто и надёжно, но тратит память, если состояние большое. <strong>2. Обратные команды</strong> — у каждой команды есть <code>undo()</code>, который делает противоположное (<code>add</code> ↔ <code>remove</code>). Экономно, но для «Очистить корзину» обратная операция всё равно требует помнить, что там было. Текстовые редакторы и Figma обычно комбинируют оба подхода.</p>
+  </div></div>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p><strong>Redux</strong> — это Command в чистом виде: <code>dispatch({ type: 'cart/add', payload })</code> — объект-намерение, а редьюсер решает, как его выполнить. <strong>Redux DevTools</strong> с перемоткой во времени (time travel) — это Memento: каждое состояние — снимок. Сохранение черновика формы в <code>localStorage</code> — тоже Memento. <strong>На бэкенде</strong>: задачи в очереди (Celery, BullMQ) — команды, которые выполнятся позже и на другом сервере; миграции Alembic с <code>upgrade()</code>/<code>downgrade()</code> — команды с отменой.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 06 BLITZ 1 -->
+<section id="blitz1">
+  <div class="sec-head"><h2>06 · Блиц: Iterator и Template Method</h2><span class="tag blitz">блиц</span><span class="tag time">~6 мин</span></div>
+
+  <h3>Iterator — «дай следующий»</h3>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <p>Суши-конвейер: вам не вываливают на стол все 200 тарелок. Вы берёте следующую, когда она нужна. Вам не важно, как устроена кухня, — важно, что есть «следующая тарелка» и признак «тарелки кончились».</p>
+  </div></div>
+  <p>Iterator даёт обходить коллекцию по одному элементу, не раскрывая, как она устроена внутри. В JS и Python он <strong>встроен в язык</strong>: <code>for...of</code> под капотом вызывает итератор, а генератор (<code>function*</code> / <code>yield</code>) — самый короткий способ написать свой.</p>
+  <div class="fileinfo"><span class="k">создаём</span><code>src/lib/paginate.ts</code><span class="k">роль</span><span>Отдаёт список порциями (страницами), по одной за раз.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/lib/paginate.ts</span><span class="role">Iterator</span></figcaption>
+    <pre><code class="language-typescript">// ITERATOR. Отвечает за: выдавать список порциями (страницами) по запросу.
+// function* — генератор: функция, которая умеет «вставать на паузу» на каждом yield.
+
+export function* paginate&lt;T&gt;(items: T[], pageSize: number): Generator&lt;T[]&gt; {
+  for (let start = 0; start &lt; items.length; start += pageSize) {
+    yield items.slice(start, start + pageSize);
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>export function* paginate&lt;T&gt;(items: T[], pageSize: number): Generator&lt;T[]&gt;</code></td><td>function* — генератор; Generator&lt;T[]&gt; — выдаёт значения типа «массив T»</td><td><code>def paginate(items: list[T], page_size: int) -&gt; Iterator[list[T]]:</code></td></tr><tr><td><code>for (let start = 0; start &lt; items.length; start += pageSize)</code></td><td>цикл со счётчиком и шагом</td><td><code>for start in range(0, len(items), page_size):</code></td></tr><tr><td><code>yield items.slice(start, start + pageSize);</code></td><td>отдать очередную порцию и «уснуть» до следующего запроса</td><td><code>yield items[start:start + page_size]</code></td></tr></tbody></table><p class="note"><b>Для питониста:</b> вот здесь вы как дома. <code>function*</code> + <code>yield</code> работают ровно как генераторы в Python, только звёздочка вместо отдельного ключевого слова.</p></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">+ импорт и в конец</span></figcaption>
+    <pre><code class="language-typescript">import { paginate } from './lib/paginate';
+
+// --- Iterator: меню по страницам ---
+let page = 1;
+for (const pizzas of paginate(menu, 2)) {
+  console.log(`— страница ${page++} —`);
+  pizzas.forEach((p) =&gt; console.log(`   ${p.name} — ${p.price} ₽`));
+}</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">новые строки</span></figcaption>
+    <pre><code class="language-none">— страница 1 —
+   Маргарита — 499 ₽
+   Пепперони — 599 ₽
+— страница 2 —
+   Четыре сыра — 649 ₽
+   Овощная — 459 ₽</code></pre>
+  </figure>
+  <p><strong>Зачем генератор, а не просто массив страниц?</strong> Он <em>ленивый</em>: следующая страница вычисляется только когда цикл её попросил. Для 4 пицц разницы нет, а для курсора по миллиону строк из базы — огромная: в памяти всегда одна страница. <strong>На бэкенде</strong> это курсоры БД (<code>async for doc in collection.find()</code> в Mongo, <code>yield_per</code> в SQLAlchemy) и потоковая отдача больших файлов.</p>
+
+  <h3>Template Method — «скелет алгоритма с дырками»</h3>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <p>Рецепт любой пиццы одинаковый: раскатать тесто → <em>положить начинку</em> → запечь → <em>украсить</em>. Шаги 1 и 3 всегда одни и те же, а 2 и 4 у каждой пиццы свои. Шаблонный метод — это рецепт, в котором базовый класс задаёт <strong>порядок шагов</strong>, а подклассы заполняют <strong>отдельные шаги</strong>.</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">идея (в проект не пишем)</span></figcaption>
+    <pre><code class="language-typescript">abstract class ReportExporter {
+  // ШАБЛОННЫЙ МЕТОД: порядок шагов фиксирован и не переопределяется
+  export(rows: string[][]): string {
+    return [this.header(), ...rows.map((r) =&gt; this.row(r)), this.footer()].join('\n');
+  }
+  protected abstract header(): string;            // «дырки», которые заполнят наследники
+  protected abstract row(cells: string[]): string;
+  protected footer(): string { return ''; }       // шаг по умолчанию — можно не трогать
+}
+
+class CsvExporter extends ReportExporter {
+  protected header() { return 'pizza,qty'; }
+  protected row(cells: string[]) { return cells.join(','); }
+}
+
+new CsvExporter().export([['Маргарита', '2'], ['Пепперони', '1']]);
+// pizza,qty
+// Маргарита,2
+// Пепперони,1</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>abstract class ReportExporter</code></td><td>класс, от которого нельзя создать объект — только наследоваться</td><td><code>class ReportExporter(ABC):</code></td></tr><tr><td><code>protected abstract header(): string;</code></td><td>метод без тела, который ОБЯЗАН реализовать наследник; protected — виден только в классе и наследниках</td><td><code>@abstractmethod
+def _header(self) -&gt; str: ...</code></td></tr><tr><td><code>class CsvExporter extends ReportExporter</code></td><td>наследование</td><td><code>class CsvExporter(ReportExporter):</code></td></tr><tr><td><code>[this.header(), ...rows.map((r) =&gt; this.row(r)), this.footer()].join('\n')</code></td><td>spread ... разворачивает массив внутрь другого; join склеивает строки</td><td><code>'\n'.join([self._header(), *(self._row(r) for r in rows), self._footer()])</code></td></tr></tbody></table></div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p><strong>Жизненный цикл компонента</strong>: React решает, <em>когда</em> вызвать <code>render</code>, <code>componentDidMount</code>, <code>componentWillUnmount</code>, а вы пишете, <em>что</em> в них делать. Хуки <code>beforeEach</code>/<code>afterEach</code> в Jest и <code>setUp</code>/<code>tearDown</code> в Python <code>unittest</code>. <strong>Голливудский принцип</strong> в чистом виде: фреймворк вызывает ваш код, а не вы его.</p>
+  </div></div>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — цепочка проверок перед оплатой. Подумайте: что делает ваш бэкенд с запросом до того, как он дойдёт до кода эндпоинта?</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Поведенческие паттерны · часть 2</span><span class="bar"></span></div>
+
+<!-- 07 CHAIN -->
+<section id="chain">
+  <div class="sec-head"><h2>07 · Chain of Responsibility — проверки перед оплатой</h2><span class="tag behav">поведенческий</span><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <div class="oneliner">Запрос идёт по цепочке обработчиков; каждый решает — остановить его или передать дальше.<small>Добавить проверку = добавить звено. Поменять порядок = переставить звенья.</small></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: ТЕХПОДДЕРЖКА</span>
+    <p>Вы звоните в поддержку провайдера. Сначала бот: «Вы пробовали выключить и включить роутер?» (привет сериалу «Компьютерщики»). Не помогло — оператор первой линии. Не справился — вторая линия. Потом инженер. Каждое звено либо решает проблему, либо передаёт её дальше, и вы не знаете заранее, кто именно вам поможет.</p>
+  </div></div>
+
+  <h3>Боль</h3>
+  <p>Перед оплатой заказ нужно проверить: корзина не пуста, пиццерия открыта, пицц не больше 20, крупный заказ — на ручное подтверждение. Завтра добавятся «зона доставки», «стоп-лист ингредиентов», «антифрод». Если писать всё это в <code>checkout()</code> подряд, фасад распухнет, а проверки нельзя будет ни переиспользовать, ни переставить, ни протестировать по отдельности.</p>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/checkout/checks/pipeline.ts</code><span class="k">роль</span><span>Механизм цепочки: тип «звена» (<code>Middleware</code>) и функция <code>compose</code>, которая склеивает звенья в одну функцию. Ничего не знает о пиццах.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/checkout/checks/pipeline.ts</span><span class="role">Chain of Responsibility</span></figcaption>
+    <pre><code class="language-typescript">// CHAIN OF RESPONSIBILITY. Отвечает за: прогнать заказ через цепочку проверок.
+// Каждое звено решает: остановить заказ (throw) или передать дальше (await next()).
+import type { CartItem } from '../../types';
+
+export interface CheckoutContext {
+  items: CartItem[];
+  total: number;
+  now: Date;
+}
+
+export type Middleware = (ctx: CheckoutContext, next: () =&gt; Promise&lt;void&gt;) =&gt; Promise&lt;void&gt;;
+
+export function compose(middlewares: Middleware[]): (ctx: CheckoutContext) =&gt; Promise&lt;void&gt; {
+  return async (ctx) =&gt; {
+    const run = async (index: number): Promise&lt;void&gt; =&gt; {
+      const middleware = middlewares[index];
+      if (!middleware) return;                           // цепочка закончилась
+      await middleware(ctx, () =&gt; run(index + 1));       // next = «запусти следующее звено»
+    };
+    await run(0);
+  };
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>export type Middleware = (ctx: CheckoutContext, next: () =&gt; Promise&lt;void&gt;) =&gt; Promise&lt;void&gt;;</code></td><td>тип звена: async-функция от контекста и функции next</td><td><code>Middleware = Callable[[CheckoutContext, Callable[[], Awaitable[None]]], Awaitable[None]]</code></td></tr><tr><td><code>const run = async (index: number): Promise&lt;void&gt; =&gt; { ... }</code></td><td>вложенная рекурсивная async-функция</td><td><code>async def run(index: int) -&gt; None: ...</code></td></tr><tr><td><code>const middleware = middlewares[index]; if (!middleware) return;</code></td><td>выход за границу массива даёт undefined, а не ошибку — так узнаём, что цепочка кончилась</td><td><code>if index &gt;= len(middlewares): return</code></td></tr><tr><td><code>await middleware(ctx, () =&gt; run(index + 1));</code></td><td>вызвать звено и передать ему «кнопку» запуска следующего</td><td><code>await middleware(ctx, lambda: run(index + 1))</code></td></tr></tbody></table><p class="note"><b>Для питониста:</b> это ровно middleware FastAPI/Starlette. <code>await next()</code> здесь — то же, что <code>response = await call_next(request)</code> в <code>@app.middleware("http")</code>.</p></div>
+
+  <div class="fileinfo"><span class="k">создаём</span><code>src/checkout/checks/checks.ts</code><span class="k">роль</span><span>Сами звенья. Каждое — маленькая функция с <em>одной</em> проверкой и своими именованными константами.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/checkout/checks/checks.ts</span><span class="role">звенья</span></figcaption>
+    <pre><code class="language-typescript">// Звенья цепочки. Каждое — маленькая функция с ОДНОЙ проверкой.
+import type { Middleware } from './pipeline';
+
+const OPEN_HOUR = 10;          // пиццерия открывается в 10:00
+const CLOSE_HOUR = 23;         // и закрывается в 23:00
+const MAX_PIZZAS = 20;         // больше — это уже банкет, оформляется через менеджера
+const MANUAL_REVIEW_FROM = 5000; // ₽ — крупные заказы подтверждает оператор
+
+export const logTiming: Middleware = async (ctx, next) =&gt; {
+  const start = performance.now();
+  console.log('🔍 проверки: старт');
+  await next();                                        // ← все остальные звенья выполняются ЗДЕСЬ
+  console.log(`🔍 проверки: пройдены за ${Math.round(performance.now() - start)} мс`);
+};
+
+export const cartNotEmpty: Middleware = async (ctx, next) =&gt; {
+  if (ctx.items.length === 0) throw new Error('Корзина пуста');
+  await next();
+};
+
+export const workingHours: Middleware = async (ctx, next) =&gt; {
+  const hour = ctx.now.getHours();
+  if (hour &lt; OPEN_HOUR || hour &gt;= CLOSE_HOUR) {
+    throw new Error(`Пиццерия работает с ${OPEN_HOUR}:00 до ${CLOSE_HOUR}:00`);
+  }
+  await next();
+};
+
+export const maxPizzas: Middleware = async (ctx, next) =&gt; {
+  const count = ctx.items.reduce((sum, item) =&gt; sum + item.qty, 0);
+  if (count &gt; MAX_PIZZAS) throw new Error(`Не больше ${MAX_PIZZAS} пицц в одном заказе`);
+  await next();
+};
+
+export const manualReview: Middleware = async (ctx, next) =&gt; {
+  if (ctx.total &gt;= MANUAL_REVIEW_FROM) {
+    throw new Error('Крупный заказ: с вами свяжется оператор для подтверждения');
+  }
+  await next();
+};</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>export const cartNotEmpty: Middleware = async (ctx, next) =&gt; { ... };</code></td><td>переменная с типом Middleware; типы ctx и next TS берёт из него</td><td><code>async def cart_not_empty(ctx, next_): ...</code></td></tr><tr><td><code>ctx.now.getHours()</code></td><td>час из даты (по местному времени)</td><td><code>ctx.now.hour</code></td></tr><tr><td><code>ctx.items.reduce((sum, item) =&gt; sum + item.qty, 0)</code></td><td>сумма количеств</td><td><code>sum(item.qty for item in ctx.items)</code></td></tr></tbody></table></div>
+
+  <h4>Разбор</h4>
+  <ul>
+    <li><strong>Звено</strong> получает контекст <code>ctx</code> (что проверяем) и функцию <code>next</code> (запустить следующее звено). Есть три варианта поведения: <code>throw</code> — остановить цепочку с ошибкой; <code>await next()</code> — передать дальше; сделать что-то <em>до и после</em> <code>next()</code> — как <code>logTiming</code>.</li>
+    <li><strong><code>compose</code></strong> — сердце паттерна. <code>run(0)</code> вызывает первое звено и подсовывает ему <code>next = () =&gt; run(1)</code>, тот вызывает второе с <code>next = () =&gt; run(2)</code>, и так до конца массива.</li>
+    <li><strong><code>ctx.now</code></strong> вместо <code>new Date()</code> внутри проверки — время передаётся снаружи. Иначе тест «ночью закрыто» проходил бы только ночью. Это приём «внедрение зависимости», и он делает код тестируемым.</li>
+  </ul>
+
+  <div class="diagram">
+<pre>Модель «луковицы»: каждое звено оборачивает все следующие
+
+  logTiming ──── до next(): «старт» ─────────────────────────────┐
+  │  cartNotEmpty ─── проверка ──────────────────────────────┐   │
+  │  │  workingHours ─── проверка ───────────────────────┐   │   │
+  │  │  │  maxPizzas ─── проверка ───────────────────┐   │   │   │
+  │  │  │  │  manualReview ─── проверка ─────────┐   │   │   │   │
+  │  │  │  │                                     ▼   ▼   ▼   ▼   ▼
+  logTiming ──── после next(): «пройдены за N мс»  ◀── возвращаемся обратно</pre>
+  </div>
+
+  <div class="fileinfo"><span class="k">создаём или заменяем</span><code>src/checkout/checkout.facade.ts</code><span class="k">что</span><span>Если файл остался с урока 1 — заменяем целиком, если его нет — создаём. Фасад «Оформить заказ» получает цепочку проверок, машину состояний и шину событий. Обратите внимание: <code>notify('success', ...)</code> из фасада ушёл — теперь это забота подписчика.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/checkout/checkout.facade.ts</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-typescript">// FACADE (урок 1) — теперь внутри работают ещё и паттерны урока 2:
+// Chain of Responsibility (проверки), State (статус заказа), Observer (события).
+import { bus } from '../events/app-events';
+import { notify } from '../notifications/toast.factory';
+import { OrderBuilder } from '../orders/order.builder';
+import { OrderStateMachine } from '../orders/order-status';
+import { calcTotal } from '../pricing';
+import { cartStore } from '../store/cart.store';
+import type { Order } from '../types';
+import { cartNotEmpty, logTiming, manualReview, maxPizzas, workingHours } from './checks/checks';
+import { compose } from './checks/pipeline';
+import { payWithCard } from './payment';
+
+// цепочку собираем один раз; порядок звеньев = порядок проверок
+const runChecks = compose([logTiming, cartNotEmpty, workingHours, maxPizzas, manualReview]);
+
+export interface CheckoutInput {
+  address: string;
+  phone: string;
+  promoCode?: string;
+  now?: Date;            // «который час» — можно подставить в тестах
+}
+
+export type CheckoutResult =
+  | { ok: true; order: Order; status: OrderStateMachine; paymentId: string }
+  | { ok: false; error: string };
+
+export async function checkout(input: CheckoutInput): Promise&lt;CheckoutResult&gt; {
+  try {
+    const items = cartStore.getItems();
+    const promoCode = input.promoCode ?? null;
+    await runChecks({ items, total: calcTotal(items, promoCode), now: input.now ?? new Date() });
+
+    const order = new OrderBuilder()
+      .fromCart(items)
+      .to(input.address)
+      .withPhone(input.phone)
+      .withPromo(promoCode)
+      .build();
+
+    const status = new OrderStateMachine(order.id);       // статус «new»
+    const paymentId = await payWithCard(order.total);
+    status.transition('paid');
+    cartStore.clear();
+
+    bus.emit('order:paid', { orderId: order.id, total: order.total, phone: order.phone });
+    return { ok: true, order, status, paymentId };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    notify('error', `Заказ не оформлен: ${message}`);
+    return { ok: false, error: message };
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const runChecks = compose([logTiming, cartNotEmpty, ...]);</code></td><td>собрать цепочку один раз при загрузке модуля</td><td><code>run_checks = compose([log_timing, cart_not_empty, ...])</code></td></tr><tr><td><code>now?: Date;</code></td><td>необязательное поле</td><td><code>now: datetime | None = None</code></td></tr><tr><td><code>input.now ?? new Date()</code></td><td>если now не передали — текущее время</td><td><code>input.now or datetime.now()</code></td></tr><tr><td><code>{ ok: true; ...; status: OrderStateMachine } | { ok: false; error: string }</code></td><td>размеченное объединение: по полю ok понятно, какие ещё поля есть</td><td><code>Success | Failure  # два dataclass</code></td></tr></tbody></table></div>
+
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ЭТО КРАСИВО</span>
+    <p>Посчитайте паттерны в одной функции <code>checkout()</code>: Facade (сама функция), Singleton (<code>cartStore</code>, <code>bus</code>), Chain (<code>runChecks</code>), Builder (<code>OrderBuilder</code>), State (<code>OrderStateMachine</code>), Observer (<code>bus.emit</code>), Factory (<code>notify</code>). Семь паттернов — и функция всё равно читается сверху вниз как обычный текст, потому что каждый паттерн спрятан в своём файле.</p>
+  </div></div>
+
+  <details class="classic"><summary>📊 UML для mermaid.live: что происходит ночью</summary>
+  <figure class="code"><figcaption><span class="dot"></span><span class="path">вставить в mermaid.live</span></figcaption>
+  <pre><code class="language-none">sequenceDiagram
+    participant F as checkout()
+    participant L as logTiming
+    participant C as cartNotEmpty
+    participant W as workingHours
+    participant M as maxPizzas
+    participant R as manualReview
+    F-&gt;&gt;L: ctx
+    L-&gt;&gt;C: next()
+    C-&gt;&gt;W: next()
+    W--&gt;&gt;F: throw «Пиццерия работает с 10:00»
+    Note over W,R: ночью цепочка обрывается здесь,&lt;br/&gt;до maxPizzas и manualReview дело не доходит</code></pre></figure>
+  <p>Диаграмма последовательности показывает главное свойство цепочки: как только звено бросило ошибку, следующие даже не вызываются.</p>
+  </details>
+
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ГДЕ ВЫ ЭТО УЖЕ ВИДЕЛИ</span>
+    <p><strong>Всплытие событий DOM</strong>: клик идёт от <code>span</code> к <code>div</code> и к <code>body</code>, и любой может его перехватить или остановить <code>stopPropagation()</code>. <strong>Middleware</strong> в Express (<code>app.use((req, res, next) =&gt; ...)</code>), Koa (там как раз «луковица» с <code>await next()</code>), Redux, interceptors в axios. <strong>На бэкенде на Python</strong>: middleware в FastAPI — <code>async def mw(request, call_next): ... response = await call_next(request)</code> — один в один наш <code>next</code>. В Django — список <code>MIDDLEWARE</code> в settings.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 BLITZ 2 -->
+<section id="blitz2">
+  <div class="sec-head"><h2>08 · Блиц: Mediator и Visitor</h2><span class="tag blitz">блиц</span><span class="tag time">~6 мин</span></div>
+
+  <h3>Mediator — «диспетчерская вышка»</h3>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <p>Самолёты в аэропорту не договариваются друг с другом напрямую: «ты садись первым, а я покружу». Иначе 30 самолётов — это 435 пар переговоров. Все говорят только с <strong>диспетчером</strong>, и он решает, кто когда садится. Диспетчер — посредник.</p>
+  </div></div>
+  <div class="diagram">
+<pre>   Без посредника: каждый с каждым          С посредником: все через одного
+     A ─── B                                     A     B
+     │ ╲ ╱ │                                      ╲   ╱
+     │  ╳  │      связей: n·(n−1)/2               [ <span class="tn">Mediator</span> ]     связей: n
+     │ ╱ ╲ │                                      ╱   ╲
+     C ─── D                                     C     D</pre>
+  </div>
+  <p>Компоненты не знают друг о друге — только о посреднике. <strong>Видели:</strong> Redux / Pinia store — кнопка отправляет action в стор, таблица читает из стора, друг о друге они не знают. Контроллер в MVC. Чат-комната: участники пишут в комнату, а не каждому лично. <strong>На бэкенде</strong> — оркестратор, который координирует несколько сервисов при оформлении заказа.</p>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">MEDIATOR vs OBSERVER</span>
+    <p>Наша шина событий похожа на посредника — все общаются через неё. Разница в том, у кого логика. Observer — «почтальон»: просто разносит события, решения принимают подписчики. Mediator — «диспетчер»: сам знает правила и командует участниками («ты подожди, ты садись»). Если в посреднике начинает копиться бизнес-логика всех участников, он рискует превратиться в God Object — см. антипаттерны.</p>
+  </div></div>
+
+  <h3>Visitor — «новая операция без правки классов»</h3>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <p>Налоговый инспектор обходит разные заведения: в пиццерии считает одно, в кофейне другое, в магазине третье. Заведения не меняются, когда налоговый кодекс обновился, — меняется инспектор. Visitor позволяет добавлять новые операции над структурой объектов, не трогая сами объекты.</p>
+  </div></div>
+  <p>В продуктовом коде встречается редко, зато на нём построены <strong>инструменты</strong>. Babel, ESLint, Prettier, TypeScript разбирают ваш код в дерево (AST) и обходят его «посетителями»: правило ESLint — это объект вида <code>{ CallExpression(node) {...}, Identifier(node) {...} }</code>, который вызывается для каждого узла нужного типа.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">Visitor в Python — стандартная библиотека</span><span class="role">python</span></figcaption>
+    <pre><code class="language-python">import ast
+
+class PrintCounter(ast.NodeVisitor):           # посетитель
+    count = 0
+    def visit_Call(self, node):                # вызовется для КАЖДОГО вызова функции в коде
+        if getattr(node.func, "id", None) == "print":
+            self.count += 1
+        self.generic_visit(node)               # идём дальше вглубь дерева
+
+tree = ast.parse(open("app/main.py").read())
+counter = PrintCounter()
+counter.visit(tree)
+print(f"забытых print: {counter.count}")       # мини-линтер за 10 строк</code></pre>
+  </figure>
+</section>
+
+<hr>
+
+<!-- 09 FINAL -->
+<section id="final">
+  <div class="sec-head"><h2>09 · Финал: весь сценарий урока</h2><span class="tag practice">запуск</span><span class="tag time">~6 мин</span></div>
+
+  <p>Убираем из <code>main.ts</code> временные демо (ручной <code>bus.emit</code> и <code>demo</code>-заказ) — теперь события и статусы порождает настоящий <code>checkout()</code>. Итоговый сценарий:</p>
+  <div class="fileinfo"><span class="k">заменяем целиком</span><code>src/main.ts</code><span class="k">что</span><span>Iterator → Command + Memento → Strategy → Chain (ночью отказ) → Facade + State + Observer (днём успех).</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/main.ts</span><span class="role">итоговая версия</span></figcaption>
+    <pre><code class="language-typescript">// Сценарий урока 2: поведенческие паттерны в PizzaHub.
+import { getMenu } from './api/pizza.api';
+import { addPizza, clearCart, CommandHistory } from './cart/cart.commands';
+import { checkout } from './checkout/checkout.facade';
+import { courier, express, pickup, quote } from './delivery/delivery.strategies';
+import { registerSubscribers } from './events/subscribers';
+import { paginate } from './lib/paginate';
+import { notify } from './notifications/toast.factory';
+import { renderHeader } from './ui/header';
+
+registerSubscribers();                                // Observer: подписались один раз при старте
+console.log('🍕 PizzaHub · урок 2\n');
+
+// --- Iterator: меню по страницам ---
+const menu = await getMenu();
+let page = 1;
+for (const pizzas of paginate(menu, 2)) {
+  console.log(`— страница ${page++} —`);
+  pizzas.forEach((p) =&gt; console.log(`   ${p.name} — ${p.price} ₽`));
+}
+
+// --- Command + Memento: корзина с отменой ---
+console.log();
+const history = new CommandHistory();
+history.run(addPizza(menu[0], 'L', 2));
+history.run(addPizza(menu[1]));
+history.run(clearCart());                             // «ой, промахнулся мимо кнопки»
+renderHeader();
+history.undo();                                       // Ctrl+Z
+renderHeader();
+
+// --- Strategy: способы доставки ---
+console.log();
+for (const strategy of [courier, express, pickup]) {
+  console.log(`🚚 ${quote(strategy, 900, 4)}`);
+}
+console.log(`🚚 ${quote(courier, 1900, 4)}   ← от 1500 ₽ курьер бесплатно`);
+
+// --- Chain of Responsibility: ночью пиццерия закрыта ---
+console.log();
+await checkout({ address: 'ул. Ленина, 1', phone: '+79001234567', now: new Date('2026-10-22T03:00:00') });
+
+// --- Facade → Chain → State → Observer: обед, всё получается ---
+console.log();
+const result = await checkout({
+  address: 'ул. Ленина, 1',
+  phone: '+79001234567',
+  promoCode: 'PIZZA10',
+  now: new Date('2026-10-22T13:00:00'),
+});
+
+if (result.ok) {
+  const { status } = result;
+  status.transition('cooking');
+  status.transition('delivering');
+  status.transition('delivered');
+  try {
+    status.transition('cancelled');                   // отменить уже доставленный? нельзя
+  } catch (error) {
+    notify('error', (error as Error).message);
+  }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>let page = 1; ... page++</code></td><td>изменяемая переменная и постфиксный инкремент (вернёт старое значение, потом прибавит)</td><td><code>page = 1; ...; page += 1</code></td></tr><tr><td><code>new Date('2026-10-22T03:00:00')</code></td><td>дата из ISO-строки без зоны — по местному времени</td><td><code>datetime.fromisoformat('2026-10-22T03:00:00')</code></td></tr><tr><td><code>const { status } = result;</code></td><td>деструктуризация: достать поле status в переменную</td><td><code>status = result.status</code></td></tr><tr><td><code>if (result.ok) { ... }</code></td><td>после проверки TS знает, что внутри есть result.status</td><td><code>if isinstance(result, Success): ...</code></td></tr></tbody></table></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">npm run dev</span><span class="role">полный вывод</span></figcaption>
+    <pre><code class="language-none">🍕 PizzaHub · урок 2
+
+⏱  getMenu: 302 мс
+— страница 1 —
+   Маргарита — 499 ₽
+   Пепперони — 599 ₽
+— страница 2 —
+   Четыре сыра — 649 ₽
+   Овощная — 459 ₽
+
+▶  Добавить Маргарита (L) × 2
+▶  Добавить Пепперони (M) × 1
+▶  Очистить корзину
+🛒 Шапка: в корзине 0 шт.
+↩  Отменено: Очистить корзину
+🛒 Шапка: в корзине 3 шт.
+
+🚚 Курьер: 230 ₽, ~46 мин
+🚚 Экспресс: 460 ₽, ~23 мин
+🚚 Самовывоз: бесплатно, ~20 мин
+🚚 Курьер: бесплатно, ~46 мин   ← от 1500 ₽ курьер бесплатно
+
+🔍 проверки: старт
+❌ Заказ не оформлен: Пиццерия работает с 10:00 до 23:00
+
+🔍 проверки: старт
+🔍 проверки: пройдены за 0 мс
+🔔 Заказ №381a0390: new → paid
+✅ Заказ №381a0390 оплачен: 1707 ₽
+📊 analytics: purchase, revenue=1707
+📱 SMS на +79001234567: «Спасибо! Готовим вашу пиццу»
+🔔 Заказ №381a0390: paid → cooking
+🔔 Заказ №381a0390: cooking → delivering
+🔔 Заказ №381a0390: delivering → delivered
+❌ Нельзя перейти из «delivered» в «cancelled»</code></pre>
+  </figure>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ВОПРОС ГРУППЕ</span>
+    <p>«Почему после первого (ночного) отказа корзина не пропала и второй заказ прошёл с теми же тремя пиццами?» Ответ: цепочка бросила ошибку <em>до</em> оплаты и до <code>cartStore.clear()</code>, а фасад поймал её и вернул <code>{ ok: false }</code>. Порядок шагов в фасаде — тоже проектное решение.</p>
+  </div></div>
+  <div class="callout note"><div class="ic">i</div><div>
+    <p>Если запускать из терминала, строки с ❌ иногда печатаются на строчку раньше или позже: ошибки идут в поток <code>stderr</code> (<code>console.error</code>), остальное — в <code>stdout</code>, и терминал может склеить их не в том порядке. Логика при этом верная.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Как не надо · антипаттерны</span><span class="bar"></span></div>
+
+<!-- 10 ANTI -->
+<section id="anti">
+  <div class="sec-head"><h2>10 · Антипаттерны</h2><span class="tag theory">теория + рефакторинг</span><span class="tag time">~15 мин</span></div>
+
+  <p>Паттерн — проверенное хорошее решение. <strong>Антипаттерн</strong> — решение, которое выглядит разумным, встречается постоянно и стабильно приносит боль. Знать их названия так же полезно: на код-ревью «тут God Object» звучит короче и понятнее, чем «этот файл делает всё сразу, и его страшно трогать».</p>
+
+  <h3>1. Магические числа и строки</h3>
+  <p>Число или строка прямо в логике без объяснения, что это.</p>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ЗАГАДКА ДЛЯ ГРУППЫ</span>
+    <p>Что такое <code>86400000</code>? (Спойлер: миллисекунды в сутках.) А <code>if (user.status === 2)</code> — это бан или админ? Автор знает. Автор через две недели — уже нет.</p>
+  </div></div>
+
+  <p><strong>А теперь честно: этот антипаттерн есть в нашем PizzaHub.</strong> Откройте <code>src/checkout/payment.ts</code> из урока 1:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/checkout/payment.ts</span><span class="role">было — найдите два магических числа</span></figcaption>
+    <pre><code class="language-typescript">// Имитация платёжного сервиса. Отвечает за: «списать» деньги или отказать.
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export async function payWithCard(amount: number): Promise&lt;string&gt; {
+  await sleep(200);
+  if (amount &gt; 5000) throw new Error('Банк отклонил платёж: недостаточно средств');
+  return `pay_${Date.now()}`;
+}</code></pre>
+  </figure>
+  <p><code>200</code> — это что? Миллисекунды? Рубли? А <code>5000</code> — лимит карты, или порог антифрода, или ещё что-то? Чиним:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">src/checkout/payment.ts</span><span class="role">стало</span></figcaption>
+    <pre><code class="language-typescript">// Имитация платёжного сервиса. Отвечает за: «списать» деньги или отказать.
+const sleep = (ms: number) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+const BANK_DELAY_MS = 200;        // имитация ответа банка
+const CARD_BALANCE_RUB = 5000;    // столько «денег» на тестовой карте
+
+export async function payWithCard(amount: number): Promise&lt;string&gt; {
+  await sleep(BANK_DELAY_MS);
+  if (amount &gt; CARD_BALANCE_RUB) throw new Error('Банк отклонил платёж: недостаточно средств');
+  return `pay_${Date.now()}`;
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">СИНТАКСИС: TS → PYTHON</div><table><thead><tr><th>Конструкция</th><th>Что значит</th><th>В Python</th></tr></thead><tbody><tr><td><code>const CARD_BALANCE_RUB = 5000;</code></td><td>константа модуля; ВЕРХНИЙ_РЕГИСТР — общепринятое имя для констант</td><td><code>CARD_BALANCE_RUB: Final = 5000</code></td></tr></tbody></table></div>
+  <p>Логика не изменилась, но теперь код объясняет сам себя: имя говорит <em>что</em>, суффикс <code>_MS</code>/<code>_RUB</code> — <em>в чём измеряется</em>. Сравните с <code>checks.ts</code> и <code>delivery.strategies.ts</code> — там константы с именами с самого начала. Для статусов лучше всего — union-тип вроде нашего <code>OrderStatus</code>: <code>'cancelled'</code> читается лучше, чем <code>5</code>.</p>
+
+  <h3>2. God Object — «божественный объект»</h3>
+  <p>Один класс, компонент или файл, который делает <strong>всё</strong>. Симптомы: файл на 3000 строк; в одном месте вёрстка, запросы к API, валидация, форматирование дат и логика чата; его боятся трогать, а при любом мердже в нём конфликты.</p>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ, КОТОРУЮ МЫ ЧУТЬ НЕ НАПИСАЛИ</span>
+    <p>Представьте <code>checkout()</code>, если бы мы не разнесли код по паттернам: внутри проверки времени работы, лимиты, валидация телефона, расчёт цены, промокоды, оплата, статусы, уведомления, аналитика, SMS. Строк на 400 — и каждая новая задача от бизнеса дописывается туда же. Через год это файл, про который на собеседовании говорят «ну, у нас там легаси».</p>
+  </div></div>
+  <p><strong>Лечение</strong> — принцип единственной ответственности (S в SOLID): у модуля должна быть одна причина для изменения. Именно поэтому у нас <code>pricing.ts</code> знает только цены, <code>checks.ts</code> — только проверки, <code>subscribers.ts</code> — только реакции. Фасад <em>координирует</em>, но ничего не делает сам.</p>
+  <div class="diagram">
+<pre>   CheckoutGod.ts (1 файл, 400 строк)          после рефакторинга
+ ┌───────────────────────────────────┐        pricing.ts            — цены
+ │ цены · промо · проверки · оплата  │  ───▶  checks/checks.ts      — проверки
+ │ статусы · SMS · аналитика · toast │        order-status.ts       — статусы
+ │ форматирование · логи · ...       │        events/subscribers.ts — реакции
+ └───────────────────────────────────┘        checkout.facade.ts    — координация (40 строк)</pre>
+  </div>
+
+  <h3>3. Преждевременная оптимизация</h3>
+  <p>Ускорять код до того, как доказано, что он медленный.</p>
+  <blockquote style="border-left:3px solid var(--teal); margin:14px 0; padding:4px 16px; color:var(--ink-soft)">«Нам следует забыть о мелких улучшениях эффективности, скажем, в 97% случаев: преждевременная оптимизация — корень всех зол. Но мы не должны упускать наши возможности в этих критических 3%». — Дональд Кнут, 1974</blockquote>
+  <p>Обычно цитируют только середину, а вторая половина не менее важна: оптимизировать <em>надо</em>, но только то, что измерили.</p>
+  <ul>
+    <li><code>useMemo</code>/<code>useCallback</code> на каждый чих — код хуже читается, а выигрыш часто нулевой или отрицательный.</li>
+    <li>Сложный кеш для списка из 10 элементов (с Redis мы как раз разобрались, <em>когда</em> он оправдан).</li>
+    <li>Замена понятного <code>.map().filter()</code> на хитрый цикл «потому что на 0,001 мс быстрее».</li>
+  </ul>
+  <p><strong>Правило:</strong> сначала работает → потом понятно → потом измерили профилировщиком → только потом ускоряем узкое место. Наш <code>withLogging</code> из урока 1 — как раз инструмент «сначала измерь».</p>
+
+  <h3>4. Изобретение велосипеда и квадратное колесо</h3>
+  <p>Писать своё решение стандартной задачи, когда есть проверенное. Хуже всего, когда велосипед получается <strong>квадратным</strong> — хуже готового.</p>
+  <ul>
+    <li>Свой парсер дат вместо <code>date-fns</code> / <code>Day.js</code> (часовые пояса и переход на летнее время ломают всех, кто пишет сам).</li>
+    <li>Своя функция глубокого копирования вместо встроенного <code>structuredClone</code> (мы его используем в трёх местах — и ни строчки своей копилки).</li>
+    <li>Своя регулярка для email, которая отвергает <code>name+tag@gmail.com</code>. В FastAPI для этого есть готовый <code>EmailStr</code>.</li>
+  </ul>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ИСТОРИЯ С ОБРАТНОЙ СТОРОНЫ: LEFT-PAD</span>
+    <p>Март 2016 года. Автор крошечного npm-пакета <code>left-pad</code> — 11 строк, добавить пробелы слева к строке — удалил его из реестра после конфликта с другой компанией. Пакет был в зависимостях у Babel и React, и сборки по всему миру начали падать. Мораль в две стороны: не пишите своё там, где есть стандартное решение, но и не тащите зависимость ради трёх строк, которые можно написать самому. Сегодня, кстати, есть встроенный <code>'5'.padStart(3, '0')</code>.</p>
+  </div></div>
+
+  <h3>Бонус: ещё четыре, чтобы узнавать в лицо</h3>
+  <table class="cmp">
+    <thead><tr><th>Антипаттерн</th><th>Как выглядит</th><th>Лекарство</th></tr></thead>
+    <tbody>
+      <tr><td>Copy-paste</td><td>одна и та же логика в 5 местах; баг починили в 4</td><td>вынести в функцию; DRY — «не повторяйся»</td></tr>
+      <tr><td>Золотой молоток</td><td>«Если единственный инструмент — молоток, всё кажется гвоздями» (Маслоу). Redux для формы из двух полей, микросервисы для блога</td><td>выбирать инструмент под задачу</td></tr>
+      <tr><td>Спагетти-код</td><td>всё вызывает всё, связи не проследить</td><td>слои, Mediator, Observer</td></tr>
+      <tr><td>Карго-культ</td><td>копировать код или практику, не понимая, зачем она («у Google так»)</td><td>спрашивать «какую проблему это решает у нас?»</td></tr>
+    </tbody>
+  </table>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ОТКУДА «КАРГО-КУЛЬТ»</span>
+    <p>После Второй мировой жители некоторых островов Меланезии строили из соломы «взлётные полосы» и «диспетчерские вышки» с бамбуковыми «наушниками», надеясь, что самолёты снова привезут грузы (cargo). Форма скопирована идеально — самолёты не прилетают. Физик Ричард Фейнман в 1974 году назвал так науку, которая повторяет ритуалы без сути. Программисты подхватили термин. Паттерн, добавленный «потому что так в книжке», без боли, которую он лечит, — тот самый карго-культ (помните паттернит из урока 1?).</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 11 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>11 · Игра «Угадай паттерн»</h2><span class="tag practice">интерактив</span><span class="tag time">~6 мин</span></div>
+  <p>Читаем вслух — группа отвечает — открываем ответ. Последние два вопроса — про антипаттерны.</p>
+
+  <details class="quiz"><summary><code>window.addEventListener('resize', handler)</code></summary><div class="ans"><b>Observer.</b> Окно не знает, кто подписан на изменение размера.</div></details>
+  <details class="quiz"><summary><code>users.sort((a, b) =&gt; a.age - b.age)</code></summary><div class="ans"><b>Strategy.</b> Алгоритм сравнения передан в <code>sort</code> как аргумент.</div></details>
+  <details class="quiz"><summary>У запроса статус <code>'idle' | 'loading' | 'success' | 'error'</code>, а не четыре булевых флага.</summary><div class="ans"><b>State</b> (конечный автомат) — как наш <code>OrderStatus</code>.</div></details>
+  <details class="quiz"><summary><code>dispatch({ type: 'cart/add', payload: pizza })</code></summary><div class="ans"><b>Command.</b> Действие превращено в объект, который можно залогировать, отложить, воспроизвести.</div></details>
+  <details class="quiz"><summary>Redux DevTools: перематываем приложение на 5 действий назад.</summary><div class="ans"><b>Memento.</b> Каждое состояние — снимок.</div></details>
+  <details class="quiz"><summary><code>app.use(cors()); app.use(auth); app.use(rateLimit);</code></summary><div class="ans"><b>Chain of Responsibility</b> — middleware, как наш <code>compose</code>.</div></details>
+  <details class="quiz"><summary><code>for (const row of cursor)</code> по миллиону строк из БД — в памяти всегда одна порция.</summary><div class="ans"><b>Iterator</b> (ленивый, как наш генератор <code>paginate</code>).</div></details>
+  <details class="quiz"><summary>Jest сам вызывает <code>beforeEach → тест → afterEach</code>, а вы заполняете содержимое.</summary><div class="ans"><b>Template Method.</b> Порядок задаёт фреймворк, шаги — вы.</div></details>
+  <details class="quiz"><summary>Плагин ESLint обходит дерево кода и ругается на каждый <code>console.log</code>.</summary><div class="ans"><b>Visitor.</b> Новая операция над AST без изменения самого AST.</div></details>
+  <details class="quiz"><summary>Кнопка шлёт action в store, таблица читает из store, друг о друге не знают.</summary><div class="ans"><b>Mediator.</b> Store — диспетчерская вышка.</div></details>
+  <details class="quiz"><summary><code>setTimeout(retry, 300000)</code></summary><div class="ans"><b>Магическое число.</b> 300000 мс = 5 минут. Лучше <code>const RETRY_DELAY_MS = 5 * 60 * 1000</code>.</div></details>
+  <details class="quiz"><summary><code>utils.ts</code> на 2800 строк: даты, деньги, запросы к API, валидация и функция для конфетти.</summary><div class="ans"><b>God Object.</b> Разнести по модулям с одной ответственностью.</div></details>
+</section>
+
+<hr>
+
+<!-- 12 HOMEWORK -->
+<section id="homework">
+  <div class="sec-head"><h2>12 · Шпаргалка и домашка</h2><span class="tag time">до следующего урока</span></div>
+
+  <h3>Шпаргалка по уроку</h3>
+  <table class="cmp">
+    <thead><tr><th>Паттерн</th><th>Боль</th><th>Файл в PizzaHub</th><th>На бэкенде</th></tr></thead>
+    <tbody>
+      <tr><td>Observer</td><td>одно событие — много реакций</td><td><code>events/event-bus.ts</code></td><td>Kafka, RabbitMQ, Redis Pub/Sub</td></tr>
+      <tr><td>Strategy</td><td><code>if/else</code> по типу алгоритма</td><td><code>delivery/delivery.strategies.ts</code></td><td>способы оплаты, налоги</td></tr>
+      <tr><td>State</td><td>флаги и невозможные состояния</td><td><code>orders/order-status.ts</code></td><td>колонка <code>status</code> + таблица переходов</td></tr>
+      <tr><td>Command</td><td>действие нельзя отложить, отменить, залогировать</td><td><code>cart/cart.commands.ts</code></td><td>задачи в очереди (Celery, BullMQ)</td></tr>
+      <tr><td>Memento</td><td>нужен откат состояния</td><td><code>cartStore.snapshot()/restore()</code></td><td>бэкапы, <code>downgrade()</code> в миграциях</td></tr>
+      <tr><td>Iterator</td><td>большая коллекция целиком в памяти</td><td><code>lib/paginate.ts</code></td><td>курсоры БД, стриминг</td></tr>
+      <tr><td>Chain of Responsibility</td><td>проверки свалены в одну функцию</td><td><code>checkout/checks/</code></td><td>middleware FastAPI / Express</td></tr>
+      <tr><td>Template Method · Mediator · Visitor</td><td colspan="3">блиц: скелет с «дырками» (жизненный цикл, <code>setUp/tearDown</code>) · диспетчер (store, оркестратор) · операция над деревом (ESLint, <code>ast.NodeVisitor</code>)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание — продолжаем PizzaHub</h3>
+  <ol>
+    <li><strong>Observer.</strong> Добавьте подписчика «бонусы»: на <code>order:paid</code> начисляйте 5% от суммы на бонусный счёт (просто <code>let bonuses = 0</code> в модуле) и печатайте баланс. Фасад трогать нельзя.</li>
+    <li><strong>Strategy.</strong> Доделайте <code>drone</code> из мини-задания. Сделайте функцию <code>cheapest(strategies, total, km)</code>, которая выбирает самую дешёвую доставку.</li>
+    <li><strong>State.</strong> Добавьте статус <code>returned</code> («курьер не дозвонился»): из <code>delivering</code> можно перейти в <code>returned</code>, из <code>returned</code> — в <code>delivering</code> (повторная доставка) или в <code>cancelled</code>. Сколько строк кода понадобилось?</li>
+    <li><strong>Command.</strong> Добавьте команду <code>removePizza(pizzaId, size)</code> (понадобится метод <code>remove</code> в <code>cartStore</code>) и метод <code>redo()</code> в <code>CommandHistory</code>. Подсказка: второй стек для отменённых команд, и его нужно очищать при каждом новом <code>run()</code>.</li>
+    <li><strong>Chain.</strong> Напишите звено <code>deliveryZone</code>: если в адресе нет слова «ул.», «пр.» или «пер.» — ошибка «Не можем найти адрес». Вставьте его в цепочку и подумайте, на какое место и почему.</li>
+    <li><strong>Антипаттерны.</strong> Пройдитесь по всему PizzaHub и найдите ещё хотя бы два магических числа (подсказка: загляните в <code>fake-backend.ts</code>, <code>decorators.ts</code> и <code>delivery.strategies.ts</code> — <code>30 + 4 * km</code>). Исправьте.</li>
+  </ol>
+
+  <h3>Что дальше в модуле</h3>
+  <ul>
+    <li><strong>Базы данных</strong>: настоящая БД вместо <code>pizzas.json</code>; State превратится в колонку <code>status</code>, Command — в транзакции и очереди, Iterator — в курсоры.</li>
+    <li><strong>Docker</strong>: упакуем PizzaHub-бэкенд, базу и брокер сообщений в контейнеры — и шина событий станет настоящей, между сервисами.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · Урок 2 · Поведенческие паттерны (Observer, Strategy, State, Command, Memento, Iterator, Template Method, Chain of Responsibility, Mediator, Visitor) и антипаттерны · проект PizzaHub (TypeScript + Node)</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

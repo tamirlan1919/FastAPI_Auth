@@ -15,9 +15,11 @@ class Settings(BaseSettings):
     mongo_url: str = 'mongodb://localhost:27017'
     mongo_db: str = 'test_db'
 
-    redis_url: str = 'redis://localhost:6379'
+    redis_url: str = 'redis://localhost:6379/0'
     cache_ttl: int = 60
 
+    rabbit_url: str = 'amqp://guest:guest@localhost:5672/'
 
+    celery_result_backend: str = 'redis://localhost:6379/1'
 
 settings = Settings()

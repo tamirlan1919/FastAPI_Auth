@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus          # на этот uid ссылаются панели дашборда
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 5s       # = scrape_interval, чтобы $__rate_interval считался правильно
