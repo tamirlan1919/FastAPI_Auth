@@ -3,7 +3,7 @@ from asyncio import ensure_future
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
-from app.api.routers import users, auth, todos, stats, posts, reports
+from app.api.routers import users, auth, todos, stats, posts, reports, github, weather
 from app.db.database import Base, engine
 from app.db import models  # noqa: F401 — регистрирует модели в Base.metadata для create_all
 from contextlib import asynccontextmanager
@@ -35,6 +35,8 @@ app.include_router(todos.router)
 app.include_router(stats.router)
 app.include_router(posts.router)
 app.include_router(reports.router)
+app.include_router(github.router)
+app.include_router(weather.router)
 
 # Prometheus: middleware считает запросы/латентность, GET /metrics отдаёт их в формате Prometheus
 Instrumentator(

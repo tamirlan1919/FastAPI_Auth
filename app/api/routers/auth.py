@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.security import create_access_token
-from app.shemas.token import Token
-from app.shemas.user import UserCreate, UserOut, UserWithProfileOut, RegisterWithProfile
+from app.schemas.token import Token
+from app.schemas.user import UserCreate, UserOut, UserWithProfileOut, RegisterWithProfile
 from app.services import auth_service
 from app.api.deps import UserRepoDep, ProfileRepoDep, SessionDep, RedisDep, PublisherDep
 from app.services.registration_service import register_with_profile, UserAlreadyExists

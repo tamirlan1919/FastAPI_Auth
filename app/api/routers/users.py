@@ -4,7 +4,7 @@ from fastapi import Response, HTTPException
 from fastapi import APIRouter
 from app.api.deps import CurrentUserDep, UserRepoDep, RedisDep
 from app.db.mongo import database
-from app.shemas.user import UserOut
+from app.schemas.user import UserOut
 
 
 router = APIRouter(

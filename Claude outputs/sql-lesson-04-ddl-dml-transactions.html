@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL · Урок 4 — Создание таблиц, изменение данных и транзакции</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>SQL</div>
+  <p class="lead">Модуль Backend · SQL · Урок 4</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и подготовка</a>
+    <div class="grp">Часть 1 · Строим таблицы</div>
+    <a href="#types"><span class="n theory-dot">01</span>DDL и DML, типы данных</a>
+    <a href="#create"><span class="n practice-dot">02</span>CREATE TABLE и ограничения</a>
+    <a href="#alter"><span class="n practice-dot">03</span>ALTER TABLE и миграции</a>
+    <a href="#insert"><span class="n practice-dot">04</span>INSERT и RETURNING</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 2 · Меняем данные безопасно</div>
+    <a href="#update"><span class="n practice-dot">05</span>UPDATE, DELETE, TRUNCATE</a>
+    <a href="#upsert"><span class="n practice-dot">06</span>UPSERT: ON CONFLICT</a>
+    <a href="#tx"><span class="n practice-dot">07</span>Транзакции и ACID</a>
+    <a href="#conc"><span class="n practice-dot">08</span>Два пользователя сразу</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">09</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · SQL · Урок 4 · 2 часа с перерывом · для фронтенд-разработчиков · база Pagila</p>
+  <h1>Создание таблиц, изменение данных и транзакции</h1>
+  <p class="lead-p">Три урока мы только <strong>читали</strong> данные — сегодня начнём их создавать и менять. Видеопрокат хочет две новые функции: <b>отзывы о фильмах</b> и <b>бонусный кошелёк</b>, бонусы с которого можно дарить друг другу. Мы сами спроектируем для них таблицы, наполним их, научимся менять данные так, чтобы не «обнулить бизнес» одной строкой, и разберёмся, почему при переводе бонусов они не могут пропасть, даже если сервер упадёт посередине.</p>
+
+  <div class="hero">
+    <h3>ЧТО СДЕЛАЕМ ЗА УРОК</h3>
+    <ul>
+      <li><b>Выберем типы данных</b> и увидим, как <code>real</code> «теряет» 40 долларов на выручке проката.</li>
+      <li><b>Создадим таблицы</b> <code>film_review</code> и <code>bonus_wallet</code> с ограничениями — и попробуем сломать каждое.</li>
+      <li><b>Изменим структуру</b> работающей таблицы через <code>ALTER TABLE</code> и поймём, что такое миграции.</li>
+      <li><b>Освоим <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, UPSERT</b> и привычки, которые защищают от катастроф.</li>
+      <li><b>Разберём транзакции</b>: ACID, <code>COMMIT</code>/<code>ROLLBACK</code>, <code>SAVEPOINT</code>, а в двух окнах DBeaver воспроизведём потерянное обновление и взаимную блокировку.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>DDL и DML, типы данных, почему деньги не хранят во <code>float</code></td><td>теория + live</td></tr>
+      <tr><td class="t">0:10</td><td><code>CREATE TABLE</code>, ограничения, ломаем каждое</td><td>live-coding</td></tr>
+      <tr><td class="t">0:27</td><td><code>ALTER TABLE</code>, <code>DROP</code>, миграции</td><td>live-coding</td></tr>
+      <tr><td class="t">0:39</td><td><code>INSERT</code>, <code>RETURNING</code>, <code>INSERT ... SELECT</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:53</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:03</td><td><code>UPDATE</code>, <code>UPDATE ... FROM</code>, <code>DELETE</code>, <code>TRUNCATE</code>, мягкое удаление</td><td>live-coding</td></tr>
+      <tr><td class="t">1:15</td><td>UPSERT: <code>ON CONFLICT</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:23</td><td>Транзакции, ACID, <code>SAVEPOINT</code></td><td>live-coding</td></tr>
+      <tr><td class="t">1:38</td><td>Два пользователя сразу: блокировки, потерянное обновление, deadlock</td><td>live-coding</td></tr>
+      <tr><td class="t">1:48</td><td>Игра, шпаргалка, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОДГОТОВКА</span>
+    <p>Та же Pagila в Docker и DBeaver. Новый скрипт: правой кнопкой по базе <b>pagila</b> → <b>SQL Editor → New SQL script</b>, сохранить как <code>lesson4.sql</code>. Сегодня мы <b>меняем</b> базу: создаём две свои таблицы и меняем данные только в них. Таблицы Pagila трогаем только внутри <code>BEGIN ... ROLLBACK</code>. Если что-то пойдёт не так, базу всегда можно пересоздать из Docker-образа, как на уроке про Docker.</p>
+  </div></div>
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">КАК ЧИТАТЬ БЛОКИ КОДА</span>
+    <p><code>lesson4.sql · + в конец скрипта</code> — пишем и выполняем: <b>Ctrl+Enter</b> выполняет запрос под курсором, <b>Alt+X</b> — весь выделенный фрагмент как скрипт. «👀 только посмотреть» — не пишем. Все запросы я выполнил по порядку на той же Pagila, что и в прошлом уроке (999 клиентов, 51 061 платёж). Результаты настоящие, кроме колонок со временем: у вас там будет текущее время.</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · самое начало скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 0. Как и раньше: время в UTC, чтобы цифры совпадали у всех
+SET TIME ZONE 'UTC';</code></pre>
+  </figure>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Строим таблицы</span><span class="bar"></span></div>
+
+<!-- 01 TYPES -->
+<section id="types">
+  <div class="sec-head"><h2>01 · DDL и DML, типы данных</h2><span class="tag theory">теория</span><span class="tag practice">live</span><span class="tag time">~10 мин</span></div>
+
+  <p>Все команды SQL делятся на несколько «языков». Нам сегодня нужны два:</p>
+  <table class="cmp">
+    <thead><tr><th>Группа</th><th>Что делает</th><th>Команды</th><th>Аналогия с фронтендом</th></tr></thead>
+    <tbody>
+      <tr><td><b>DDL</b> — Data Definition Language</td><td>описывает <b>структуру</b>: какие таблицы, колонки, правила</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code></td><td>TypeScript-интерфейс: <code>interface Review { rating: number }</code></td></tr>
+      <tr><td><b>DML</b> — Data Manipulation Language</td><td>работает с <b>данными</b> внутри структуры</td><td><code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td><td>сами объекты: <code>{ rating: 5 }</code></td></tr>
+      <tr><td><b>TCL</b> — Transaction Control</td><td>управляет транзакциями</td><td><code>BEGIN</code>, <code>COMMIT</code>, <code>ROLLBACK</code>, <code>SAVEPOINT</code></td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p>Разница с TypeScript важная: TypeScript проверяет типы только при сборке, а в браузер уходит обычный JS. <b>База проверяет типы и правила при каждой записи</b>, всегда. Её не обойти никаким кодом.</p>
+
+  <h3>Пять типов, которых хватит на 90% задач</h3>
+  <table class="cmp">
+    <thead><tr><th>Что храним</th><th>Тип PostgreSQL</th><th>Пример из Pagila</th><th>Почему так</th></tr></thead>
+    <tbody>
+      <tr><td>id</td><td><code>BIGINT GENERATED ALWAYS AS IDENTITY</code> (раньше — <code>SERIAL</code>)</td><td><code>customer_id</code> (<code>integer</code> + последовательность)</td><td>база сама выдаёт номера 1, 2, 3…</td></tr>
+      <tr><td>строки</td><td><code>TEXT</code> или <code>VARCHAR(n)</code></td><td><code>first_name text</code></td><td>в PostgreSQL они одинаково быстрые. <code>VARCHAR(n)</code> — когда нужен лимит длины</td></tr>
+      <tr><td>да/нет</td><td><code>BOOLEAN</code></td><td><code>customer.activebool</code></td><td><code>true</code> / <code>false</code> / <code>NULL</code></td></tr>
+      <tr><td>дата и время</td><td><code>TIMESTAMPTZ</code></td><td><code>last_update timestamptz</code></td><td>хранит момент времени с учётом часового пояса</td></tr>
+      <tr><td>деньги, точные числа</td><td><code>NUMERIC(10, 2)</code></td><td><code>payment.amount numeric(5,2)</code></td><td>точная десятичная арифметика. Никогда не <code>float</code>/<code>real</code></td></tr>
+    </tbody>
+  </table>
+  <p>Последний пункт проверим на настоящих деньгах.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 1. Школьная арифметика: 0.1 + 0.2
+SELECT 0.1::float8 + 0.2::float8         AS float_sum,
+       0.1::float8 + 0.2::float8 = 0.3   AS float_ok,
+       0.1::numeric + 0.2::numeric       AS numeric_sum,
+       0.1::numeric + 0.2::numeric = 0.3 AS numeric_ok;
+
+-- 2. Вся выручка проката в трёх типах
+SELECT SUM(amount)         AS numeric_total,
+       SUM(amount::float8) AS float_total,
+       SUM(amount::real)   AS real_total
+FROM payment;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">      float_sum      | float_ok | numeric_sum | numeric_ok
+---------------------+----------+-------------+------------
+ 0.30000000000000004 | f        |         0.3 | t
+
+ numeric_total |    float_total    | real_total
+---------------+-------------------+------------
+     170962.39 | 170962.3899999787 |  170922.44</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>0.1::float8</code></td><td><code>::</code> — приведение типа, как <code>CAST(0.1 AS float8)</code></td><td>чтобы сравнить один и тот же расчёт в разных типах</td></tr>
+      <tr><td><code>float8</code> / <code>double precision</code></td><td>двоичное число с плавающей точкой — то же, что <code>number</code> в JavaScript</td><td>быстро, но 0,1 в двоичной системе не записывается точно</td></tr>
+      <tr><td><code>real</code> / <code>float4</code></td><td>то же, но с вдвое меньшей точностью</td><td>на 51 061 платеже ошибка уже <b>39,95 $</b></td></tr>
+      <tr><td><code>numeric</code></td><td>десятичное число, считается «как на бумаге»</td><td>ровно 170 962,39 — до цента</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ФРОНТЕНДЕРАМ ЭТО ЗНАКОМО</span>
+    <p>Откройте консоль браузера: <code>0.1 + 0.2</code> → <code>0.30000000000000004</code>. Тот же стандарт IEEE 754, та же ошибка. Поэтому на фронте деньги считают в копейках (<code>1099</code> вместо <code>10.99</code>) или через библиотеки вроде <code>decimal.js</code>, а в базе используют <code>NUMERIC</code>. В JSON из API деньги часто приходят <b>строкой</b> <code>"10.99"</code> — именно чтобы JavaScript не испортил число.</p>
+  </div></div>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">TIMESTAMP ИЛИ TIMESTAMPTZ</span>
+    <p><code>TIMESTAMP</code> хранит «10:00» без пояса: непонятно, это 10:00 в Москве или в Нью-Йорке. <code>TIMESTAMPTZ</code> хранит точный момент (внутри — в UTC) и показывает его в поясе вашего подключения. Поэтому мы и пишем <code>SET TIME ZONE 'UTC'</code> в начале скрипта. Правило простое: для моментов времени (создан, оплачен) — всегда <code>TIMESTAMPTZ</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 CREATE -->
+<section id="create">
+  <div class="sec-head"><h2>02 · CREATE TABLE и ограничения</h2><span class="tag practice">live-coding</span><span class="tag time">~17 мин</span></div>
+
+  <p>Задача от владельца проката: «Клиенты должны ставить фильмам оценку от 1 до 5 и писать отзыв. Один клиент — один отзыв на фильм». Сначала переведём это в правила:</p>
+  <table class="cmp">
+    <thead><tr><th>Требование бизнеса</th><th>Правило в базе</th></tr></thead>
+    <tbody>
+      <tr><td>у отзыва есть номер</td><td><code>PRIMARY KEY</code> с автонумерацией</td></tr>
+      <tr><td>отзыв пишет существующий клиент о существующем фильме</td><td><code>REFERENCES</code> (внешние ключи из урока 3)</td></tr>
+      <tr><td>оценка обязательна, от 1 до 5</td><td><code>NOT NULL</code> + <code>CHECK</code></td></tr>
+      <tr><td>текст не обязателен</td><td>колонка без <code>NOT NULL</code></td></tr>
+      <tr><td>дата ставится сама</td><td><code>DEFAULT now()</code></td></tr>
+      <tr><td>один отзыв на фильм от клиента</td><td><code>UNIQUE (customer_id, film_id)</code></td></tr>
+    </tbody>
+  </table>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 3. Таблица отзывов
+CREATE TABLE film_review (
+    review_id   BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    customer_id INTEGER     NOT NULL REFERENCES customer (customer_id) ON DELETE CASCADE,
+    film_id     INTEGER     NOT NULL REFERENCES film (film_id) ON DELETE CASCADE,
+    rating      SMALLINT    NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    body        TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (customer_id, film_id)
+);</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>CREATE TABLE film_review ( ... );</code></td><td>создать таблицу; внутри скобок — колонки через запятую</td><td>после последней колонки запятой нет — самая частая синтаксическая ошибка</td></tr>
+      <tr><td><code>BIGINT GENERATED ALWAYS AS IDENTITY</code></td><td>база сама выдаёт номера; вручную задать номер <b>нельзя</b></td><td>современная замена <code>SERIAL</code>. <code>BIGINT</code> — до 9·10¹⁸, <code>INTEGER</code> кончится на 2,1 млрд</td></tr>
+      <tr><td><code>PRIMARY KEY</code></td><td>первичный ключ: уникален и не <code>NULL</code></td><td>по нему находят строку и на него ссылаются другие таблицы</td></tr>
+      <tr><td><code>REFERENCES customer (customer_id)</code></td><td>внешний ключ</td><td>тип должен совпадать: в <code>customer</code> это <code>integer</code></td></tr>
+      <tr><td><code>ON DELETE CASCADE</code></td><td>удалили клиента — удалились его отзывы</td><td>отзывы — зависимая мелочь (правила — урок 3)</td></tr>
+      <tr><td><code>SMALLINT</code></td><td>целое до 32 767, 2 байта</td><td>для оценки 1–5 больше и не нужно</td></tr>
+      <tr><td><code>CHECK (rating BETWEEN 1 AND 5)</code></td><td>условие, которое должно быть истинным для каждой строки</td><td>валидация в самой базе</td></tr>
+      <tr><td><code>DEFAULT now()</code></td><td>значение, если колонку не передали</td><td><code>now()</code> — момент начала транзакции</td></tr>
+      <tr><td><code>UNIQUE (customer_id, film_id)</code></td><td>уникальна <b>пара</b>, а не каждая колонка</td><td>клиент может оценить много фильмов, фильм — получить много оценок, но пара не повторяется</td></tr>
+    </tbody></table>
+  </div>
+  <p>Чтобы увидеть таблицу в DBeaver: в навигаторе слева раскройте pagila → Schemas → public → Tables и нажмите <b>F5</b> (обновить) — появится <code>film_review</code>. Двойной клик → вкладки <b>Columns</b> и <b>Constraints</b> покажут всё, что мы написали.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 4. Первый отзыв: review_id и created_at не передаём — их заполнит база
+INSERT INTO film_review (customer_id, film_id, rating, body)
+VALUES (1, 1, 5, 'Отличный фильм, пересмотрю');
+
+-- 5. Проверяем
+SELECT * FROM film_review;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий · время у вас своё</span></figcaption>
+    <pre><code class="language-none"> review_id | customer_id | film_id | rating |            body            |          created_at
+-----------+-------------+---------+--------+----------------------------+-------------------------------
+         1 |           1 |       1 |      5 | Отличный фильм, пересмотрю | 2026-11-05 14:12:23.122077+00</code></pre>
+  </figure>
+
+  <h3>Ломаем каждое правило</h3>
+  <p>Теперь представим, что на фронте баг: форма отправляет что попало. Выполняйте запросы <b>по одному</b> (Ctrl+Enter) — каждый должен упасть.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span><span class="role">все пять упадут — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 6a. Оценка 7
+INSERT INTO film_review (customer_id, film_id, rating) VALUES (1, 2, 7);
+-- 6b. Второй отзыв на тот же фильм
+INSERT INTO film_review (customer_id, film_id, rating) VALUES (1, 1, 4);
+-- 6c. Несуществующий клиент
+INSERT INTO film_review (customer_id, film_id, rating) VALUES (99999, 1, 4);
+-- 6d. Забыли оценку
+INSERT INTO film_review (customer_id, film_id) VALUES (2, 1);
+-- 6e. Пытаемся сами задать номер
+INSERT INTO film_review (review_id, customer_id, film_id, rating) VALUES (100, 2, 1, 3);</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие ошибки</span></figcaption>
+    <pre><code class="language-none">6a ERROR:  new row for relation "film_review" violates check constraint "film_review_rating_check"
+   DETAIL:  Failing row contains (2, 1, 2, 7, null, 2026-11-05 14:12:23.123063+00).
+6b ERROR:  duplicate key value violates unique constraint "film_review_customer_id_film_id_key"
+   DETAIL:  Key (customer_id, film_id)=(1, 1) already exists.
+6c ERROR:  insert or update on table "film_review" violates foreign key constraint "film_review_customer_id_fkey"
+   DETAIL:  Key (customer_id)=(99999) is not present in table "customer".
+6d ERROR:  null value in column "rating" of relation "film_review" violates not-null constraint
+   DETAIL:  Failing row contains (5, 2, 1, null, null, 2026-11-05 14:12:23.12344+00).
+6e ERROR:  cannot insert a non-DEFAULT value into column "review_id"
+   DETAIL:  Column "review_id" is an identity column defined as GENERATED ALWAYS.</code></pre>
+  </figure>
+  <p>База отвергла все пять. Обратите внимание на имена в ошибках: <code>film_review_rating_check</code>, <code>film_review_customer_id_film_id_key</code> — PostgreSQL сам придумал их по шаблону «таблица_колонки_тип». На бэкенде по такому имени ошибку превращают в понятный ответ API: «Вы уже оставили отзыв на этот фильм» вместо «Internal Server Error».</p>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ЗАЧЕМ ПРОВЕРЯТЬ В БАЗЕ, ЕСЛИ ЕСТЬ ВАЛИДАЦИЯ НА ФРОНТЕ?</span>
+    <p>Валидация на фронте — для удобства пользователя: подсказать до отправки. Но в базу пишет не только ваша форма: мобильное приложение, старая версия сайта, скрипт импорта, коллега из консоли, злоумышленник через Postman. <code>CHECK</code>, <code>UNIQUE</code> и <code>NOT NULL</code> — последняя линия обороны, которую не обойти. А <code>UNIQUE</code> вообще нельзя надёжно проверить в коде: два запроса одновременно спросят «есть ли отзыв?», оба получат «нет» и оба запишут.</p>
+  </div></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 7. Отзыв клиента №2 без текста. RETURNING возвращает то, что база заполнила сама
+INSERT INTO film_review (customer_id, film_id, rating)
+VALUES (2, 1, 4)
+RETURNING review_id, created_at;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> review_id |          created_at
+-----------+-------------------------------
+         6 | 2026-11-05 14:12:23.123613+00</code></pre>
+  </figure>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">КУДА ДЕЛИСЬ НОМЕРА 2, 3, 4, 5?</span>
+    <p>Второй отзыв получил номер 6, а не 2. Номера 2–5 «съели» неудачные вставки 6a–6d: база выдала номер, а потом строка не прошла проверку. Посмотрите на <code>DETAIL</code> ошибок 6a и 6d: там видны <code>(2, ...)</code> и <code>(5, ...)</code>. Счётчик никогда не откатывается назад — это сделано специально, чтобы тысячи одновременных вставок не ждали друг друга. Дыры в id — норма. Если менеджер просит «пронумеровать заказы без пропусков», это отдельная задача, и id для неё не подходит.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 ALTER -->
+<section id="alter">
+  <div class="sec-head"><h2>03 · ALTER TABLE и миграции</h2><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <p>Прошла неделя, приходят новые требования: пометка «спойлер», дата редактирования, а колонку <code>body</code> хотят переименовать в <code>review_text</code>. Пересоздать таблицу нельзя — в ней уже живые отзывы. Для этого есть <code>ALTER TABLE</code>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span><span class="role">9 упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 8. Новая колонка с DEFAULT: старые строки получат false
+ALTER TABLE film_review ADD COLUMN is_spoiler BOOLEAN NOT NULL DEFAULT false;
+
+-- 9. Обязательная колонка без DEFAULT — чем заполнить старые строки?
+ALTER TABLE film_review ADD COLUMN moderated_at TIMESTAMPTZ NOT NULL;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат 9</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">ERROR:  column "moderated_at" of relation "film_review" contains null values</code></pre>
+  </figure>
+  <p>Логично: у двух существующих отзывов значения нет, а колонка обязательна. Правильный рецепт — в три шага: добавить необязательную колонку, заполнить, сделать обязательной.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 10. Обязательная колонка в три шага
+ALTER TABLE film_review ADD COLUMN moderated_at TIMESTAMPTZ;       -- 1) добавить, NULL можно
+UPDATE film_review SET moderated_at = created_at;                  -- 2) заполнить старые строки
+ALTER TABLE film_review ALTER COLUMN moderated_at SET NOT NULL;    -- 3) запретить NULL
+
+-- 11. Переименовать колонку и добавить дату редактирования
+ALTER TABLE film_review RENAME COLUMN body TO review_text;
+ALTER TABLE film_review ADD COLUMN updated_at TIMESTAMPTZ;
+
+-- 12. Ограничить длину текста 10 символами, сменив тип
+ALTER TABLE film_review ALTER COLUMN review_text TYPE VARCHAR(10);</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">ALTER TABLE
+UPDATE 2
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ERROR:  value too long for type character varying(10)</code></pre>
+  </figure>
+  <p>Смена типа упала: «Отличный фильм, пересмотрю» не помещается в 10 символов. База не стала молча обрезать текст — и это хорошо. Ограничение длины лучше делать через <code>CHECK</code>: его можно добавить, убрать и поменять, не трогая тип. Колонку <code>moderated_at</code> мы создали для примера — удалим её.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 13. Ограничение длины — отдельным правилом; удалить учебную колонку
+ALTER TABLE film_review ADD CONSTRAINT review_text_len CHECK (length(review_text) &lt;= 2000);
+ALTER TABLE film_review DROP COLUMN moderated_at;
+SELECT * FROM film_review;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> review_id | customer_id | film_id | rating |        review_text         |  created_at  | is_spoiler | updated_at
+-----------+-------------+---------+--------+----------------------------+--------------+------------+------------
+         1 |           1 |       1 |      5 | Отличный фильм, пересмотрю | 2026-11-05…  | f          |
+         6 |           2 |       1 |      4 |                            | 2026-11-05…  | f          |</code></pre>
+  </figure>
+  <div class="syn"><div class="h">ШПАРГАЛКА ALTER TABLE</div>
+    <table><thead><tr><th>Код</th><th>Что делает</th><th>Опасность</th></tr></thead><tbody>
+      <tr><td><code>ADD COLUMN x TYPE [DEFAULT ...]</code></td><td>добавить колонку</td><td>низкая. С <code>NOT NULL</code> нужен <code>DEFAULT</code> или рецепт из трёх шагов</td></tr>
+      <tr><td><code>RENAME COLUMN a TO b</code></td><td>переименовать</td><td>мгновенно, но <b>ломает код</b>, который пишет <code>a</code></td></tr>
+      <tr><td><code>ALTER COLUMN x TYPE ...</code></td><td>сменить тип</td><td>может упасть или <b>тихо изменить данные</b> (см. ниже); на большой таблице перезаписывает её целиком</td></tr>
+      <tr><td><code>ALTER COLUMN x SET NOT NULL</code> / <code>DROP NOT NULL</code></td><td>сделать обязательной / необязательной</td><td><code>SET</code> проверяет все строки</td></tr>
+      <tr><td><code>ADD CONSTRAINT имя CHECK (...)</code></td><td>добавить правило</td><td>проверяет все существующие строки</td></tr>
+      <tr><td><code>DROP COLUMN x</code></td><td>удалить колонку <b>с данными</b></td><td>необратимо</td></tr>
+      <tr><td><code>DROP TABLE [IF EXISTS] t</code></td><td>удалить таблицу целиком</td><td>необратимо. <code>IF EXISTS</code> — не падать, если её нет</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 14. Что будет с деньгами, если сменить тип NUMERIC на INTEGER
+SELECT 12.75::integer AS b1, 12.49::integer AS b2;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> b1 | b2
+----+----
+ 13 | 12</code></pre>
+  </figure>
+  <p>Ни ошибки, ни предупреждения: <code>ALTER COLUMN balance TYPE INTEGER</code> молча округлит каждый баланс. У одних клиентов бонусы «появятся», у других пропадут.</p>
+
+  <h3>Миграции</h3>
+  <p>На реальном проекте никто не пишет <code>ALTER TABLE</code> руками в продакшен-базу. Каждое изменение структуры оформляют как <b>миграцию</b> — файл в репозитории, который применяется автоматически при деплое на всех серверах по порядку. Это git для структуры базы.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">prisma/migrations/20261105_add_spoiler/migration.sql</span><span class="role">👀 только посмотреть · так выглядит миграция в Prisma</span></figcaption>
+    <pre><code class="language-sql">-- AlterTable
+ALTER TABLE "film_review" ADD COLUMN "is_spoiler" BOOLEAN NOT NULL DEFAULT false;</code></pre>
+  </figure>
+  <p>В Node.js такие файлы создаёт Prisma (<code>npx prisma migrate dev</code>), TypeORM или Knex, в Python — Alembic (его мы используем в FastAPI-проекте). Внутри — тот же SQL, который мы сейчас писали руками.</p>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ALTER TABLE БЛОКИРУЕТ ТАБЛИЦУ</span>
+    <p>Большинство команд <code>ALTER TABLE</code> берут самую сильную блокировку: пока команда работает, таблицу нельзя ни читать, ни писать. На нашей таблице из двух строк это миллисекунды. А смена типа колонки в таблице на 50 миллионов заказов перезаписывает её целиком — сайт может «лежать» минуты. Поэтому большие миграции делают по шагам, как в рецепте с <code>NOT NULL</code>, и в часы наименьшей нагрузки.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 04 INSERT -->
+<section id="insert">
+  <div class="sec-head"><h2>04 · INSERT, RETURNING и INSERT ... SELECT</h2><span class="tag practice">live-coding</span><span class="tag time">~14 мин</span></div>
+
+  <p>Одну строку мы уже вставляли. Три способа, которые нужны на практике: несколько строк за раз, вставка с возвратом результата и вставка из запроса.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 15. Несколько строк одной командой + RETURNING
+INSERT INTO film_review (customer_id, film_id, rating, review_text)
+VALUES (3, 1, 4, 'Неплохо'),
+       (3, 2, 2, 'Скучно'),
+       (4, 1, 5, NULL)
+RETURNING review_id, customer_id, film_id, rating;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> review_id | customer_id | film_id | rating
+-----------+-------------+---------+--------
+         7 |           3 |       1 |      4
+         8 |           3 |       2 |      2
+         9 |           4 |       1 |      5</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>INSERT INTO t (a, b, c)</code></td><td>в какие колонки пишем</td><td>всегда перечисляйте колонки явно: <code>INSERT INTO t VALUES (...)</code> сломается после первой же миграции</td></tr>
+      <tr><td><code>VALUES (...), (...), (...)</code></td><td>несколько строк через запятую</td><td>одна команда вместо трёх — один поход в базу, в разы быстрее</td></tr>
+      <tr><td><code>NULL</code></td><td>значения нет</td><td>для <code>review_text</code> разрешено</td></tr>
+      <tr><td><code>RETURNING ...</code></td><td>вернуть колонки вставленных строк</td><td>как ответ <code>POST /reviews</code> → <code>201 Created</code> с новым объектом. Без лишнего <code>SELECT</code></td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ВЫ ЭТО ВИДЕЛИ</span>
+    <p>Когда фронт отправляет <code>POST /api/reviews</code>, а сервер в ответ присылает <code>{ "review_id": 7, "created_at": "..." }</code> — это почти наверняка <code>INSERT ... RETURNING</code>. Prisma делает так при каждом <code>prisma.review.create()</code>.</p>
+  </div></div>
+
+  <h3>INSERT ... SELECT: данные из запроса</h3>
+  <p>Задача: для тестов нужны отзывы. Пусть клиенты 5–9 «оценят» все фильмы, которые брали: брали повторно — 5 звёзд, один раз — 3. Привычка из урока 3: <b>сначала SELECT</b>, смотрим, что получится, и только потом вставляем.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 16. Сначала смотрим, ЧТО вставим
+SELECT r.customer_id,
+       i.film_id,
+       CASE WHEN COUNT(*) &gt; 1 THEN 5 ELSE 3 END AS rating
+FROM rental r
+JOIN inventory i ON i.inventory_id = r.inventory_id
+WHERE r.customer_id BETWEEN 5 AND 9
+GROUP BY r.customer_id, i.film_id
+ORDER BY rating DESC, r.customer_id, i.film_id
+LIMIT 5;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> customer_id | film_id | rating
+-------------+---------+--------
+           5 |     220 |      5
+           5 |     298 |      5
+           5 |     349 |      5
+           5 |     511 |      5
+           5 |     575 |      5</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 17. Тот же запрос, но вместо VALUES — результат SELECT
+INSERT INTO film_review (customer_id, film_id, rating)
+SELECT r.customer_id,
+       i.film_id,
+       CASE WHEN COUNT(*) &gt; 1 THEN 5 ELSE 3 END
+FROM rental r
+JOIN inventory i ON i.inventory_id = r.inventory_id
+WHERE r.customer_id BETWEEN 5 AND 9
+GROUP BY r.customer_id, i.film_id;
+
+SELECT COUNT(*) AS reviews, ROUND(AVG(rating), 2) AS avg_rating FROM film_review;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">INSERT 0 355
+
+ reviews | avg_rating
+---------+------------
+     360 |       3.14</code></pre>
+  </figure>
+  <p>355 строк одной командой, без единой строчки кода на JavaScript. <code>INSERT 0 355</code> — так база сообщает, сколько строк вставлено (<code>0</code> — исторический артефакт, всегда ноль). Колонки <code>SELECT</code> сопоставляются со списком в <code>INSERT</code> <b>по порядку</b>, а не по именам.</p>
+
+  <h3>Вторая таблица: бонусный кошелёк</h3>
+  <p>Начислим каждому клиенту приветственные бонусы — 5% от всех его платежей. Этот кошелёк понадобится во второй части для транзакций.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 18. Кошелёк: один на клиента, баланс не может уйти в минус
+CREATE TABLE bonus_wallet (
+    customer_id INTEGER PRIMARY KEY REFERENCES customer (customer_id),
+    balance     NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (balance &gt;= 0)
+);
+
+INSERT INTO bonus_wallet (customer_id, balance)
+SELECT customer_id, ROUND(SUM(amount) * 0.05, 2)
+FROM payment
+GROUP BY customer_id;
+
+SELECT * FROM bonus_wallet ORDER BY customer_id LIMIT 3;
+SELECT COUNT(*), SUM(balance) FROM bonus_wallet;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">INSERT 0 997
+
+ customer_id | balance
+-------------+---------
+           1 |   10.87
+           2 |   12.77
+           3 |   13.42
+
+ count |   sum
+-------+---------
+   997 | 8548.37</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>customer_id INTEGER PRIMARY KEY REFERENCES customer</code></td><td>ключ кошелька — сам id клиента</td><td>связь 1:1: у клиента не больше одного кошелька</td></tr>
+      <tr><td><code>NUMERIC(10, 2)</code></td><td>10 цифр всего, 2 после запятой: до 99 999 999,99</td><td>деньги — только <code>NUMERIC</code></td></tr>
+      <tr><td><code>CHECK (balance &gt;= 0)</code></td><td>баланс не бывает отрицательным</td><td>это правило спасёт нас во второй части</td></tr>
+    </tbody></table>
+  </div>
+  <p>Почему 997, а не 999? Запомните — пригодится в домашке. (Подсказка: клиенты 647 и 978 из прошлого урока.) А сумму <b>8548,37</b> запишите: во второй части мы будем переводить бонусы между клиентами, и общая сумма должна оставаться правильной.</p>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — как обновить тысячу строк одной опечаткой, и почему бонусы не пропадут, даже если сервер упадёт посреди перевода.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Меняем данные безопасно</span><span class="bar"></span></div>
+
+<!-- 05 UPDATE -->
+<section id="update">
+  <div class="sec-head"><h2>05 · UPDATE, DELETE, TRUNCATE и мягкое удаление</h2><span class="tag practice">live-coding</span><span class="tag time">~12 мин</span></div>
+
+  <p>Клиент №3 передумал: фильм №2 уже не кажется ему скучным. Правило, которое стоит выучить раньше синтаксиса: <b>перед <code>UPDATE</code> и <code>DELETE</code> выполните <code>SELECT</code> с тем же <code>WHERE</code></b> и посмотрите, какие строки изменятся.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 19. Сначала смотрим, кого будем менять
+SELECT review_id, customer_id, film_id, rating
+FROM film_review
+WHERE customer_id = 3 AND rating &lt;= 2;
+
+-- 20. Меняем. RETURNING работает и здесь
+UPDATE film_review
+SET rating      = 3,
+    review_text = 'Пересмотрел — не так уж и скучно',
+    updated_at  = now()
+WHERE customer_id = 3 AND film_id = 2
+RETURNING review_id, rating, review_text, updated_at;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> review_id | customer_id | film_id | rating
+-----------+-------------+---------+--------
+         8 |           3 |       2 |      2
+
+ review_id | rating |           review_text            |          updated_at
+-----------+--------+----------------------------------+-------------------------------
+         8 |      3 | Пересмотрел — не так уж и скучно | 2026-11-05 14:13:01.579524+00</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>UPDATE film_review</code></td><td>какую таблицу меняем</td><td>одна таблица за раз</td></tr>
+      <tr><td><code>SET a = ..., b = ...</code></td><td>новые значения через запятую</td><td>справа можно писать выражения: <code>balance = balance + 10</code></td></tr>
+      <tr><td><code>WHERE ...</code></td><td>какие строки менять</td><td>без <code>WHERE</code> — <b>все строки таблицы</b></td></tr>
+      <tr><td><code>updated_at = now()</code></td><td>время изменения вручную</td><td>в Pagila это делает триггер <code>last_updated</code>: посмотрите вкладку Triggers у таблицы <code>film</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>UPDATE по данным из других таблиц</h3>
+  <p>Акция: всем клиентам из Канады +10 бонусов. Страна живёт через три таблицы от кошелька — нужна цепочка JOIN из урока 3. В <code>UPDATE</code> для этого есть <code>FROM</code>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 21. Проверка: сколько канадцев и сколько у них бонусов
+SELECT COUNT(*) AS canadians, SUM(w.balance) AS total
+FROM bonus_wallet w
+JOIN customer c  ON c.customer_id = w.customer_id
+JOIN address a   ON a.address_id = c.address_id
+JOIN city ci     ON ci.city_id = a.city_id
+JOIN country co  ON co.country_id = ci.country_id
+WHERE co.country = 'Canada';
+
+-- 22. Начисляем
+UPDATE bonus_wallet w
+SET balance = w.balance + 10
+FROM customer c
+JOIN address a  ON a.address_id = c.address_id
+JOIN city ci    ON ci.city_id = a.city_id
+JOIN country co ON co.country_id = ci.country_id
+WHERE c.customer_id = w.customer_id
+  AND co.country = 'Canada';</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> canadians | total
+-----------+-------
+         5 | 60.88
+
+UPDATE 5</code></pre>
+  </figure>
+  <p>Проверка показала 5 клиентов — и <code>UPDATE 5</code> изменил ровно 5 строк. Числа совпали, значит условие верное. Связь с обновляемой таблицей пишется в <code>WHERE</code> (<code>c.customer_id = w.customer_id</code>), а не в <code>ON</code>: таблица <code>bonus_wallet</code> стоит в <code>UPDATE</code>, а не в <code>FROM</code>. Общая сумма бонусов теперь <b>8548,37 + 50 = 8598,37</b>.</p>
+
+  <h3>Забытый WHERE</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта · выполнять как скрипт: выделить и Alt+X</span></figcaption>
+    <pre><code class="language-sql">-- 23. Хотели сделать бесплатным один фильм, но забыли WHERE
+BEGIN;
+UPDATE film SET rental_rate = 0;
+SELECT COUNT(*) AS free_films FROM film WHERE rental_rate = 0;
+ROLLBACK;
+SELECT COUNT(*) AS free_films FROM film WHERE rental_rate = 0;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">UPDATE 1000
+ free_films
+------------
+       1000      ← весь каталог проката бесплатный
+ROLLBACK
+ free_films
+------------
+          0      ← спасены</code></pre>
+  </figure>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ: «ПОЧЕМУ У ВСЕХ ПОЛЬЗОВАТЕЛЕЙ ОДИН ПАРОЛЬ?»</span>
+    <p>Классика, которую рассказывают в каждой второй команде: разработчик сбрасывает пароль одному пользователю, выделяет в редакторе <code>UPDATE users SET password_hash = '...'</code>, нажимает «выполнить» — а строка <code>WHERE id = 42</code> осталась невыделенной. Через минуту у всех пользователей одинаковый пароль, а в чате — «а почему я могу войти в чужой аккаунт?». Три привычки, которые защищают:</p>
+    <p>1) сначала <code>SELECT</code> с тем же <code>WHERE</code>; 2) опасные изменения — внутри <code>BEGIN</code>: проверили число строк и только потом <code>COMMIT</code>; 3) в DBeaver есть защита: у подключения на вкладке <b>General</b> выберите тип <b>Production</b> — тогда DBeaver будет спрашивать подтверждение перед каждым изменением данных.</p>
+  </div></div>
+
+  <h3>DELETE, TRUNCATE и мягкое удаление</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span><span class="role">26 упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 24. Клиент №4 попросил удалить свой отзыв
+DELETE FROM film_review
+WHERE customer_id = 4 AND film_id = 1
+RETURNING review_id, customer_id, film_id;
+
+-- 25. TRUNCATE мгновенно очищает таблицу. Но в PostgreSQL его можно откатить
+BEGIN;
+TRUNCATE film_review;
+SELECT COUNT(*) AS after_truncate FROM film_review;
+ROLLBACK;
+SELECT COUNT(*) AS after_rollback FROM film_review;
+
+-- 26. Очистить таблицу, на которую ссылаются другие
+TRUNCATE customer;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> review_id | customer_id | film_id
+-----------+-------------+---------
+         9 |           4 |       1
+DELETE 1
+
+ after_truncate          after_rollback
+----------------        ----------------
+              0                      359
+
+ERROR:  cannot truncate a table referenced in a foreign key constraint
+DETAIL:  Table "payment_p2022_01" references "customer".
+HINT:  Truncate table "payment_p2022_01" at the same time, or use TRUNCATE ... CASCADE.</code></pre>
+  </figure>
+  <table class="cmp">
+    <thead><tr><th></th><th><code>DELETE FROM t WHERE ...</code></th><th><code>TRUNCATE t</code></th></tr></thead>
+    <tbody>
+      <tr><td>что удаляет</td><td>строки по условию</td><td><b>все</b> строки, условия нет</td></tr>
+      <tr><td>скорость на миллионах строк</td><td>медленно: удаляет по одной строке, срабатывают триггеры</td><td>мгновенно: отбрасывает файлы таблицы целиком</td></tr>
+      <tr><td>откат в PostgreSQL</td><td>да, внутри транзакции</td><td><b>тоже да</b> — мы проверили. В MySQL и Oracle — нет</td></tr>
+      <tr><td>счётчик id</td><td>не сбрасывает</td><td>сбрасывает, если написать <code>TRUNCATE t RESTART IDENTITY</code></td></tr>
+      <tr><td>где используют</td><td>в приложении</td><td>очистка тестовой базы перед автотестами</td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">НИКОГДА НЕ ПИШИТЕ TRUNCATE ... CASCADE НА АВТОМАТЕ</span>
+    <p>Подсказка из ошибки выглядит невинно: «используйте <code>TRUNCATE ... CASCADE</code>». Но она очистит не только <code>customer</code>, а все таблицы, которые на него ссылаются: платежи, аренды, наши отзывы и кошельки. Вся бизнес-история проката — одной командой.</p>
+  </div></div>
+  <p>На практике данные пользователей почти никогда не удаляют физически. Их помечают как удалённые — это <b>мягкое удаление</b> (soft delete), о нём шла речь в уроке 3. В Pagila для этого есть колонка <code>customer.activebool</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 27. Сколько клиентов «удалены» мягко
+SELECT activebool, COUNT(*) FROM customer GROUP BY activebool;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> activebool | count
+------------+-------
+ f          |    12
+ t          |   987</code></pre>
+  </figure>
+  <p>12 клиентов «удалены», но их платежи, аренды и история на месте. «Удалить» становится <code>UPDATE customer SET activebool = false WHERE ...</code>, а все запросы приложения получают условие <code>WHERE activebool</code>. Плюс: можно восстановить аккаунт и не ломается бухгалтерия. Минус: это условие легко забыть в каком-нибудь запросе.</p>
+</section>
+
+<hr>
+
+<!-- 06 UPSERT -->
+<section id="upsert">
+  <div class="sec-head"><h2>06 · UPSERT: вставить или обновить</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <p>Фронтенд отправляет оценку: клиент нажал звёздочку. Если он ещё не оценивал фильм — нужна новая строка, если оценивал — обновить старую. Можно сделать <code>SELECT</code>, а потом в коде выбрать <code>INSERT</code> или <code>UPDATE</code>. Но это два запроса, и между ними второй запрос (двойной клик!) успеет вставить строку — получим ошибку <code>duplicate key</code>. PostgreSQL умеет сделать это одной атомарной командой.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 28. Клиент №1 переоценил фильм №1 (отзыв уже есть)
+INSERT INTO film_review (customer_id, film_id, rating, review_text)
+VALUES (1, 1, 3, 'Пересмотрел через год — уже не то')
+ON CONFLICT (customer_id, film_id)
+DO UPDATE SET rating      = EXCLUDED.rating,
+              review_text = EXCLUDED.review_text,
+              updated_at  = now()
+RETURNING review_id, rating, review_text, (xmax = 0) AS inserted;
+
+-- 29. Тот же запрос для фильма №3 (отзыва ещё нет)
+INSERT INTO film_review (customer_id, film_id, rating, review_text)
+VALUES (1, 3, 4, 'Посмотрел впервые')
+ON CONFLICT (customer_id, film_id)
+DO UPDATE SET rating      = EXCLUDED.rating,
+              review_text = EXCLUDED.review_text,
+              updated_at  = now()
+RETURNING review_id, rating, review_text, (xmax = 0) AS inserted;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none"> review_id | rating |            review_text            | inserted
+-----------+--------+-----------------------------------+----------
+         1 |      3 | Пересмотрел через год — уже не то | f         ← обновил старый отзыв №1
+
+ review_id | rating |    review_text    | inserted
+-----------+--------+-------------------+----------
+       366 |      4 | Посмотрел впервые | t         ← создал новый</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>ON CONFLICT (customer_id, film_id)</code></td><td>«если вставка нарушит уникальность по этим колонкам…»</td><td>нужен <code>UNIQUE</code> или <code>PRIMARY KEY</code> ровно на этих колонках — иначе ошибка</td></tr>
+      <tr><td><code>DO UPDATE SET ...</code></td><td>«…то обнови существующую строку»</td><td>вставка или обновление — одной командой</td></tr>
+      <tr><td><code>EXCLUDED.rating</code></td><td>значение, которое мы <b>пытались</b> вставить</td><td>просто <code>rating</code> — это старое значение в таблице</td></tr>
+      <tr><td><code>(xmax = 0) AS inserted</code></td><td>служебная колонка PostgreSQL: <code>0</code> у новой строки</td><td>трюк, чтобы узнать, что произошло. Знать необязательно</td></tr>
+    </tbody></table>
+  </div>
+  <p>Новый отзыв получил номер 366, хотя до этого последним был 364. Номер 365 «съел» запрос 28: база выдала номер ещё до того, как обнаружила конфликт. Тот же эффект, что в блоке 02.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 30. DO NOTHING: «если уже есть — ничего не делать». Две строки, одна уже существует
+INSERT INTO film_review (customer_id, film_id, rating)
+VALUES (1, 1, 1), (1, 4, 2)
+ON CONFLICT (customer_id, film_id) DO NOTHING
+RETURNING review_id, film_id, rating;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> review_id | film_id | rating
+-----------+---------+--------
+       368 |       4 |      2
+INSERT 0 1</code></pre>
+  </figure>
+  <p>Вставлена одна строка из двух, без ошибок. Отзыв на фильм №1 остался с оценкой 3.</p>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ИДЕМПОТЕНТНОСТЬ</span>
+    <p>Запрос 29 можно выполнить хоть десять раз — результат один: один отзыв с оценкой 4. Такие операции называют <b>идемпотентными</b>. Это важно, потому что сеть ненадёжна: фронт отправил запрос, ответ потерялся, fetch повторил запрос (или пользователь нажал кнопку дважды). С обычным <code>INSERT</code> второй запрос упадёт или создаст дубль, с UPSERT — ничего не испортит. Поэтому, например, <code>PUT</code> в REST по договорённости должен быть идемпотентным, а <code>POST</code> — нет.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 07 TX -->
+<section id="tx">
+  <div class="sec-head"><h2>07 · Транзакции и ACID</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Новая функция: клиент может подарить бонусы другу. Перевод — это два <code>UPDATE</code>: списать у одного и начислить другому. Что будет, если между ними что-то сломается? Сначала проверим без защиты.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span></figcaption>
+    <pre><code class="language-sql">-- 31. Балансы клиентов 1 и 2 до переводов
+SELECT * FROM bonus_wallet WHERE customer_id IN (1, 2) ORDER BY customer_id;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> customer_id | balance
+-------------+---------
+           1 |   10.87
+           2 |   12.77</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта</span><span class="role">опечатка в id — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 32. Перевод БЕЗ транзакции: клиент 1 дарит 3 бонуса, но в id получателя опечатка
+UPDATE bonus_wallet SET balance = balance - 3 WHERE customer_id = 1;
+UPDATE bonus_wallet SET balance = balance + 3 WHERE customer_id = 99999;
+SELECT SUM(balance) FROM bonus_wallet;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">UPDATE 1
+UPDATE 0      ← не ошибка! Просто 0 строк подошло под WHERE
+   sum
+---------
+ 8595.37      ← было 8598.37: три бонуса исчезли</code></pre>
+  </figure>
+  <p>Обратите внимание: <code>UPDATE 0</code> — <b>не ошибка</b>. База честно выполнила «увеличь баланс всем клиентам с id 99999» — таких нет. А вместо опечатки мог быть сбой: упал сервер приложения, оборвалась сеть, закончилась память. Списание уже записано, начисления не будет никогда. Вернём бонусы и сделаем правильно.</p>
+
+  <h3>Транзакция: всё или ничего</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта · выполнять как скрипт: выделить и Alt+X</span></figcaption>
+    <pre><code class="language-sql">-- вернём 3 бонуса клиенту №1
+UPDATE bonus_wallet SET balance = balance + 3 WHERE customer_id = 1;
+
+-- 33. Клиент 1 дарит 5 бонусов клиенту 2 — в транзакции
+BEGIN;
+UPDATE bonus_wallet SET balance = balance - 5 WHERE customer_id = 1;
+UPDATE bonus_wallet SET balance = balance + 5 WHERE customer_id = 2;
+COMMIT;
+SELECT * FROM bonus_wallet WHERE customer_id IN (1, 2) ORDER BY customer_id;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> customer_id | balance
+-------------+---------
+           1 |    5.87
+           2 |   17.77</code></pre>
+  </figure>
+  <div class="diagram">
+<pre>  BEGIN ─────────────── «черновик» ───────────────── COMMIT
+    │   UPDATE  −5 клиенту 1                            │   изменения видят все,
+    │   UPDATE  +5 клиенту 2                            │   они записаны на диск
+    │   другие подключения видят СТАРЫЕ балансы          │
+    │                                                   │
+    └── ошибка / ROLLBACK / обрыв связи / сервер упал ──┴──▶ всё отменено, как будто
+                                                             транзакции не было</pre>
+  </div>
+  <p>Теперь главный эксперимент: клиент 1 пытается подарить 100 бонусов, хотя у него 5,87. Начисление мы специально поставили первым — оно пройдёт.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта · выполнять как скрипт: выделить и Alt+X</span><span class="role">ошибка — так и задумано</span></figcaption>
+    <pre><code class="language-sql">-- 34. Попытка подарить больше, чем есть
+BEGIN;
+UPDATE bonus_wallet SET balance = balance + 100 WHERE customer_id = 2;
+UPDATE bonus_wallet SET balance = balance - 100 WHERE customer_id = 1;
+SELECT * FROM bonus_wallet WHERE customer_id IN (1, 2);
+ROLLBACK;
+SELECT * FROM bonus_wallet WHERE customer_id IN (1, 2) ORDER BY customer_id;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">BEGIN
+UPDATE 1                                       ← клиенту 2 уже +100 (в черновике)
+ERROR:  new row for relation "bonus_wallet" violates check constraint "bonus_wallet_balance_check"
+DETAIL:  Failing row contains (1, -94.13).
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK
+ customer_id | balance
+-------------+---------
+           1 |    5.87                        ← ничего не изменилось
+           2 |   17.77</code></pre>
+  </figure>
+  <p>Сработали две защиты сразу. <code>CHECK (balance &gt;= 0)</code> из блока 04 не дал уйти в минус. А транзакция отменила начисление +100, которое <b>уже прошло</b>. Строка <code>current transaction is aborted</code> — важное поведение PostgreSQL: после любой ошибки транзакция «сломана», все следующие команды игнорируются, и единственный выход — <code>ROLLBACK</code>. Даже если написать <code>COMMIT</code>, база выполнит откат.</p>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">DBEAVER: AUTO-COMMIT</span>
+    <p>По умолчанию DBeaver работает в режиме <b>Auto-commit</b>: каждая команда — отдельная транзакция, которая сразу фиксируется. Поэтому запрос 32 сразу «потерял» бонусы. Явный <code>BEGIN</code> временно отключает это до <code>COMMIT</code>/<code>ROLLBACK</code>. На панели инструментов есть переключатель режима <b>Auto-Commit / Manual Commit</b>: в ручном режиме ничего не фиксируется, пока вы не нажмёте кнопку <b>Commit</b>. А если забыли <code>COMMIT</code> и закрыли DBeaver, он спросит, что сделать с незавершённой транзакцией. Незакрытая транзакция держит блокировки, и другие запросы будут её ждать — это увидим в блоке 08.</p>
+  </div></div>
+
+  <h3>ACID: четыре обещания базы</h3>
+  <table class="cmp">
+    <thead><tr><th>Буква</th><th>Обещание</th><th>Что мы видели</th></tr></thead>
+    <tbody>
+      <tr><td><b>A</b> — Atomicity, атомарность</td><td>все команды транзакции выполняются целиком или не выполняются вовсе</td><td>запрос 34: +100 откатилось вместе с ошибкой</td></tr>
+      <tr><td><b>C</b> — Consistency, согласованность</td><td>после транзакции все правила (<code>CHECK</code>, FK, <code>UNIQUE</code>) соблюдены</td><td>баланс не стал −94,13</td></tr>
+      <tr><td><b>I</b> — Isolation, изоляция</td><td>параллельные транзакции не видят «черновики» друг друга</td><td>блок 08</td></tr>
+      <tr><td><b>D</b> — Durability, надёжность</td><td>после <code>COMMIT</code> данные переживут выключение сервера</td><td>PostgreSQL сначала записывает изменения в журнал на диске (WAL), и только потом отвечает «COMMIT»</td></tr>
+    </tbody>
+  </table>
+
+  <h3>SAVEPOINT: откатить часть транзакции</h3>
+  <p>Клиент 1 дарит 1 бонус клиенту 2 и заодно оставляет отзыв «Спасибо за подарок!». Если отзыв не сохранится, подарок отменять не хочется. <code>SAVEPOINT</code> — «точка сохранения», как в игре: можно вернуться к ней, не теряя всё, что было до неё.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">lesson4.sql · + в конец скрипта · выполнять как скрипт: выделить и Alt+X</span></figcaption>
+    <pre><code class="language-sql">-- 35. Подарок + отзыв; отзыв упадёт, подарок останется
+BEGIN;
+UPDATE bonus_wallet SET balance = balance - 1 WHERE customer_id = 1;
+UPDATE bonus_wallet SET balance = balance + 1 WHERE customer_id = 2;
+SAVEPOINT before_review;
+INSERT INTO film_review (customer_id, film_id, rating, review_text)
+VALUES (1, 1, 5, 'Спасибо за подарок!');      -- отзыв на фильм 1 уже есть
+ROLLBACK TO SAVEPOINT before_review;
+COMMIT;
+SELECT * FROM bonus_wallet WHERE customer_id IN (1, 2) ORDER BY customer_id;</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результаты</span><span class="role">настоящие</span></figcaption>
+    <pre><code class="language-none">ERROR:  duplicate key value violates unique constraint "film_review_customer_id_film_id_key"
+DETAIL:  Key (customer_id, film_id)=(1, 1) already exists.
+ROLLBACK
+COMMIT
+ customer_id | balance
+-------------+---------
+           1 |    4.87       ← подарок прошёл
+           2 |   18.77</code></pre>
+  </figure>
+  <p><code>ROLLBACK TO SAVEPOINT</code> откатил только неудачный <code>INSERT</code> и «починил» сломанную транзакцию, а <code>COMMIT</code> зафиксировал перевод. Без <code>SAVEPOINT</code> ошибка отзыва отменила бы и подарок.</p>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">КАК ЭТО ВЫГЛЯДИТ В КОДЕ</span>
+    <p>В Node.js вы редко пишете <code>BEGIN</code> руками: ORM делает это сама. В Prisma перевод выглядит так 👀: <code>await prisma.$transaction(async (tx) =&gt; { await tx.bonusWallet.update({ where: { customerId: 1 }, data: { balance: { decrement: 5 } } }); await tx.bonusWallet.update({ where: { customerId: 2 }, data: { balance: { increment: 5 } } }); })</code>. Если внутри функции бросить исключение, Prisma сделает <code>ROLLBACK</code>, иначе — <code>COMMIT</code>. В FastAPI-проекте то же самое делает <code>async with session.begin():</code>. А <code>decrement: 5</code> превращается в <code>SET balance = balance - 5</code> — почему это важно, увидим прямо сейчас.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 CONC -->
+<section id="conc">
+  <div class="sec-head"><h2>08 · Два пользователя сразу: блокировки и потерянное обновление</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Пока мы работали в одном окне. А на сервере одновременно работают сотни подключений. Откройте второе окно: <b>SQL Editor → New SQL script</b> ещё раз (или <b>Ctrl+]</b>). Первое окно — «пользователь A», второе — «пользователь B». Положите окна рядом и выполняйте команды <b>по одной</b>, в указанном порядке.</p>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПРОВЕРЬТЕ, ЧТО ОКНА — РАЗНЫЕ ПОДКЛЮЧЕНИЯ</span>
+    <p>По умолчанию DBeaver открывает для каждого редактора отдельное подключение. Если на шаге 3 первого опыта запрос в окне B <b>не</b> «завис», значит окна делят одно подключение: включите <b>Window → Preferences → Editors → SQL Editor → Open separate connection for each editor</b> и переподключитесь. Запасной вариант — второе окно в терминале: <code>docker exec -it &lt;контейнер&gt; psql -U postgres -d pagila</code> (имя контейнера покажет <code>docker ps</code>).</p>
+  </div></div>
+
+  <h3>Опыт 1. Изоляция и блокировка строки</h3>
+  <table class="cmp">
+    <thead><tr><th>Шаг</th><th>Окно A</th><th>Окно B</th><th>Что видим</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>BEGIN;</code><br><code>UPDATE bonus_wallet SET balance = balance - 2 WHERE customer_id = 1;</code></td><td></td><td>A списал 2 бонуса, но не зафиксировал</td></tr>
+      <tr><td>2</td><td></td><td><code>SELECT balance FROM bonus_wallet WHERE customer_id = 1;</code></td><td><b>4.87</b> — B не видит черновик A (буква I в ACID)</td></tr>
+      <tr><td>3</td><td></td><td><code>UPDATE bonus_wallet SET balance = balance - 1 WHERE customer_id = 1;</code></td><td>запрос B <b>висит</b>: строку держит A</td></tr>
+      <tr><td>4</td><td><code>SELECT balance FROM bonus_wallet WHERE customer_id = 1;</code></td><td></td><td><b>2.87</b> — A видит свой черновик</td></tr>
+      <tr><td>5</td><td><code>COMMIT;</code></td><td></td><td>в ту же секунду <code>UPDATE</code> в B выполнился</td></tr>
+      <tr><td>6</td><td></td><td><code>SELECT balance FROM bonus_wallet WHERE customer_id = 1;</code></td><td><b>1.87</b> = 4.87 − 2 − 1. Оба списания учтены</td></tr>
+    </tbody>
+  </table>
+  <p>В моём прогоне запрос B ждал 3,5 секунды — ровно до <code>COMMIT</code> в A. Когда две транзакции меняют <b>одну строку</b>, вторая ждёт первую. Читать при этом можно свободно: читатели не ждут писателей.</p>
+
+  <h3>Опыт 2. Потерянное обновление</h3>
+  <p>Теперь сделаем так, как часто пишут новички: прочитали баланс в приложение, посчитали новое значение на JavaScript и записали <b>готовое число</b>. A дарит 5 бонусов, B дарит 3 — с одного кошелька клиента №2, одновременно.</p>
+  <table class="cmp">
+    <thead><tr><th>Шаг</th><th>Окно A (дарит 5)</th><th>Окно B (дарит 3)</th><th>Что видим</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>BEGIN;</code><br><code>SELECT balance FROM bonus_wallet WHERE customer_id = 2;</code></td><td><code>BEGIN;</code><br><code>SELECT balance FROM bonus_wallet WHERE customer_id = 2;</code></td><td>оба прочитали <b>18.77</b></td></tr>
+      <tr><td>2</td><td>«в JS» 18.77 − 5 = 13.77:<br><code>UPDATE bonus_wallet SET balance = 13.77 WHERE customer_id = 2;</code><br><code>COMMIT;</code></td><td></td><td></td></tr>
+      <tr><td>3</td><td></td><td>«в JS» 18.77 − 3 = 15.77:<br><code>UPDATE bonus_wallet SET balance = 15.77 WHERE customer_id = 2;</code><br><code>COMMIT;</code></td><td></td></tr>
+      <tr><td>4</td><td><code>SELECT balance FROM bonus_wallet WHERE customer_id = 2;</code></td><td></td><td><b>15.77</b>, а должно быть 10.77</td></tr>
+    </tbody>
+  </table>
+  <p>Клиент подарил 8 бонусов, а списалось 3. Подарок A <b>потерян</b>: B перезаписал баланс числом, посчитанным по устаревшим данным. Транзакции не помогли — каждая сама по себе прошла корректно. Это <b>lost update</b>, одна из самых частых ошибок в бэкенде: лайки, остатки на складе, счётчики просмотров.</p>
+  <table class="cmp">
+    <thead><tr><th>Решение</th><th>Как</th><th>Когда</th></tr></thead>
+    <tbody>
+      <tr><td><b>1. Считать в базе</b></td><td><code>SET balance = balance - 5</code> вместо <code>SET balance = 13.77</code></td><td>почти всегда. Так работает опыт 1: база сама берёт актуальное значение под блокировкой</td></tr>
+      <tr><td><b>2. Заблокировать при чтении</b></td><td><code>SELECT ... FOR UPDATE</code> — «читаю, чтобы изменить: остальные подождите»</td><td>когда решение принимается в коде: «хватает ли бонусов? есть ли товар на складе?»</td></tr>
+    </tbody>
+  </table>
+  <p>Проверим второе решение. Сначала вернём баланс: <code>UPDATE bonus_wallet SET balance = 18.77 WHERE customer_id = 2;</code> — и повторим опыт, добавив к обоим <code>SELECT</code> слова <code>FOR UPDATE</code>:</p>
+  <table class="cmp">
+    <thead><tr><th>Шаг</th><th>Окно A</th><th>Окно B</th><th>Что видим</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>BEGIN;</code><br><code>SELECT balance FROM bonus_wallet WHERE customer_id = 2 FOR UPDATE;</code></td><td></td><td>A получил <b>18.77</b> и держит строку</td></tr>
+      <tr><td>2</td><td></td><td><code>BEGIN;</code><br><code>SELECT balance FROM bonus_wallet WHERE customer_id = 2 FOR UPDATE;</code></td><td>B <b>висит</b> на чтении</td></tr>
+      <tr><td>3</td><td><code>UPDATE bonus_wallet SET balance = 13.77 WHERE customer_id = 2;</code><br><code>COMMIT;</code></td><td></td><td>B сразу получил <b>13.77</b> — свежее значение</td></tr>
+      <tr><td>4</td><td></td><td>13.77 − 3 = 10.77:<br><code>UPDATE bonus_wallet SET balance = 10.77 WHERE customer_id = 2;</code><br><code>COMMIT;</code></td><td>итог <b>10.77</b> — оба подарка учтены</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Опыт 3. Взаимная блокировка (deadlock)</h3>
+  <p>Клиент 1 дарит бонус клиенту 2, а клиент 2 в ту же секунду — клиенту 1. Каждая транзакция сначала списывает у «своего», потом начисляет «чужому».</p>
+  <table class="cmp">
+    <thead><tr><th>Шаг</th><th>Окно A</th><th>Окно B</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>BEGIN;</code><br><code>UPDATE bonus_wallet SET balance = balance - 1 WHERE customer_id = 1;</code></td><td></td></tr>
+      <tr><td>2</td><td></td><td><code>BEGIN;</code><br><code>UPDATE bonus_wallet SET balance = balance - 1 WHERE customer_id = 2;</code></td></tr>
+      <tr><td>3</td><td><code>UPDATE bonus_wallet SET balance = balance + 1 WHERE customer_id = 2;</code> — висит, строку 2 держит B</td><td></td></tr>
+      <tr><td>4</td><td></td><td><code>UPDATE bonus_wallet SET balance = balance + 1 WHERE customer_id = 1;</code> — висит, строку 1 держит A</td></tr>
+    </tbody>
+  </table>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">через секунду в одном из окон</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">ERROR:  deadlock detected
+DETAIL:  Process 367 waits for ShareLock on transaction 48596; blocked by process 368.
+Process 368 waits for ShareLock on transaction 48595; blocked by process 367.
+HINT:  See server log for query details.</code></pre>
+  </figure>
+  <p>A ждёт B, B ждёт A — сами они никогда не разойдутся. PostgreSQL раз в секунду проверяет такие циклы и «убивает» одну из транзакций. Вторая продолжает работу. Выполните <code>ROLLBACK;</code> в обоих окнах. Лекарство — <b>всегда блокировать строки в одном порядке</b>, например по возрастанию id: сначала кошелёк с меньшим номером, потом с большим, кто бы ни был отправителем. А приложение должно уметь повторить транзакцию, если поймало <code>deadlock detected</code>.</p>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">УРОВНИ ИЗОЛЯЦИИ — ОДНОЙ СТРОКОЙ</span>
+    <p>Всё, что мы видели, — поведение уровня по умолчанию <code>READ COMMITTED</code>: каждая команда видит то, что зафиксировано к её началу. Есть уровни строже: <code>REPEATABLE READ</code> (вся транзакция видит один «снимок» базы) и <code>SERIALIZABLE</code> (база гарантирует результат, как если бы транзакции шли по очереди, и сама отменяет те, что мешают друг другу). Включаются так: <code>BEGIN ISOLATION LEVEL SERIALIZABLE;</code>. Для начала достаточно знать, что они есть.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 09 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>09 · Игра «Что пошло не так?», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~12 мин</span></div>
+
+  <details class="quiz"><summary>Сумма всех заказов в отчёте отличается от бухгалтерии на 40 долларов. Колонка <code>price real</code>.</summary><div class="ans"><b>Деньги во float/real.</b> Только <code>NUMERIC(10, 2)</code>.</div></details>
+  <details class="quiz"><summary><code>ALTER TABLE orders ADD COLUMN source TEXT NOT NULL;</code> → ERROR: contains null values.</summary><div class="ans"><b>Старым строкам нечем заполнить колонку.</b> <code>DEFAULT</code> или три шага: добавить, заполнить <code>UPDATE</code>, <code>SET NOT NULL</code>.</div></details>
+  <details class="quiz"><summary>После миграции <code>balance TYPE INTEGER</code> клиенты жалуются: «у меня было 12.49, стало 12, а у соседа 12.75 стало 13».</summary><div class="ans"><b>Тихое округление при смене типа.</b> Проверять смену типа на копии данных.</div></details>
+  <details class="quiz"><summary><code>UPDATE film SET rental_rate = 0.99;</code> → <code>UPDATE 1000</code>.</summary><div class="ans"><b>Забыли <code>WHERE</code>.</b> Сначала <code>SELECT</code>, опасное — в <code>BEGIN</code>, смотреть на число строк.</div></details>
+  <details class="quiz"><summary>Пользователь дважды кликнул «Оценить» — второй запрос вернул 500 «duplicate key».</summary><div class="ans"><b>Не идемпотентная вставка.</b> <code>INSERT ... ON CONFLICT DO UPDATE</code>.</div></details>
+  <details class="quiz"><summary>Перевод бонусов: списание прошло, сервер упал, начисления нет.</summary><div class="ans"><b>Два UPDATE без транзакции.</b> <code>BEGIN ... COMMIT</code> (в ORM — <code>$transaction</code>).</div></details>
+  <details class="quiz"><summary>В транзакции после ошибки все команды отвечают «current transaction is aborted».</summary><div class="ans"><b>Транзакция сломана ошибкой.</b> Только <code>ROLLBACK</code> (или <code>SAVEPOINT</code> заранее).</div></details>
+  <details class="quiz"><summary>Два администратора одновременно списали товар со склада, остаток уменьшился только на 1, хотя продали 2.</summary><div class="ans"><b>Lost update:</b> прочитали, посчитали в коде, записали число. <code>SET qty = qty - 1</code> или <code>SELECT ... FOR UPDATE</code>.</div></details>
+  <details class="quiz"><summary>Запросы к таблице заказов «зависли» на 10 минут, хотя нагрузки нет. Один разработчик ушёл на обед с открытым DBeaver.</summary><div class="ans"><b>Незакрытая транзакция держит блокировки.</b> <code>COMMIT</code>/<code>ROLLBACK</code>, не оставлять <code>BEGIN</code> открытым.</div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Нужно</th><th>SQL</th></tr></thead>
+    <tbody>
+      <tr><td>создать таблицу</td><td><code>CREATE TABLE t (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, ...);</code></td></tr>
+      <tr><td>правила</td><td><code>NOT NULL</code> · <code>UNIQUE (a, b)</code> · <code>CHECK (x &gt; 0)</code> · <code>DEFAULT now()</code> · <code>REFERENCES t (id) ON DELETE ...</code></td></tr>
+      <tr><td>типы</td><td><code>TEXT</code> · <code>BOOLEAN</code> · <code>TIMESTAMPTZ</code> · <code>NUMERIC(10, 2)</code> для денег</td></tr>
+      <tr><td>изменить структуру</td><td><code>ALTER TABLE t ADD COLUMN</code> / <code>RENAME COLUMN</code> / <code>ALTER COLUMN ... TYPE</code> / <code>ADD CONSTRAINT</code> / <code>DROP COLUMN</code></td></tr>
+      <tr><td>вставить и получить id</td><td><code>INSERT INTO t (a, b) VALUES (...), (...) RETURNING id;</code></td></tr>
+      <tr><td>вставить из запроса</td><td><code>INSERT INTO t (a, b) SELECT ...;</code></td></tr>
+      <tr><td>обновить</td><td><code>UPDATE t SET x = x + 1 WHERE ... RETURNING ...;</code></td></tr>
+      <tr><td>обновить по другой таблице</td><td><code>UPDATE t SET ... FROM t2 WHERE t2.id = t.t2_id AND ...;</code></td></tr>
+      <tr><td>удалить</td><td><code>DELETE FROM t WHERE ...;</code> · всё сразу: <code>TRUNCATE t;</code></td></tr>
+      <tr><td>вставить или обновить</td><td><code>INSERT ... ON CONFLICT (a, b) DO UPDATE SET x = EXCLUDED.x;</code> · <code>DO NOTHING</code></td></tr>
+      <tr><td>транзакция</td><td><code>BEGIN; ... COMMIT;</code> · отмена <code>ROLLBACK;</code> · <code>SAVEPOINT s; ROLLBACK TO SAVEPOINT s;</code></td></tr>
+      <tr><td>прочитать, чтобы изменить</td><td><code>SELECT ... FOR UPDATE;</code> внутри транзакции</td></tr>
+      <tr><td>безопасная привычка</td><td><code>SELECT</code> с тем же <code>WHERE</code> → <code>BEGIN</code> → изменение → проверить число строк → <code>COMMIT</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание (Pagila)</h3>
+  <p>Решения — в <code>homework4.sql</code>, первой строкой <code>SET TIME ZONE 'UTC';</code>. Выполняйте после всего скрипта урока.</p>
+  <ol>
+    <li><b>Список желаний.</b> Создайте таблицу <code>wishlist</code>: клиент, фильм, дата добавления (сама). Первичный ключ — <b>пара</b> <code>(customer_id, film_id)</code>, отдельный id не нужен. При удалении клиента или фильма записи удаляются. Добавьте клиенту №1 фильмы 10, 20 и 30 одной командой с <code>RETURNING</code> и попробуйте добавить фильм 10 ещё раз. <i>Проверка: ошибка про <code>wishlist_pkey</code>.</i></li>
+    <li><b>Ловушка CHECK.</b> Добавьте в <code>film_review</code> правило «текст отзыва не пустая строка»: <code>CHECK (review_text &lt;&gt; '')</code>. Попробуйте вставить отзыв клиента №10 на фильм №1 с текстом <code>''</code>, а потом с <code>NULL</code>. Почему второй прошёл? <i>Подсказка: урок 1, сравнение с <code>NULL</code>.</i></li>
+    <li><b>Хоррор на вечер.</b> Одним <code>INSERT ... SELECT</code> добавьте в список желаний клиента №1 все фильмы категории Horror длиннее 150 минут, которые он ещё не брал (<code>NOT EXISTS</code> из урока 2). Дубли пропускайте через <code>ON CONFLICT DO NOTHING</code>. <i>Проверка: <code>INSERT 0 34</code>, всего у клиента 37 записей.</i></li>
+    <li><b>Награда постоянным.</b> Внутри <code>BEGIN ... ROLLBACK</code> начислите +2 бонуса клиентам, у которых 80 и больше аренд (<code>UPDATE ... FROM</code> с подзапросом и <code>HAVING</code>). <i>Проверка: <code>UPDATE 76</code>.</i></li>
+    <li><b>Идемпотентность.</b> Выполните дважды <code>INSERT</code> в <code>wishlist</code> фильмов 10 и 40 для клиента №1 с <code>ON CONFLICT DO NOTHING RETURNING film_id</code>. <i>Проверка: первый раз вернётся 40, второй — ничего.</i></li>
+    <li><b>Безопасный перевод.</b> Напишите транзакцию: клиент №3 дарит 2,50 бонуса клиенту №4. Затем попробуйте подарить 1000 и объясните каждую строку ответа базы. <i>Проверка: после первого перевода у клиентов 10,92 и 12,67.</i></li>
+    <li><b>Мягкое удаление.</b> Внутри <code>BEGIN ... ROLLBACK</code> «удалите» клиента №5 через <code>activebool</code> и посчитайте активных клиентов до и после. Почему <code>DELETE FROM customer WHERE customer_id = 5</code> не сработал бы?</li>
+    <li><b>Со звёздочкой: два окна.</b> Повторите опыт 2 (lost update) сами, а потом исправьте его <b>первым</b> способом: оба окна пишут <code>balance = balance - N</code>. Сколько будет итог и ждёт ли одно окно другое?</li>
+  </ol>
+  <details class="classic"><summary>Ответы для преподавателя</summary><div class="ans">
+    <pre><code class="language-sql">-- 1
+CREATE TABLE wishlist (
+    customer_id INTEGER NOT NULL REFERENCES customer (customer_id) ON DELETE CASCADE,
+    film_id     INTEGER NOT NULL REFERENCES film (film_id) ON DELETE CASCADE,
+    added_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (customer_id, film_id)
+);
+INSERT INTO wishlist (customer_id, film_id) VALUES (1, 10), (1, 20), (1, 30)
+RETURNING customer_id, film_id;
+INSERT INTO wishlist (customer_id, film_id) VALUES (1, 10);   -- ERROR ... "wishlist_pkey"
+-- 2 (CHECK пропускает строку, если условие = NULL: NULL &lt;&gt; '' — это NULL, а не false)
+ALTER TABLE film_review ADD CONSTRAINT review_text_not_empty CHECK (review_text &lt;&gt; '');
+INSERT INTO film_review (customer_id, film_id, rating, review_text) VALUES (10, 1, 4, '');    -- ERROR
+INSERT INTO film_review (customer_id, film_id, rating, review_text) VALUES (10, 1, 4, NULL);  -- OK
+-- 3
+INSERT INTO wishlist (customer_id, film_id)
+SELECT 1, f.film_id
+FROM film f
+JOIN film_category fc ON fc.film_id = f.film_id
+JOIN category c       ON c.category_id = fc.category_id
+WHERE c.name = 'Horror' AND f.length &gt; 150
+  AND NOT EXISTS (SELECT 1
+                  FROM rental r JOIN inventory i ON i.inventory_id = r.inventory_id
+                  WHERE r.customer_id = 1 AND i.film_id = f.film_id)
+ON CONFLICT DO NOTHING;
+-- 4
+BEGIN;
+UPDATE bonus_wallet w
+SET balance = w.balance + 2
+FROM (SELECT customer_id FROM rental GROUP BY customer_id HAVING COUNT(*) &gt;= 80) t
+WHERE t.customer_id = w.customer_id;
+ROLLBACK;
+-- 5
+INSERT INTO wishlist (customer_id, film_id) VALUES (1, 10), (1, 40)
+ON CONFLICT (customer_id, film_id) DO NOTHING RETURNING film_id;
+-- 6 (было 13.42 и 10.17)
+BEGIN;
+UPDATE bonus_wallet SET balance = balance - 2.50 WHERE customer_id = 3;
+UPDATE bonus_wallet SET balance = balance + 2.50 WHERE customer_id = 4;
+COMMIT;
+-- 1000: CHECK bonus_wallet_balance_check → transaction is aborted → ROLLBACK
+-- 7 (DELETE не даст FK от payment и rental: ON DELETE RESTRICT)
+BEGIN;
+SELECT COUNT(*) FROM customer WHERE activebool;               -- 987
+UPDATE customer SET activebool = false WHERE customer_id = 5;
+SELECT COUNT(*) FROM customer WHERE activebool;               -- 986
+ROLLBACK;
+-- 8: итог правильный; второе окно ждёт COMMIT первого, потом вычитает из свежего значения</code></pre>
+  </div></details>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Различаю DDL, DML и команды транзакций.</li>
+    <li>☐ Выбираю типы: <code>IDENTITY</code> для id, <code>TEXT</code>, <code>BOOLEAN</code>, <code>TIMESTAMPTZ</code>, <code>NUMERIC</code> для денег — и объясняю, чем плох <code>float</code>.</li>
+    <li>☐ Пишу <code>CREATE TABLE</code> с <code>PRIMARY KEY</code>, <code>REFERENCES</code>, <code>NOT NULL</code>, <code>UNIQUE</code>, <code>CHECK</code>, <code>DEFAULT</code> и читаю ошибки нарушений.</li>
+    <li>☐ Меняю структуру через <code>ALTER TABLE</code>, знаю рецепт обязательной колонки и что такое миграции.</li>
+    <li>☐ Вставляю несколько строк, использую <code>RETURNING</code> и <code>INSERT ... SELECT</code>.</li>
+    <li>☐ Обновляю и удаляю безопасно: <code>SELECT</code> → <code>BEGIN</code> → проверка числа строк → <code>COMMIT</code>; знаю <code>UPDATE ... FROM</code>.</li>
+    <li>☐ Знаю разницу <code>DELETE</code> и <code>TRUNCATE</code> и что такое мягкое удаление.</li>
+    <li>☐ Пишу UPSERT через <code>ON CONFLICT</code> и объясняю идемпотентность.</li>
+    <li>☐ Объясняю ACID, использую <code>BEGIN</code>/<code>COMMIT</code>/<code>ROLLBACK</code>/<code>SAVEPOINT</code>.</li>
+    <li>☐ Узнаю lost update и deadlock и знаю, как их избежать.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://www.postgresql.org/docs/current/ddl-constraints.html" target="_blank" rel="noopener">PostgreSQL: Constraints</a> — <code>CHECK</code>, <code>UNIQUE</code>, внешние ключи.</li>
+    <li><a href="https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT" target="_blank" rel="noopener">PostgreSQL: INSERT ... ON CONFLICT</a></li>
+    <li><a href="https://www.postgresql.org/docs/current/tutorial-transactions.html" target="_blank" rel="noopener">PostgreSQL Tutorial: Transactions</a> — тот же пример с банковским переводом.</li>
+    <li><a href="https://www.postgresql.org/docs/current/transaction-iso.html" target="_blank" rel="noopener">PostgreSQL: Transaction Isolation</a> — уровни изоляции подробно.</li>
+    <li><a href="https://www.prisma.io/docs/orm/prisma-client/queries/transactions" target="_blank" rel="noopener">Prisma: Transactions</a> — как это выглядит в Node.js.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · SQL, урок 4 · DDL, DML, типы данных, NUMERIC и float, TIMESTAMPTZ, CREATE TABLE, IDENTITY, PRIMARY KEY, REFERENCES, NOT NULL, UNIQUE, CHECK, DEFAULT, ALTER TABLE, миграции, DROP, INSERT, RETURNING, INSERT ... SELECT, UPDATE ... FROM, DELETE, TRUNCATE, soft delete, UPSERT, ON CONFLICT, идемпотентность, транзакции, ACID, SAVEPOINT, блокировки, lost update, SELECT FOR UPDATE, deadlock, уровни изоляции</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

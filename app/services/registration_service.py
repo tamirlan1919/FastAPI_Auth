@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.db.models import User, Profile
-from app.shemas.user import RegisterWithProfile
+from app.schemas.user import RegisterWithProfile
 
 class UserAlreadyExists(Exception):
     pass

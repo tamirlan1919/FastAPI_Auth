@@ -13,7 +13,7 @@ from app.repositories.post_repo import PostRepo
 from app.repositories.profile_repo import ProfileRepo
 from app.repositories.tag_repo import TagRepo
 from app.repositories.user_repo import UserRepo
-from app.shemas.token import TokenPayload
+from app.schemas.token import TokenPayload
 from app.broker.rabbit import EventPublisher, get_publisher
 
 

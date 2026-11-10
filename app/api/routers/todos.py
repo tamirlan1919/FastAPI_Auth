@@ -3,7 +3,7 @@ from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import JSONResponse
 
 from app.db.mongo import database
-from app.shemas.todo import TodoIn
+from app.schemas.todo import TodoIn
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 # Предполагаем, что 'todo_collection' импортирована из database.py

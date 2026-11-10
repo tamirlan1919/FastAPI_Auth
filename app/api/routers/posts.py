@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from app.api.deps import CurrentUserDep, PostRepoDep, RedisDep, SessionDep
 from app.db.database import async_session_maker
 from app.db.models import Post, Tag, User, post_tags
-from app.shemas.post import AuthorOut, AuthorStat, PostStat, PostOut, PostCreate, TagOut, TagStat
+from app.schemas.post import AuthorOut, AuthorStat, PostStat, PostOut, PostCreate, TagOut, TagStat
 
 router = APIRouter(prefix="/posts")
 

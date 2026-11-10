@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker · Контейнеры изнутри: Pagila своими руками</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>Docker</div>
+  <p class="lead">Модуль Backend · Docker · после блока SQL</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и подготовка</a>
+    <div class="grp">Часть 1 · Как это устроено</div>
+    <a href="#why"><span class="n theory-dot">01</span>«У меня работает» и история</a>
+    <a href="#process"><span class="n practice-dot">02</span>Контейнер — это процесс</a>
+    <a href="#arch"><span class="n practice-dot">03</span>CLI, демон, API, реестр</a>
+    <a href="#layers"><span class="n practice-dot">04</span>Образ, слои, контейнер</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 2 · Pagila своими руками</div>
+    <a href="#postgres"><span class="n practice-dot">05</span>Postgres одной командой</a>
+    <a href="#volumes"><span class="n practice-dot">06</span>Тома: данные отдельно</a>
+    <a href="#dockerfile"><span class="n practice-dot">07</span>Dockerfile для films-api</a>
+    <a href="#network"><span class="n practice-dot">08</span>Сети: контейнеры знакомятся</a>
+    <a href="#prod"><span class="n theory-dot">09</span>Уборка и прод</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">10</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · Docker · 2 часа с перерывом · для фронтенд-разработчиков · после блока SQL</p>
+  <h1>Docker: контейнеры изнутри</h1>
+  <p class="lead-p">Весь блок SQL вы работали с базой Pagila, которую подняли одной командой <code>docker compose up</code> и, скорее всего, ни разу не задумались, что произошло. На вашем компьютере нет PostgreSQL, но база работает. Ни один SQL-файл вы не запускали руками, а в ней 1000 фильмов. Сегодня разберём эту «магию» по винтикам: соберём ту же Pagila <strong>своими руками</strong> одной командой <code>docker run</code>, сохраним данные в томе, упакуем в контейнер маленький Node.js-API к этой базе и соединим два контейнера в сеть.</p>
+
+  <div class="hero">
+    <h3>ЧТО СДЕЛАЕМ ЗА УРОК</h3>
+    <ul>
+      <li><b>Разберёмся, чем контейнер отличается от виртуальной машины</b> — и увидим, что контейнер занимает 652 КБ памяти и стартует за 0,24 с.</li>
+      <li><b>Заглянем внутрь Docker</b>: CLI, демон, REST API (спросим демона через <code>curl</code>), реестр.</li>
+      <li><b>Поймём слои и «одноразовость» контейнера</b>: куда пропадают файлы и почему.</li>
+      <li><b>Поднимем Postgres с Pagila одной командой</b> и сохраним таблицу из урока про DDL в томе — она переживёт удаление контейнера.</li>
+      <li><b>Напишем Dockerfile</b> для API <code>films-api</code> и запустим его рядом с базой в общей сети.</li>
+    </ul>
+  </div>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>«У меня работает»: хостинг → виртуальные машины → контейнеры</td><td>теория</td></tr>
+      <tr><td class="t">0:12</td><td>Контейнер — это просто процесс: ядро, PID 1, память</td><td>live</td></tr>
+      <tr><td class="t">0:24</td><td>Архитектура: CLI → REST API → демон → реестр</td><td>live</td></tr>
+      <tr><td class="t">0:34</td><td>Образ, слои, слой записи, <code>docker diff</code></td><td>live</td></tr>
+      <tr><td class="t">0:47</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">0:57</td><td>Postgres одной командой: <code>-e</code>, <code>-p</code>, <code>exec</code>, куда делась таблица</td><td>live-coding</td></tr>
+      <tr><td class="t">1:12</td><td>Тома и init-скрипты: так поднималась ваша Pagila</td><td>live-coding</td></tr>
+      <tr><td class="t">1:25</td><td>Dockerfile для Node.js-API, слои и кеш сборки</td><td>live-coding</td></tr>
+      <tr><td class="t">1:40</td><td>Сети: почему <code>localhost</code> внутри контейнера — это не ваш компьютер</td><td>live-coding</td></tr>
+      <tr><td class="t">1:50</td><td>Уборка, прод, игра, шпаргалка, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОДГОТОВКА</span>
+    <p>Запущенный <b>Docker Desktop</b> (кит в строке меню на Mac или в трее на Windows должен быть неподвижным) и папка с репозиторием Pagila, из которой вы поднимали базу. Ваша «старая» Pagila пусть продолжает работать на порту 5432: сегодня все наши контейнеры будут на <b>5433</b> и <b>3000</b>, чтобы ничего не сломать. Заранее скачайте образы, пока все не начали качать одновременно: <code>docker pull postgres:18</code> и <code>docker pull node:22-alpine</code>.</p>
+  </div></div>
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">КАК ЧИТАТЬ БЛОКИ КОДА И ЧТО Я ПРОВЕРИЛ</span>
+    <p>В заголовке блока написано, где вводить: «терминал · папка pagila», «новый файл · films-api/Dockerfile». «👀 только посмотреть» — не вводим. Все команды я выполнил на Docker Engine 29.8.2 (Linux): выводы настоящие.</p>
+    <p>Одна оговорка. На моём сервере Docker Hub был закрыт, поэтому базовые образы я собрал сам из Ubuntu 24.04 под именами <code>postgres:18</code> и <code>node:22-alpine</code>. Внутри «моего» <code>postgres:18</code> — <b>официальный</b> скрипт запуска из репозитория <code>docker-library/postgres</code> (все его сообщения в уроке настоящие), но сам сервер — PostgreSQL 16. Поэтому у вас будут другие размеры образов и строки с версией в логах, а Pagila у вас новее (999 клиентов вместо 599 у меня). Фильмы одинаковые — на них и проверяем.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Как это устроено</span><span class="bar"></span></div>
+
+<!-- 01 WHY -->
+<section id="why">
+  <div class="sec-head"><h2>01 · «У меня работает» и как к этому пришли</h2><span class="tag theory">теория</span><span class="tag time">~12 мин</span></div>
+
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">ИСТОРИЯ ИЗ ЭТОГО ЖЕ КУРСА</span>
+    <p>Когда я готовил уроки SQL, свежая версия Pagila не загрузилась в мой PostgreSQL 16: <code>ERROR: function uuidv7() does not exist</code>. Схема использует функции из PostgreSQL 18. У вас всё заработало с первого раза, потому что <code>docker compose up</code> скачал <b>ровно ту</b> версию Postgres, которую указал автор репозитория. Это и есть главная задача Docker: <b>приложение едет вместе со своим окружением</b>.</p>
+  </div></div>
+  <table class="cmp">
+    <thead><tr><th>«Матрица ада» фронтендера</th><th>Как обычно</th><th>С Docker</th></tr></thead>
+    <tbody>
+      <tr><td>Проекту нужен Node 18, другому — Node 22</td><td><code>nvm use</code>, забыли переключить — странные ошибки</td><td>версия Node записана в <code>Dockerfile</code> проекта</td></tr>
+      <tr><td>Бэкенду нужны Postgres, Redis, RabbitMQ</td><td>установить всё на ноутбук, держать в фоне, конфликты версий</td><td>по контейнеру на сервис, удалил — следов нет</td></tr>
+      <tr><td>«У меня работает, а на сервере нет»</td><td>у вас macOS, на сервере Linux и другие версии библиотек</td><td>на сервер едет тот же образ, что проверен у вас и в CI</td></tr>
+      <tr><td>Новичок в команде</td><td>день на установку по устаревшему README</td><td><code>docker compose up</code> — как с Pagila</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Три эпохи доставки приложений</h3>
+  <div class="diagram">
+<pre> 1. Один сервер на всех              2. Виртуальные машины               3. Контейнеры
+
+ ┌──────────────────────────┐   ┌────────────┐ ┌────────────┐    ┌──────────┐ ┌──────────┐
+ │ App A   App B   App C    │   │ App A      │ │ App B      │    │ App A    │ │ App B    │
+ │ (общие библиотеки,       │   │ Библиотеки │ │ Библиотеки │    │ Библ.    │ │ Библ.    │
+ │  общая память — одно     │   │ <span class="fk">Гостевая ОС</span>│ │ <span class="fk">Гостевая ОС</span>│    └──────────┘ └──────────┘
+ │  упало — упали все)      │   └────────────┘ └────────────┘    ┌────────────────────────┐
+ ├──────────────────────────┤   ┌──────────────────────────┐    │ <span class="pk">Docker Engine</span>          │
+ │ ОС сервера               │   │ Гипервизор               │    ├────────────────────────┤
+ ├──────────────────────────┤   ├──────────────────────────┤    │ ОС сервера (<span class="pk">одно ядро</span>) │
+ │ Железо                   │   │ Железо                   │    ├────────────────────────┤
+ └──────────────────────────┘   └──────────────────────────┘    │ Железо                 │
+                                                                └────────────────────────┘</pre>
+  </div>
+  <table class="cmp">
+    <thead><tr><th></th><th>Виртуальная машина</th><th>Контейнер</th></tr></thead>
+    <tbody>
+      <tr><td>Что внутри</td><td>целая ОС со своим ядром</td><td>только приложение и его библиотеки, ядро — общее с хостом</td></tr>
+      <tr><td>Размер</td><td>гигабайты</td><td>мегабайты</td></tr>
+      <tr><td>Запуск</td><td>десятки секунд — загрузка ОС</td><td>доли секунды — это запуск процесса</td></tr>
+      <tr><td>Изоляция</td><td>очень сильная</td><td>сильная, но ядро общее</td></tr>
+      <tr><td>Аналогия</td><td>отдельный дом со своим фундаментом</td><td>квартира в доме: свои стены и замок, общий фундамент и трубы</td></tr>
+    </tbody>
+  </table>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ПОЧЕМУ КИТ</span>
+    <p>Docker в переводе — «докер», портовый грузчик. До изобретения стандартного морского контейнера в 1950-х корабль грузили неделю: мешки, бочки, ящики разного размера. Потом всё стали класть в одинаковые железные коробки, которые одинаково грузит любой кран в любом порту. Docker сделал то же самое с программами: неважно, что внутри — Python, Node или Postgres, — запускается всё одной командой. А кит на логотипе везёт эти контейнеры на спине.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 PROCESS -->
+<section id="process">
+  <div class="sec-head"><h2>02 · Контейнер — это просто процесс</h2><span class="tag practice">live</span><span class="tag time">~12 мин</span></div>
+
+  <p>Звучит как «маленький компьютер внутри компьютера», но на деле контейнер — обычный процесс вашей ОС, на который надели «шоры»: он видит только свои файлы, свои процессы и свою сеть. Проверим.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · любая папка</span></figcaption>
+    <pre><code class="language-bash">uname -r                                    # версия ядра хоста
+docker run --rm ubuntu:24.04 uname -r       # версия ядра «внутри Ubuntu»
+docker run --rm ubuntu:24.04 hostname       # имя «компьютера» внутри
+time docker run --rm ubuntu:24.04 echo привет</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий, Linux-сервер</span></figcaption>
+    <pre><code class="language-none">6.18.44-fc-v310
+6.18.44-fc-v310          ← то же самое ядро: своего ядра у контейнера нет
+4d425ddad531             ← первые символы id контейнера
+привет
+real    0m0.242s         ← «запустить Ubuntu» = запустить процесс</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>docker run</code></td><td>создать контейнер из образа и запустить его</td><td>если образа нет локально, Docker сначала скачает его</td></tr>
+      <tr><td><code>--rm</code></td><td>удалить контейнер, как только он завершится</td><td>для одноразовых команд — чтобы не копился мусор</td></tr>
+      <tr><td><code>ubuntu:24.04</code></td><td>образ <code>ubuntu</code>, тег (версия) <code>24.04</code></td><td>без тега Docker возьмёт <code>latest</code> — это «какая-то последняя», не надо так</td></tr>
+      <tr><td><code>uname -r</code></td><td>команда, которую выполнить внутри</td><td>всё, что после имени образа, — команда для контейнера</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">НА MAC И WINDOWS БУДЕТ ПО-ДРУГОМУ</span>
+    <p>Контейнерам нужно ядро <b>Linux</b>. У macOS и Windows его нет, поэтому Docker Desktop тихо запускает маленькую Linux-виртуалку, и все контейнеры живут в ней. Вы увидите ядро вроде <code>6.10.14-linuxkit</code>, отличное от <code>uname -r</code> на вашем Mac. На Windows для этого нужен режим <b>WSL 2</b> — он включается в настройках Docker Desktop. На Linux-серверах, где работает прод, виртуалки нет: контейнеры — родные процессы.</p>
+  </div></div>
+
+  <h3>Где этот процесс?</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker run -d --name box ubuntu:24.04 sleep 3600   # -d: в фоне, --name: своё имя
+docker top box                                     # процессы контейнера глазами хоста
+docker exec box cat /proc/1/comm                   # кто PID 1 глазами контейнера
+docker stats --no-stream box                       # сколько он ест</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">02fcb917306ec5904e595314f2820702d904b51f6ea23e322b2af7c08dd192ec
+
+UID     PID     PPID    C   STIME   TTY   TIME       CMD
+root    12295   12270   12  17:11   ?     00:00:00   sleep 3600     ← для хоста это процесс №12295
+
+sleep                                                               ← для контейнера он №1, единственный в мире
+
+NAME   CPU %   MEM USAGE / LIMIT
+box    0.00%   652KiB / 7.835GiB                                    ← 652 КБ. Виртуалке нужен хотя бы гигабайт</code></pre>
+  </figure>
+  <p>На Linux-хосте <code>ps -ef | grep "sleep 3600"</code> показывает тот же процесс №12295 — без всякого Docker. Внутри контейнера он считает себя первым и единственным. Это работа двух механизмов ядра Linux:</p>
+  <table class="cmp">
+    <thead><tr><th>Механизм</th><th>Что делает</th><th>Что мы видели</th></tr></thead>
+    <tbody>
+      <tr><td><b>namespaces</b> (пространства имён)</td><td>«шоры»: свой список процессов, своё имя хоста, своя файловая система, своя сеть</td><td>PID 1 внутри, свой <code>hostname</code></td></tr>
+      <tr><td><b>cgroups</b> (контрольные группы)</td><td>«ограничитель»: сколько памяти и процессора можно взять</td><td><code>docker stats</code>, флаги <code>--memory 512m --cpus 1</code></td></tr>
+    </tbody>
+  </table>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker rm -f box      # -f: остановить и удалить одной командой</code></pre>
+  </figure>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">КОНТЕЙНЕР ЖИВЁТ, ПОКА ЖИВЁТ ЕГО ПРОЦЕСС</span>
+    <p><code>echo привет</code> отработал за миллисекунду — и контейнер завершился. <code>sleep 3600</code> держит контейнер час. Postgres, nginx, Node-сервер работают «вечно» — и контейнер с ними. Частый вопрос новичков: «запустил контейнер, а он сразу остановился» — значит, главный процесс закончил работу или упал. Смотрите <code>docker logs</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 ARCH -->
+<section id="arch">
+  <div class="sec-head"><h2>03 · CLI, демон, REST API, реестр</h2><span class="tag practice">live</span><span class="tag time">~10 мин</span></div>
+
+  <div class="diagram">
+<pre>  вы в терминале              Docker Engine (демон dockerd)              реестр (Docker Hub)
+ ┌──────────────┐   HTTP     ┌───────────────────────────────┐  pull   ┌──────────────────┐
+ │ docker run … │ ─────────▶ │ образы · контейнеры · тома ·   │ ◀────── │ postgres  node   │
+ │  (CLI)       │ ◀───────── │ сети                           │ ──────▶ │ nginx  ваши …    │
+ └──────────────┘   JSON     └───────────────────────────────┘  push   └──────────────────┘
+ Docker Desktop, VS Code, PyCharm — тоже клиенты этого API</pre>
+  </div>
+  <table class="cmp">
+    <thead><tr><th>Часть</th><th>Что это</th><th>Аналогия с фронтендом</th></tr></thead>
+    <tbody>
+      <tr><td><b>Docker CLI</b> (<code>docker ...</code>)</td><td>консольный клиент</td><td>фронтенд</td></tr>
+      <tr><td><b>Docker API</b></td><td>REST API демона: JSON по HTTP через сокет</td><td>бэкенд-API, в который ходит фронт</td></tr>
+      <tr><td><b>Демон</b> <code>dockerd</code></td><td>фоновый процесс: качает, собирает, запускает</td><td>сервер</td></tr>
+      <tr><td><b>Реестр</b> (Docker Hub)</td><td>хранилище образов</td><td>npm registry: <code>docker pull</code> ≈ <code>npm install</code>, <code>docker push</code> ≈ <code>npm publish</code></td></tr>
+    </tbody>
+  </table>
+  <p>Убедимся, что CLI действительно просто шлёт HTTP-запросы. Сначала создадим контейнер, не запуская его, — так видно все стадии жизни:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker version --format 'Client: {{.Client.Version}}  Server: {{.Server.Version}}'
+docker create --name demo ubuntu:24.04 echo "я контейнер"
+docker ps -a
+docker start -a demo        # -a: показать вывод в терминале
+docker ps -a</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">Client: 29.8.2  Server: 29.8.2       ← два разных процесса: клиент и сервер
+178a997bc6cd57f72ae6d48f8259444b7c473d6dc3f231f5f33a80abde7b5a3c
+NAMES     IMAGE          STATUS
+demo      ubuntu:24.04   Created                              ← создан, но не запущен
+я контейнер
+NAMES     IMAGE          STATUS
+demo      ubuntu:24.04   Exited (0) Less than a second ago    ← отработал, код выхода 0</code></pre>
+  </figure>
+  <p>Теперь спросим демона напрямую, без CLI — обычным <code>curl</code>, как вы проверяли бы любой бэкенд:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · Mac/Linux</span><span class="role">на Windows — только посмотреть</span></figcaption>
+    <pre><code class="language-bash">curl -s --unix-socket /var/run/docker.sock "http://localhost/containers/json?all=true" \
+  | jq '.[] | {Names, Image, State, Status}'</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">{
+  "Names": [
+    "/demo"
+  ],
+  "Image": "ubuntu:24.04",
+  "State": "exited",
+  "Status": "Exited (0) 3 seconds ago"
+}</code></pre>
+  </figure>
+  <p>Это ровно то, что показал <code>docker ps -a</code>, только в JSON. <code>docker ps</code> делает именно такой запрос — <code>GET /containers/json</code> — и рисует таблицу. Если <code>jq</code> не установлен, уберите <code>| jq ...</code> и увидите JSON целиком. На Mac с Docker Desktop сокет может лежать в <code>~/.docker/run/docker.sock</code>. После проверки: <code>docker rm demo</code>.</p>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ДОСТУП К СОКЕТУ = ДОСТУП КО ВСЕМУ КОМПЬЮТЕРУ</span>
+    <p>Кто может отправлять запросы в <code>docker.sock</code>, тот может запустить контейнер с доступом к любым файлам хоста. Поэтому в интернете иногда встречается совет «примонтируйте сокет в контейнер» (<code>-v /var/run/docker.sock:/var/run/docker.sock</code>) — он даёт контейнеру права администратора. Так делают только для доверенных инструментов.</p>
+  </div></div>
+
+  <h3>Что происходит при <code>docker run</code></h3>
+  <table class="cmp">
+    <thead><tr><th>Шаг</th><th>Кто</th><th>Что</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>CLI</td><td>отправляет демону запрос «создай и запусти контейнер из образа X»</td></tr>
+      <tr><td>2</td><td>демон</td><td>ищет образ локально; нет — скачивает из реестра (<code>Unable to find image ... locally</code>, <code>Pulling from library/...</code>)</td></tr>
+      <tr><td>3</td><td>демон</td><td>создаёт контейнер: слой для записи, сеть, тома (<b>Created</b>)</td></tr>
+      <tr><td>4</td><td>демон</td><td>запускает главный процесс (<b>Up</b>)</td></tr>
+      <tr><td>5</td><td>демон → CLI</td><td>передаёт вывод в ваш терминал (без <code>-d</code>) или просто печатает id (с <code>-d</code>)</td></tr>
+    </tbody>
+  </table>
+  <p><code>docker run hello-world</code>, которой обычно проверяют установку, печатает ровно эти шаги по-английски. Если у вас Docker Desktop работает, команда уже проходила.</p>
+</section>
+
+<hr>
+
+<!-- 04 LAYERS -->
+<section id="layers">
+  <div class="sec-head"><h2>04 · Образ, слои и одноразовый контейнер</h2><span class="tag practice">live</span><span class="tag time">~13 мин</span></div>
+
+  <table class="cmp">
+    <thead><tr><th></th><th>Образ (image)</th><th>Контейнер (container)</th></tr></thead>
+    <tbody>
+      <tr><td>Что это</td><td>шаблон: файловая система + настройки запуска, <b>только для чтения</b></td><td>запущенный экземпляр образа с тонким слоем <b>для записи</b></td></tr>
+      <tr><td>Аналогия из JS</td><td><code>class Film {}</code></td><td><code>new Film()</code> — объектов из одного класса может быть много</td></tr>
+      <tr><td>Ещё аналогия</td><td>установочный диск игры</td><td>ваше сохранение в этой игре</td></tr>
+      <tr><td>Команды</td><td><code>docker images</code>, <code>pull</code>, <code>build</code>, <code>rmi</code></td><td><code>docker ps</code>, <code>run</code>, <code>stop</code>, <code>rm</code></td></tr>
+    </tbody>
+  </table>
+  <div class="diagram">
+<pre> контейнер notes ─▶  ┌──────────────────────────────────────┐
+                     │ <span class="fk">слой записи</span>: /notes.txt, изменения  │  ← свой у каждого контейнера, удаляется вместе с ним
+                     ╞══════════════════════════════════════╡
+ образ ubuntu:24.04  │ слой: файлы Ubuntu                   │  ← только чтение, общий для всех контейнеров
+                     └──────────────────────────────────────┘
+ (у образа из Dockerfile слоёв несколько: «база», «npm ci», «ваш код» — блок 07)</pre>
+  </div>
+  <p>Проверим, где живут изменения. Создадим файл, удалим системный и поменяем существующий:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker run --name notes ubuntu:24.04 sh -c "echo купить молоко &gt; /notes.txt &amp;&amp; rm /etc/legal &amp;&amp; echo 'alias ll=\"ls -la\"' &gt;&gt; /root/.bashrc &amp;&amp; cat /notes.txt"
+docker diff notes                              # что контейнер поменял относительно образа
+docker run --rm ubuntu:24.04 cat /notes.txt    # новый контейнер из того же образа</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">купить молоко
+C /root
+C /root/.bashrc          ← C — changed, изменён
+C /etc
+D /etc/legal             ← D — deleted, удалён
+A /notes.txt             ← A — added, добавлен
+cat: /notes.txt: No such file or directory    ← в образе файла нет</code></pre>
+  </figure>
+  <p>Все изменения лежат в слое записи <b>контейнера</b> <code>notes</code>. Образ не изменился: новый контейнер стартует с чистого листа. Остановленный <code>notes</code> свой файл помнит (<code>docker start -a notes</code> выведет «купить молоко»). А после <code>docker rm notes</code> слой записи удаляется — и файла больше нет нигде.</p>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ПОЧЕМУ ТАК УСТРОЕНО — И ПОЧЕМУ ЭТО ХОРОШО</span>
+    <p>Образ один и неизменный, поэтому 10 контейнеров Postgres не занимают 10 копий Postgres на диске — слои образа общие. А «одноразовость» контейнера — фича, а не баг: сломался — удалили и создали заново из того же образа, получили гарантированно чистое состояние. Но отсюда <b>правило</b>: всё, что нужно сохранить (данные базы, загруженные файлы), должно жить <b>вне</b> контейнера, в томе. Без тома база в контейнере потеряет данные при первом же пересоздании. Именно это мы и увидим после перерыва.</p>
+  </div></div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ФРОНТЕНДЕРАМ ЭТО ЗНАКОМО</span>
+    <p>Слои похожи на кеш <code>node_modules</code> в CI: если <code>package-lock.json</code> не менялся, зависимости не ставятся заново. Docker устроен так же: если слой не менялся, он берётся из кеша. В блоке 07 мы этим воспользуемся.</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · уборка</span></figcaption>
+    <pre><code class="language-bash">docker rm notes</code></pre>
+  </figure>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — поднимаем Pagila своими руками, теряем таблицу и спасаем её томом.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Pagila своими руками</span><span class="bar"></span></div>
+
+<!-- 05 POSTGRES -->
+<section id="postgres">
+  <div class="sec-head"><h2>05 · Postgres одной командой</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Начнём с самой короткой команды — и сразу ошибки:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">упадёт — так и задумано</span></figcaption>
+    <pre><code class="language-bash">docker run --name pg-try postgres:18</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">Error: Database is uninitialized and superuser password is not specified.
+       You must specify POSTGRES_PASSWORD to a non-empty value for the
+       superuser. For example, "-e POSTGRES_PASSWORD=password" on "docker run".
+
+       You may also use "POSTGRES_HOST_AUTH_METHOD=trust" to allow all
+       connections without a password. This is *not* recommended.</code></pre>
+  </figure>
+  <p>Хорошая ошибка: образ сам говорит, чего ему не хватает. Настройки в контейнер передают через <b>переменные окружения</b> — как <code>.env</code> во фронтенд-проекте. Какие переменные понимает образ, написано на его странице на Docker Hub (<code>hub.docker.com/_/postgres</code>, раздел Environment Variables). Удалим неудачный контейнер и запустим правильно:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker rm pg-try
+docker run -d --name pg-try -e POSTGRES_PASSWORD=secret -p 5433:5432 postgres:18
+docker ps
+docker logs pg-try | tail -1</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">e2e6c0c0bc98e1e559cd6794529090c054452399d70176881261ed258698a95a
+CONTAINER ID   IMAGE         STATUS         PORTS                    NAMES
+e2e6c0c0bc98   postgres:18   Up 6 seconds   0.0.0.0:5433-&gt;5432/tcp   pg-try
+2026-11-09 14:12:23.807 UTC [1] LOG:  database system is ready to accept connections</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>-d</code> (detach)</td><td>запустить в фоне, вернуть терминал</td><td>без него терминал будет показывать логи Postgres, пока не нажмёте Ctrl+C</td></tr>
+      <tr><td><code>--name pg-try</code></td><td>своё имя вместо случайного вроде <code>quirky_hopper</code></td><td>по имени удобно обращаться: <code>logs</code>, <code>exec</code>, <code>rm</code></td></tr>
+      <tr><td><code>-e POSTGRES_PASSWORD=secret</code></td><td>переменная окружения внутри контейнера</td><td>пароль суперпользователя <code>postgres</code></td></tr>
+      <tr><td><code>-p 5433:5432</code></td><td><b>порт_вашего_компьютера : порт_в_контейнере</b></td><td>Postgres внутри слушает 5432; снаружи стучимся на 5433, потому что 5432 занят вашей «старой» Pagila</td></tr>
+      <tr><td><code>0.0.0.0:5433-&gt;5432/tcp</code> в <code>docker ps</code></td><td>проброс работает на всех сетевых интерфейсах хоста</td><td>сюда подключаются DBeaver и ваше приложение</td></tr>
+      <tr><td><code>docker logs pg-try</code></td><td>всё, что процесс напечатал</td><td>первое, что смотрят, когда контейнер «не работает»</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ПРОБРОС ПОРТОВ — КАК ПРОКСИ В VITE</span>
+    <p>У контейнера своя сеть, его порт 5432 снаружи не виден. <code>-p</code> — это «переадресация»: как <code>server.proxy</code> в <code>vite.config.ts</code>, где запросы на <code>localhost:5173/api</code> уходят на <code>localhost:8000</code>.</p>
+  </div></div>
+
+  <h3>Работаем с базой</h3>
+  <p>Подключиться можно двумя способами. В DBeaver: <b>New Database Connection → PostgreSQL</b>, Host <code>localhost</code>, Port <code>5433</code>, Database <code>postgres</code>, User <code>postgres</code>, Password <code>secret</code>. Или прямо внутри контейнера — там уже есть клиент <code>psql</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker exec -it pg-try psql -U postgres</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">psql · внутри контейнера</span><span class="role">таблица из урока про DDL</span></figcaption>
+    <pre><code class="language-sql">CREATE TABLE wishlist (
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    film_title TEXT NOT NULL,
+    added_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO wishlist (film_title) VALUES ('ACADEMY DINOSAUR'), ('ACE GOLDFINGER');
+SELECT id, film_title FROM wishlist;
+\q</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">CREATE TABLE
+INSERT 0 2
+ id |    film_title
+----+------------------
+  1 | ACADEMY DINOSAUR
+  2 | ACE GOLDFINGER</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>docker exec</code></td><td>выполнить команду в <b>уже работающем</b> контейнере</td><td><code>run</code> создаёт новый контейнер, <code>exec</code> заходит в существующий</td></tr>
+      <tr><td><code>-it</code></td><td><code>-i</code> — держать ввод открытым, <code>-t</code> — настоящий терминал</td><td>нужно для интерактивных программ: <code>psql</code>, <code>sh</code>, <code>node</code></td></tr>
+      <tr><td><code>docker exec -it pg-try sh</code></td><td>«зайти внутрь» контейнера</td><td>посмотреть файлы, проверить переменные: <code>env</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>Куда делась таблица?</h3>
+  <p>Пересоздадим контейнер — как будто обновили образ или перезагрузили сервер с чистой установкой:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker rm -f pg-try
+docker run -d --name pg-try -e POSTGRES_PASSWORD=secret -p 5433:5432 postgres:18
+docker exec -it pg-try psql -U postgres -c 'SELECT * FROM wishlist;'
+docker volume ls</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">ERROR:  relation "wishlist" does not exist
+LINE 1: SELECT * FROM wishlist;
+                      ^
+DRIVER    VOLUME NAME
+local     46d7bc694d7feb448d592a0e8a3e6f912d78e7d972714f3f02b244f766e94831
+local     0509a1a23d9c6a42e0db8c38ad088f4a355fc52979ce5d2d5f8c525f26d8a496</code></pre>
+  </figure>
+  <p>Таблицы нет. Но откуда два «тома» с длинными именами? Авторы образа <code>postgres</code> знают про одноразовость контейнеров и прописали в нём: «папку с данными храни в томе». Если том не указали, Docker создаёт <b>анонимный</b> том для каждого нового контейнера. Наши данные остались в первом томе, но новый контейнер получил второй, пустой. Старый том теперь — мусор на диске: у меня два таких тома заняли 80 МБ. Убрать: <code>docker volume prune -a</code>.</p>
+
+  <h3>Две ошибки, которые вы точно встретите</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · второй Postgres на тот же порт</span><span class="role">упадёт</span></figcaption>
+    <pre><code class="language-bash">docker run -d --name pg-two -e POSTGRES_PASSWORD=secret -p 5433:5432 postgres:18</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">docker: Error response from daemon: failed to set up container networking: driver failed programming
+external connectivity on endpoint pg-two (6120b1...): Bind for 0.0.0.0:5433 failed: port is already allocated</code></pre>
+  </figure>
+  <p>Порт на компьютере может занять только один контейнер (или программа). Решение — другой внешний порт: <code>-p 5434:5432</code>. Внутренний порт менять не нужно: у каждого контейнера своя сеть, и 5432 внутри не конфликтует. Но если просто исправить порт и повторить команду, вы получите вторую ошибку:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">docker: Error response from daemon: Conflict. The container name "/pg-two" is already in use by container
+"e29186d9c25a...". You have to remove (or rename) that container to be able to reuse that name.</code></pre>
+  </figure>
+  <p>Неудачный <code>docker run</code> успел <b>создать</b> контейнер (статус <code>Created</code> в <code>docker ps -a</code>), просто не смог его запустить. Имя занято. Сначала <code>docker rm pg-two</code>, потом повтор.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · уборка</span></figcaption>
+    <pre><code class="language-bash">docker rm -f pg-try pg-two
+docker volume prune -a      # удалить тома, которые не используются ни одним контейнером</code></pre>
+  </figure>
+</section>
+
+<hr>
+
+<!-- 06 VOLUMES -->
+<section id="volumes">
+  <div class="sec-head"><h2>06 · Тома: данные отдельно от контейнера</h2><span class="tag practice">live-coding</span><span class="tag time">~13 мин</span></div>
+
+  <p>Теперь откройте <code>docker-compose.yml</code> в папке Pagila — тот самый файл, которым вы поднимали базу. Главное в нём:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pagila/docker-compose.yml · фрагмент</span><span class="role">👀 только посмотреть</span></figcaption>
+    <pre><code class="language-yaml">services:
+  pagila:
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_USER: postgres
+      POSTGRES_DB: pagila
+    volumes:
+      - ./pagila-schema.sql:/docker-entrypoint-initdb.d/1-pagila-schema.sql
+      - ./pagila-data.sql:/docker-entrypoint-initdb.d/2-pagila-data.sql
+      - pgdata:/var/lib/postgresql
+    ports:
+      - 5432:5432</code></pre>
+  </figure>
+  <p>Теперь вы можете прочитать каждую строку: <code>environment</code> — это <code>-e</code>, <code>ports</code> — это <code>-p</code>, а <code>volumes</code> — флаги <code>-v</code>, которые мы сейчас разберём. Сделаем то же самое одной командой <code>docker run</code>, но на порту 5433 и с томом под своим именем:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · из папки pagila</span><span class="role">PowerShell: перенос строки — ` вместо \, путь — ${PWD}/pagila-schema.sql</span></figcaption>
+    <pre><code class="language-bash">docker volume create pagila-data
+
+docker run -d --name pagila-lesson \
+  -e POSTGRES_PASSWORD=123456 \
+  -e POSTGRES_DB=pagila \
+  -p 5433:5432 \
+  -v ./pagila-schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro \
+  -v ./pagila-data.sql:/docker-entrypoint-initdb.d/2-data.sql:ro \
+  -v pagila-data:/var/lib/postgresql \
+  postgres:18
+
+docker logs -f pagila-lesson     # следить за логами; выйти — Ctrl+C</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат · важные строки лога</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">... LOG:  database system is ready to accept connections        ← временный запуск для настройки
+/usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/1-schema.sql
+/usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/2-data.sql
+PostgreSQL init process complete; ready for start up.
+... LOG:  database system is ready to accept connections        ← настоящий запуск</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>docker volume create pagila-data</code></td><td>именованный том: папка, которой управляет Docker</td><td>живёт отдельно от контейнеров, удаляется только явно</td></tr>
+      <tr><td><code>-v pagila-data:/var/lib/postgresql</code></td><td><b>том : путь в контейнере</b></td><td>здесь Postgres 18 хранит данные. Контейнер удалим — том останется</td></tr>
+      <tr><td><code>-v ./pagila-schema.sql:/docker-entrypoint-initdb.d/...</code></td><td><b>bind mount</b>: файл с вашего диска «виден» внутри контейнера</td><td>путь слева начинается с <code>./</code> или <code>/</code> — значит, это файл хоста, а не имя тома</td></tr>
+      <tr><td><code>/docker-entrypoint-initdb.d/</code></td><td>особая папка официального образа</td><td>при <b>первом</b> запуске на пустом томе образ выполняет оттуда <code>*.sql</code> и <code>*.sh</code> по алфавиту — поэтому имена начинаются с <code>1-</code> и <code>2-</code></td></tr>
+      <tr><td><code>:ro</code></td><td>read-only: контейнер не может изменить файл</td><td>исходные SQL-файлы останутся нетронутыми</td></tr>
+      <tr><td><code>docker logs -f</code></td><td>follow — показывать новые строки по мере появления</td><td>как <code>tail -f</code></td></tr>
+    </tbody></table>
+  </div>
+  <p>Вот и вся «магия» вашей Pagila: официальный образ Postgres + две строки <code>volumes</code>, которые подсунули ему SQL-файлы в особую папку. Проверим и повторим опыт с удалением:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker exec -it pagila-lesson psql -U postgres -d pagila</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">psql · внутри контейнера</span></figcaption>
+    <pre><code class="language-sql">SELECT COUNT(*) AS films FROM film;
+CREATE TABLE wishlist (
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    film_title TEXT NOT NULL,
+    added_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO wishlist (film_title) VALUES ('ACADEMY DINOSAUR'), ('ACE GOLDFINGER');
+\q</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · удаляем контейнер и создаём заново той же командой</span></figcaption>
+    <pre><code class="language-bash">docker rm -f pagila-lesson
+docker volume ls
+# ↑ стрелкой вверх вернуть длинную команду docker run ... и выполнить ещё раз
+docker logs pagila-lesson | head -3
+docker exec -it pagila-lesson psql -U postgres -d pagila -c 'SELECT id, film_title FROM wishlist;'</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none"> films
+-------
+  1000
+
+DRIVER    VOLUME NAME
+local     pagila-data                     ← контейнера нет, том на месте
+
+PostgreSQL Database directory appears to contain a database; Skipping initialization
+
+ id |    film_title
+----+------------------
+  1 | ACADEMY DINOSAUR                    ← таблица пережила удаление контейнера
+  2 | ACE GOLDFINGER</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">«Я ПОМЕНЯЛ SQL-ФАЙЛ, А БАЗА СТАРАЯ!»</span>
+    <p>Видите строку <code>Skipping initialization</code>? Скрипты из <code>/docker-entrypoint-initdb.d</code> выполняются <b>только при пустом томе</b>. Если в томе уже есть база, их пропускают — иначе каждый перезапуск затирал бы ваши данные. Чтобы инициализировать заново, удаляют и контейнер, и том: <code>docker rm -f pagila-lesson && docker volume rm pagila-data</code>. Для compose то же самое делает <code>docker compose down -v</code>. Флаг <code>-v</code> удаляет тома, то есть <b>все данные</b> — на проде так не делают.</p>
+  </div></div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЛОВУШКА POSTGRES 18: СТАРЫЕ ТУТОРИАЛЫ</span>
+    <p>Почти во всех статьях в интернете написано <code>-v pgdata:/var/lib/postgresql/data</code>. Для образов до 17 включительно это правильно. С <code>postgres:18</code> контейнер с таким томом не запустится:</p>
+    <p><code>Error: in 18+, these Docker images are configured to store database data in a format which is compatible with "pg_ctlcluster" (specifically, using major-version-specific directory names). ... The suggested container configuration for 18+ is to place a single mount at /var/lib/postgresql ...</code></p>
+    <p>(Это настоящий вывод официального скрипта.) Начиная с 18 том подключают к <code>/var/lib/postgresql</code>, как в compose-файле Pagila. Мораль: читайте страницу образа на Docker Hub, а не первый ответ в поиске.</p>
+  </div></div>
+  <table class="cmp">
+    <thead><tr><th></th><th>Именованный том <code>-v имя:/путь</code></th><th>Bind mount <code>-v ./папка:/путь</code></th></tr></thead>
+    <tbody>
+      <tr><td>Где лежат данные</td><td>в служебной папке Docker (<code>docker volume inspect</code> покажет <code>/var/lib/docker/volumes/pagila-data/_data</code>)</td><td>в вашей папке, видно в Finder/проводнике</td></tr>
+      <tr><td>Для чего</td><td>данные баз, всё, что должно пережить контейнер</td><td>конфиги, SQL-скрипты, исходники при разработке (правите в редакторе — контейнер сразу видит)</td></tr>
+      <tr><td>Скорость на Mac/Windows</td><td>быстро</td><td>медленнее: файлы ходят через границу «хост ↔ Linux-виртуалка»</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<hr>
+
+<!-- 07 DOCKERFILE -->
+<section id="dockerfile">
+  <div class="sec-head"><h2>07 · Dockerfile: упаковываем свой API</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Чужие образы мы запускать умеем. Теперь соберём свой. Возьмём маленький API на Node.js, который отдаёт фильмы из Pagila: <code>GET /films?limit=3</code> и <code>GET /health</code>. Без фреймворков, только встроенный <code>node:http</code> и драйвер <code>pg</code>.</p>
+  <div class="fileinfo"><span class="k">создаём</span><code>films-api/</code> — новая папка рядом с папкой pagila<span class="k">внутри</span><span><code>server.js</code>, <code>package.json</code>, <code>Dockerfile</code>, <code>.dockerignore</code>. Затем <code>npm install pg</code> внутри папки — появится <code>package-lock.json</code>.</span></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · films-api/server.js</span></figcaption>
+    <pre><code class="language-javascript">const http = require('node:http');
+const { Pool } = require('pg');
+
+// Настройки подключения берём из переменных окружения — их передаст docker run -e
+const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT || 5432),
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'pagila',
+});
+
+function send(res, status, data) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(data));
+}
+
+const server = http.createServer(async (req, res) =&gt; {
+  const url = new URL(req.url, 'http://localhost');
+  try {
+    if (url.pathname === '/films') {
+      const limit = Math.min(Number(url.searchParams.get('limit')) || 5, 50);
+      const { rows } = await pool.query(
+        'SELECT film_id, title, rental_rate FROM film ORDER BY film_id LIMIT $1',
+        [limit],
+      );
+      return send(res, 200, rows);
+    }
+    if (url.pathname === '/health') {
+      await pool.query('SELECT 1');
+      return send(res, 200, { status: 'ok', db: pool.options.host });
+    }
+    send(res, 404, { error: 'Not found' });
+  } catch (err) {
+    console.error('Ошибка БД:', err.message);
+    send(res, 500, { error: err.message });
+  }
+});
+
+server.listen(3000, () =&gt; console.log('films-api слушает порт 3000'));</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · films-api/package.json</span><span class="role">dependencies появится после npm install pg</span></figcaption>
+    <pre><code class="language-json">{
+  "name": "films-api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · films-api/Dockerfile</span><span class="role">без расширения, с большой D</span></figcaption>
+    <pre><code class="language-docker">FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · films-api/.dockerignore</span></figcaption>
+    <pre><code class="language-none">node_modules
+npm-debug.log
+.git</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР DOCKERFILE</div>
+    <table><thead><tr><th>Строка</th><th>Что делает</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>FROM node:22-alpine</code></td><td>базовый образ: Linux + Node 22</td><td><code>alpine</code> — минимальный Linux на 5 МБ, образ в разы меньше обычного <code>node:22</code></td></tr>
+      <tr><td><code>WORKDIR /app</code></td><td>рабочая папка внутри образа (создастся сама)</td><td>все следующие пути — относительно неё, как <code>cd /app</code></td></tr>
+      <tr><td><code>COPY package*.json ./</code></td><td>скопировать <b>только</b> <code>package.json</code> и <code>package-lock.json</code></td><td>отдельный слой: зависимости меняются редко (см. ниже про кеш)</td></tr>
+      <tr><td><code>RUN npm ci --omit=dev</code></td><td>выполнить команду <b>при сборке</b> образа</td><td><code>ci</code> ставит строго по lock-файлу; <code>--omit=dev</code> — без devDependencies</td></tr>
+      <tr><td><code>COPY . .</code></td><td>скопировать остальной код</td><td>кроме того, что в <code>.dockerignore</code></td></tr>
+      <tr><td><code>EXPOSE 3000</code></td><td>документация: «приложение слушает 3000»</td><td>порт <b>не</b> открывает — это делает <code>-p</code> при запуске</td></tr>
+      <tr><td><code>CMD ["node", "server.js"]</code></td><td>команда при <b>запуске</b> контейнера</td><td><code>RUN</code> — при сборке, один раз; <code>CMD</code> — при каждом старте</td></tr>
+      <tr><td><code>.dockerignore</code>: <code>node_modules</code></td><td>не отправлять папку в сборку</td><td>ваши <code>node_modules</code> собраны под macOS/Windows, а в контейнере Linux — нативные пакеты сломаются. Плюс сотни мегабайт лишней передачи</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · папка films-api</span></figcaption>
+    <pre><code class="language-bash">docker build -t films-api .      # -t — имя образа, точка — «бери файлы из этой папки»</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат · сокращено</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">#5 [1/5] FROM docker.io/library/node:22-alpine@sha256:...
+#6 [2/5] WORKDIR /app
+#7 [3/5] COPY package*.json ./
+#8 [4/5] RUN npm ci --omit=dev
+#8 0.728 added 14 packages, and audited 15 packages in 539ms
+#9 [5/5] COPY . .
+#10 naming to docker.io/library/films-api:latest done</code></pre>
+  </figure>
+
+  <h3>Кеш слоёв: почему порядок строк важен</h3>
+  <p>Поменяйте любую строку в <code>server.js</code> (например, текст в <code>console.log</code>) и соберите ещё раз:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат · пересборка после правки server.js</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">#6 [2/5] WORKDIR /app
+#6 CACHED
+#7 [3/5] COPY package*.json ./
+#7 CACHED
+#8 [4/5] RUN npm ci --omit=dev
+#8 CACHED                          ← зависимости не ставились
+#9 [5/5] COPY . .
+real    0m0.303s</code></pre>
+  </figure>
+  <p>Docker идёт по строкам сверху вниз. Если входные данные слоя не изменились, слой берётся из кеша. Как только какой-то слой изменился, <b>все слои ниже</b> пересобираются. А теперь «наивный» Dockerfile, который часто пишут первым:</p>
+  <div class="twocol">
+    <div class="box bad"><h5>Плохо: COPY . . до npm ci</h5><pre style="margin:0"><code>FROM node:22-alpine
+WORKDIR /app
+COPY . .
+RUN npm ci --omit=dev
+CMD ["node", "server.js"]</code></pre><p>Правка <code>server.js</code> → изменился слой <code>COPY . .</code> → <code>npm ci</code> заново: <code>added 14 packages</code>, 1,23 с вместо 0,30 с.</p></div>
+    <div class="box good"><h5>Хорошо: сначала package*.json</h5><pre style="margin:0"><code>FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+CMD ["node", "server.js"]</code></pre><p>Правка <code>server.js</code> меняет только последний слой. <code>npm ci</code> пересоберётся, только когда изменятся зависимости.</p></div>
+  </div>
+  <p>У нас 14 пакетов, и разница — секунда. В реальном фронтенд-проекте с 1500 пакетами это минуты на <b>каждую</b> сборку в CI. Правило: <b>то, что меняется редко, — выше; то, что часто, — ниже</b>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · из каких слоёв состоит наш образ</span></figcaption>
+    <pre><code class="language-bash">docker history films-api</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат · верхние строки</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">CREATED BY                                      SIZE
+CMD ["node" "server.js"]                        0B
+EXPOSE [3000/tcp]                               0B
+COPY . . # buildkit                             20.5kB     ← наш код
+RUN /bin/sh -c npm ci --omit=dev # buildkit     4.4MB      ← зависимости
+COPY package*.json ./ # buildkit                20.5kB
+WORKDIR /app                                    8.19kB
+CMD ["node"]                                    0B         ← ниже — слои образа node:22-alpine</code></pre>
+  </figure>
+</section>
+
+<hr>
+
+<!-- 08 NETWORK -->
+<section id="network">
+  <div class="sec-head"><h2>08 · Сети: контейнеры знакомятся</h2><span class="tag practice">live-coding</span><span class="tag time">~10 мин</span></div>
+
+  <p>Запускаем API. База работает на <code>localhost:5433</code>, правда? Пробуем:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">не сработает — так и задумано</span></figcaption>
+    <pre><code class="language-bash">docker run -d --name films-api -p 3000:3000 -e DB_PASSWORD=123456 films-api
+curl -s localhost:3000/films
+docker logs films-api</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">{"error":"connect ECONNREFUSED 127.0.0.1:5432"}
+films-api слушает порт 3000
+Ошибка БД: connect ECONNREFUSED 127.0.0.1:5432</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ГЛАВНОЕ ПРАВИЛО: LOCALHOST ВНУТРИ КОНТЕЙНЕРА — ЭТО САМ КОНТЕЙНЕР</span>
+    <p>У каждого контейнера своя сеть (namespaces из блока 02). <code>localhost</code> внутри <code>films-api</code> — это <code>films-api</code>, а там на порту 5432 никого нет. Порт 5433 открыт на <b>вашем компьютере</b>, а не в контейнере API. Это самая частая ошибка при первом знакомстве с Docker.</p>
+  </div></div>
+  <p>Правильно — положить оба контейнера в одну пользовательскую сеть. Внутри неё работает встроенный DNS: контейнеры находят друг друга <b>по имени</b>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker rm -f films-api
+docker network create pagila-net
+docker network connect pagila-net pagila-lesson     # подключить уже работающую базу
+
+docker run -d --name films-api --network pagila-net -p 3000:3000 \
+  -e DB_HOST=pagila-lesson -e DB_PASSWORD=123456 films-api
+
+curl -s localhost:3000/health
+curl -s "localhost:3000/films?limit=3"</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий</span></figcaption>
+    <pre><code class="language-none">{"status":"ok","db":"pagila-lesson"}
+[{"film_id":1,"title":"ACADEMY DINOSAUR","rental_rate":"0.99"},{"film_id":2,"title":"ACE GOLDFINGER","rental_rate":"4.99"},{"film_id":3,"title":"ADAPTATION HOLES","rental_rate":"2.99"}]</code></pre>
+  </figure>
+  <p>Откройте <a href="http://localhost:3000/films?limit=3" target="_blank" rel="noopener">http://localhost:3000/films?limit=3</a> в браузере — то же самое. Обратите внимание: <code>rental_rate</code> пришёл <b>строкой</b> <code>"0.99"</code>. Это <code>NUMERIC</code> из урока про DDL: драйвер <code>pg</code> специально не превращает его в число JavaScript, чтобы не потерять точность.</p>
+  <div class="diagram">
+<pre> ваш компьютер              сеть pagila-net (свой DNS)
+   localhost:3000 ──-p──▶  films-api      172.18.0.3
+                                │  pagila-lesson:5432
+                                ▼
+   localhost:5433 ──-p──▶  pagila-lesson  172.18.0.2  (Postgres)</pre>
+  </div>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>docker network create pagila-net</code></td><td>своя сеть типа bridge</td><td>в ней работает DNS по именам контейнеров. В сети по умолчанию — <b>нет</b>: там <code>getent hosts pagila-lesson</code> ничего не нашёл</td></tr>
+      <tr><td><code>--network pagila-net</code></td><td>подключить контейнер к сети при запуске</td><td><code>docker network connect</code> — подключить уже работающий</td></tr>
+      <tr><td><code>DB_HOST=pagila-lesson</code></td><td>имя контейнера = имя хоста в сети</td><td><code>docker exec films-api getent hosts pagila-lesson</code> → <code>172.18.0.2</code></td></tr>
+      <tr><td>порт <b>5432</b>, а не 5433</td><td>внутри сети — «родной» порт контейнера</td><td>5433 — это проброс на ваш компьютер, внутри сети он не нужен</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЗЕРКАЛЬНАЯ ЛОВУШКА: СЕРВЕР СЛУШАЕТ 127.0.0.1</span>
+    <p>Если программа внутри контейнера слушает только <code>127.0.0.1</code>, проброс <code>-p</code> не поможет. Я проверил на Node-сервере с <code>listen(3001, '127.0.0.1')</code>: изнутри контейнера он отвечает, а снаружи <code>curl: (56) Recv failure: Connection reset by peer</code>. Именно так по умолчанию ведёт себя <b>Vite</b> (<code>npm run dev</code>). В контейнере его запускают с <code>vite --host</code> (то есть <code>0.0.0.0</code> — «все интерфейсы»). Наш <code>server.listen(3000)</code> без адреса слушает все интерфейсы, поэтому всё работает.</p>
+  </div></div>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">А ЕСЛИ БАЗА НЕ В КОНТЕЙНЕРЕ?</span>
+    <p>Если контейнеру нужен сервис на вашем компьютере (например, Postgres, установленный без Docker), в Docker Desktop есть специальное имя <code>host.docker.internal</code>: <code>-e DB_HOST=host.docker.internal -e DB_PORT=5433</code>. На Linux его нужно включить флагом <code>--add-host=host.docker.internal:host-gateway</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 09 PROD -->
+<section id="prod">
+  <div class="sec-head"><h2>09 · Уборка, Docker Desktop и прод</h2><span class="tag theory">теория + команды</span><span class="tag time">~5 мин</span></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span></figcaption>
+    <pre><code class="language-bash">docker ps                 # работающие контейнеры
+docker system df          # сколько места занимает Docker</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">результат</span><span class="role">настоящий · у вас цифры будут другими</span></figcaption>
+    <pre><code class="language-none">NAMES           IMAGE         STATUS          PORTS
+films-api       films-api     Up 6 seconds    0.0.0.0:3000-&gt;3000/tcp
+pagila-lesson   postgres:18   Up 40 seconds   0.0.0.0:5433-&gt;5432/tcp
+
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          8         2         2.867GB   1.227GB (42%)
+Containers      2         2         28.67kB   0B (0%)
+Local Volumes   1         1         74.7MB    0B (0%)
+Build Cache     46        0         3.074GB   212.4MB</code></pre>
+  </figure>
+  <p>Docker быстро съедает диск: образы, кеш сборки, забытые тома. В Docker Desktop всё это видно на вкладках <b>Containers</b> (логи, кнопки Stop/Delete, вкладка Exec — терминал внутри), <b>Images</b> и <b>Volumes</b>. Из терминала:</p>
+  <table class="cmp">
+    <thead><tr><th>Команда</th><th>Что удаляет</th></tr></thead>
+    <tbody>
+      <tr><td><code>docker rm -f имя</code></td><td>контейнер (слой записи). Именованные тома остаются</td></tr>
+      <tr><td><code>docker rmi имя</code></td><td>образ, если на него нет контейнеров</td></tr>
+      <tr><td><code>docker container prune</code></td><td>все остановленные контейнеры</td></tr>
+      <tr><td><code>docker image prune</code></td><td>образы без тега (<code>&lt;none&gt;</code>) — остатки пересборок</td></tr>
+      <tr><td><code>docker volume prune -a</code></td><td>тома без контейнеров — <b>с данными</b>, осторожно</td></tr>
+      <tr><td><code>docker system prune</code></td><td>остановленные контейнеры, сети, образы <code>&lt;none&gt;</code>, кеш сборки</td></tr>
+    </tbody>
+  </table>
+  <h3>Как это выглядит на проде</h3>
+  <div class="diagram">
+<pre> git push ──▶ CI: docker build -t films-api:1.4.0 ──▶ тесты ВНУТРИ этого образа ──▶ docker push в реестр
+                                                                                      │
+ сервер:  docker pull films-api:1.4.0  ◀──────────────────────────────────────────────┘
+          docker run ... films-api:1.4.0      (тот же образ, байт в байт)</pre>
+  </div>
+  <p>Это называют <b>неизменяемой инфраструктурой</b> (immutable infrastructure). На сервер не заходят «поправить файлик». Новая версия = новый образ с новым тегом, старая версия остаётся в реестре, и откат — это запуск прошлого тега. Фронтенд в проде тоже часто живёт в контейнере: собранная папка <code>dist</code> раздаётся nginx-образом.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · уборка после урока</span><span class="role">старую Pagila на 5432 не трогаем</span></figcaption>
+    <pre><code class="language-bash">docker rm -f films-api pagila-lesson
+docker network rm pagila-net
+docker volume rm pagila-data       # таблица wishlist удалится навсегда — это наш учебный том</code></pre>
+  </figure>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 10 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>10 · Игра «Что пошло не так?», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~8 мин</span></div>
+
+  <details class="quiz"><summary><code>docker run postgres:18</code> — контейнер сразу остановился.</summary><div class="ans"><b>Нет <code>POSTGRES_PASSWORD</code>.</b> Смотреть <code>docker logs</code>; добавить <code>-e POSTGRES_PASSWORD=...</code>.</div></details>
+  <details class="quiz"><summary>Пересоздали контейнер с базой — все таблицы пропали.</summary><div class="ans"><b>Не было тома.</b> <code>-v имя:/var/lib/postgresql</code> (для 18+).</div></details>
+  <details class="quiz"><summary><code>Bind for 0.0.0.0:5432 failed: port is already allocated</code>.</summary><div class="ans"><b>Порт занят</b> другим контейнером или программой. Другой внешний порт: <code>-p 5433:5432</code>.</div></details>
+  <details class="quiz"><summary><code>The container name "/pg-two" is already in use</code>, хотя контейнер не работает.</summary><div class="ans"><b>Неудачный <code>run</code> успел создать контейнер.</b> <code>docker ps -a</code>, <code>docker rm pg-two</code>.</div></details>
+  <details class="quiz"><summary>Поменяли SQL в <code>docker-entrypoint-initdb.d</code>, перезапустили — в базе старые данные.</summary><div class="ans"><b>Init-скрипты выполняются только на пустом томе.</b> Удалить том (и данные!) или применить SQL вручную.</div></details>
+  <details class="quiz"><summary>API в контейнере: <code>ECONNREFUSED 127.0.0.1:5432</code>, хотя база работает.</summary><div class="ans"><b><code>localhost</code> внутри контейнера — сам контейнер.</b> Общая сеть и <code>DB_HOST=имя_контейнера</code>.</div></details>
+  <details class="quiz"><summary>Vite в контейнере запущен, <code>-p 5173:5173</code> есть, а браузер: «соединение сброшено».</summary><div class="ans"><b>Сервер слушает только 127.0.0.1.</b> <code>vite --host</code>.</div></details>
+  <details class="quiz"><summary>Каждая сборка образа фронтенда ставит зависимости заново, 4 минуты.</summary><div class="ans"><b><code>COPY . .</code> стоит до <code>npm ci</code>.</b> Сначала <code>COPY package*.json</code> и <code>npm ci</code>, потом код.</div></details>
+  <details class="quiz"><summary>В контейнере падает <code>bcrypt</code>/<code>esbuild</code>: «invalid ELF header».</summary><div class="ans"><b>Скопировали <code>node_modules</code> с Mac/Windows.</b> <code>node_modules</code> в <code>.dockerignore</code>, ставить внутри образа.</div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Нужно</th><th>Команда</th></tr></thead>
+    <tbody>
+      <tr><td>запустить в фоне с именем</td><td><code>docker run -d --name X образ:тег</code></td></tr>
+      <tr><td>переменная, порт, том</td><td><code>-e KEY=value</code> · <code>-p хост:контейнер</code> · <code>-v том:/путь</code> · <code>-v ./файл:/путь:ro</code></td></tr>
+      <tr><td>одноразовая команда</td><td><code>docker run --rm образ команда</code></td></tr>
+      <tr><td>что работает / всё</td><td><code>docker ps</code> · <code>docker ps -a</code></td></tr>
+      <tr><td>логи</td><td><code>docker logs X</code> · <code>docker logs -f X</code></td></tr>
+      <tr><td>зайти внутрь</td><td><code>docker exec -it X sh</code> · <code>docker exec -it X psql -U postgres</code></td></tr>
+      <tr><td>что поменял контейнер</td><td><code>docker diff X</code></td></tr>
+      <tr><td>остановить / удалить</td><td><code>docker stop X</code> · <code>docker rm X</code> · сразу: <code>docker rm -f X</code></td></tr>
+      <tr><td>образы</td><td><code>docker images</code> · <code>docker pull</code> · <code>docker build -t имя .</code> · <code>docker history</code> · <code>docker rmi</code></td></tr>
+      <tr><td>тома</td><td><code>docker volume create / ls / inspect / rm / prune</code></td></tr>
+      <tr><td>сети</td><td><code>docker network create N</code> · <code>--network N</code> · <code>docker network connect N X</code></td></tr>
+      <tr><td>место на диске</td><td><code>docker system df</code> · <code>docker system prune</code></td></tr>
+      <tr><td>Dockerfile</td><td><code>FROM</code> → <code>WORKDIR</code> → <code>COPY package*.json</code> → <code>RUN npm ci</code> → <code>COPY . .</code> → <code>EXPOSE</code> → <code>CMD</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание</h3>
+  <ol>
+    <li><b>Redis за минуту.</b> Запустите <code>redis:7</code> в фоне на порту 6380 и выполните внутри <code>redis-cli SET hello docker</code> и <code>GET hello</code> через <code>docker exec</code>. Удалите контейнер.</li>
+    <li><b>Своя инициализация.</b> Создайте <code>init/3-wishlist.sql</code> с таблицей <code>wishlist</code> из урока про DDL и тремя фильмами. Поднимите Pagila на новом томе <code>pagila-hw</code>, подложив этот файл третьим в <code>/docker-entrypoint-initdb.d</code>. Проверьте в DBeaver, что таблица появилась сама. Потом добавьте в файл четвёртый фильм, пересоздайте <b>только контейнер</b> — объясните, почему фильма нет, и найдите строку в логах, которая это подтверждает.</li>
+    <li><b>Новый эндпоинт.</b> Добавьте в <code>films-api</code> маршрут <code>GET /films/search?q=dino</code> (поиск по <code>title ILIKE</code>, параметр запроса — через <code>$1</code>, не склейкой строк!). Пересоберите образ и найдите в выводе сборки строки <code>CACHED</code>. Какие слои пересобрались и почему?</li>
+    <li><b>Плохой порядок.</b> Временно поменяйте Dockerfile на «плохой» вариант из блока 07, сделайте правку в <code>server.js</code> и сравните время двух сборок. Верните хороший вариант.</li>
+    <li><b>Без сети.</b> Запустите <code>films-api</code> без <code>--network</code>, но так, чтобы он достучался до базы через проброшенный порт (<code>host.docker.internal</code>, порт 5433). Чем этот вариант хуже общей сети?</li>
+    <li><b>Ваш фронтенд в контейнере.</b> Для любого своего Vite-проекта напишите Dockerfile, который запускает <code>npm run dev -- --host</code> на порту 5173. Откройте в браузере. Что будет, если убрать <code>--host</code>?</li>
+    <li><b>Со звёздочкой: от run к compose.</b> Перепишите две команды <code>docker run</code> из блоков 06 и 08 (база + API + сеть + том) в один <code>docker-compose.yml</code> по образцу файла Pagila. Подсказка: в compose сеть создаётся сама, а имя сервиса становится именем хоста. Запуск — <code>docker compose up -d</code>. Это тема следующего урока, попробуйте опередить её.</li>
+  </ol>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю разницу между виртуальной машиной и контейнером и почему контейнер стартует за доли секунды.</li>
+    <li>☐ Знаю, что контейнер — процесс с namespaces и cgroups, и зачем Docker Desktop нужна Linux-виртуалка.</li>
+    <li>☐ Рисую схему CLI → API → демон → реестр и могу спросить демона через <code>curl</code>.</li>
+    <li>☐ Различаю образ и контейнер, понимаю слой записи и одноразовость контейнера (<code>docker diff</code>).</li>
+    <li>☐ Запускаю Postgres с <code>-e</code>, <code>-p</code>, <code>--name</code>, смотрю логи, захожу через <code>exec</code>.</li>
+    <li>☐ Сохраняю данные в именованном томе и понимаю, как работает <code>/docker-entrypoint-initdb.d</code>.</li>
+    <li>☐ Пишу Dockerfile для Node-приложения с правильным порядком слоёв и <code>.dockerignore</code>.</li>
+    <li>☐ Соединяю контейнеры в сеть и знаю, почему <code>localhost</code> внутри контейнера — не мой компьютер.</li>
+    <li>☐ Читаю каждую строку <code>docker-compose.yml</code> Pagila.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://hub.docker.com/_/postgres" target="_blank" rel="noopener">Docker Hub: postgres</a> — переменные окружения, <code>initdb.d</code>, изменения в 18+.</li>
+    <li><a href="https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/" target="_blank" rel="noopener">Docker Docs: What is a container?</a> — официальный курс для начинающих.</li>
+    <li><a href="https://docs.docker.com/build/cache/" target="_blank" rel="noopener">Docker Docs: Build cache</a> — как работает кеш слоёв.</li>
+    <li><a href="https://docs.docker.com/engine/network/" target="_blank" rel="noopener">Docker Docs: Networking</a> — сети и DNS между контейнерами.</li>
+    <li><a href="https://labs.play-with-docker.com/" target="_blank" rel="noopener">Play with Docker</a> — Docker в браузере, если на компьютере не получается установить.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · Docker · хостинг, виртуальные машины, контейнеры, namespaces, cgroups, Docker Desktop и WSL 2, CLI, демон, Docker API, реестр, образ и контейнер, слои, слой записи, docker diff, docker run -d -e -p --name --rm, logs, exec, тома и bind mount, docker-entrypoint-initdb.d, PostgreSQL 18, Dockerfile, кеш слоёв, .dockerignore, сети и DNS, localhost в контейнере, host.docker.internal, уборка, неизменяемая инфраструктура</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>
