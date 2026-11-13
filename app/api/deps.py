@@ -1,10 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 
+from app.clients.yandex_oauth import YandexOauthClient
 from app.core.security import decode_token
 from app.db.database import get_async_session
 from app.db.models import User
@@ -81,6 +82,20 @@ CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 RedisDep = Annotated[Redis, Depends(get_redis)]
 
+
+def _integration(request: Request, name: str, title: str):
+    client = getattr(request.app.state, name, None)
+    if client is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail = f'{title} не настроен')
+    return client
+
+def get_yandex_oauth(request: Request) -> Any | None:
+    return _integration(request, 'yandex_oauth', 'Вход через Яндекс')
+
+def get_yandex_disk(request: Request) -> Any | None:
+    return _integration(request, 'yandex_disk', 'Яндекс Диск')
+
+YandexOauthDep = Annotated[YandexOauthClient, Depends(get_yandex_oauth)]
 
 
 def require_role(role: str):

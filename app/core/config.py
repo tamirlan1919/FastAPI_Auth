@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -21,5 +22,17 @@ class Settings(BaseSettings):
     rabbit_url: str = 'amqp://guest:guest@localhost:5672/'
 
     celery_result_backend: str = 'redis://localhost:6379/1'
+
+    yandex_client_id: str | None = None
+    yandex_client_secret: SecretStr | None = None
+    yandex_redirect_uri: str = 'http://localhost:8000/auth/yandex/callback'
+    yandex_oauth_url: str = 'https://oauth.yandex.ru'
+    yandex_login_url: str = 'https://login.yandex.ru'
+
+    yandex_disk_token: SecretStr | None = None
+    yandex_disk_url: str = 'https://cloud-api.yandex.net'
+
+    #YandexGPT
+
 
 settings = Settings()

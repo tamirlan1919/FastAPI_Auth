@@ -3,7 +3,9 @@ from asyncio import ensure_future
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
-from app.api.routers import users, auth, todos, stats, posts, reports, github, weather
+from app.api.routers import users, auth, todos, stats, posts, reports, github, weather, yandex_auth
+from app.clients.yandex_oauth import YandexOauthClient
+from app.core.config import settings
 from app.db.database import Base, engine
 from app.db import models  # noqa: F401 — регистрирует модели в Base.metadata для create_all
 from contextlib import asynccontextmanager
@@ -21,10 +23,25 @@ async def lifespan(app: FastAPI):
     channel = await app.state.rabbit.channel()
     exchange = await declare_events_exchange(channel)
     app.state.publisher = EventPublisher(exchange)
+    app.state.yandex_oauth = app.state.yandex_disk = None
+    if settings.yandex_client_id and settings.yandex_client_secret:
+        app.state.yandex_oauth = YandexOauthClient(
+            client_id=settings.yandex_client_id,
+            client_secret=settings.yandex_client_secret.get_secret_value(),
+            redirect_uri=settings.yandex_redirect_uri,
+            oauth_url=settings.yandex_oauth_url,
+            login_url=settings.yandex_login_url,
+        )
+
+
 
     yield
     await app.state.rabbit.close()
     await app.state.redis.aclose()
+    for client in (app.state.yandex_oauth, app.state.yandex_disk):
+        if client is not None:
+            await client.aclose()
+
 
 
 
@@ -37,6 +54,7 @@ app.include_router(posts.router)
 app.include_router(reports.router)
 app.include_router(github.router)
 app.include_router(weather.router)
+app.include_router(yandex_auth.router)
 
 # Prometheus: middleware считает запросы/латентность, GET /metrics отдаёт их в формате Prometheus
 Instrumentator(
