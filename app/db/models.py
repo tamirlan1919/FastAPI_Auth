@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, String, ForeignKey, Table, Column, Integer
+from sqlalchemy import JSON, String, ForeignKey, Table, Column, Integer, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import select
 
@@ -32,6 +32,7 @@ class User(Base):
     profile: Mapped["Profile | None"] = relationship(
         "Profile", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True, default=None)
 
 
 class Post(Base):

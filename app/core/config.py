@@ -23,6 +23,12 @@ class Settings(BaseSettings):
 
     celery_result_backend: str = 'redis://localhost:6379/1'
 
+    telegram_bot_token: SecretStr | None = None
+    telegram_api_url: str = 'https://api.telegram.org'
+    telegram_webhook_base: str | None = None
+    telegram_webhook_secret: SecretStr | None = None
+
+
     yandex_client_id: str | None = None
     yandex_client_secret: SecretStr | None = None
     yandex_redirect_uri: str = 'http://localhost:8000/auth/yandex/callback'
@@ -31,6 +37,7 @@ class Settings(BaseSettings):
 
     yandex_disk_token: SecretStr | None = None
     yandex_disk_url: str = 'https://cloud-api.yandex.net'
+
 
     #YandexGPT
 

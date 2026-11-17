@@ -54,6 +54,20 @@ class UserRepo():
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_id(self, user_id: int) -> User | None:
+        return await self.session.get(User, user_id)
+
+    async def get_by_telegram_id(self, telegram_id: int) -> User | None:
+        stmt = select(User).where(User.telegram_id == telegram_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def set_telegram_id(self, user: User, telegram_id: int) -> User:
+        user.telegram_id = telegram_id
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
 
     async def create(self, username: str, email: str, hashed_password: str,
                     roles: list[str]) -> User:
