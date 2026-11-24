@@ -1,5 +1,6 @@
 from typing import Annotated, Any
 
+from aiogram import Bot
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +17,6 @@ from app.repositories.tag_repo import TagRepo
 from app.repositories.user_repo import UserRepo
 from app.schemas.token import TokenPayload
 from app.broker.rabbit import EventPublisher, get_publisher
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -94,6 +94,11 @@ def get_yandex_oauth(request: Request) -> Any | None:
 
 def get_yandex_disk(request: Request) -> Any | None:
     return _integration(request, 'yandex_disk', 'Яндекс Диск')
+
+def get_bot(request: Request) -> Bot:
+    return _integration(request, 'bot', 'Telegram-бот')
+
+BotDep = Annotated[Bot, Depends(get_bot)]
 
 YandexOauthDep = Annotated[YandexOauthClient, Depends(get_yandex_oauth)]
 

@@ -18,10 +18,9 @@ router = APIRouter(
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register(data: UserCreate, user_repo: UserRepoDep, publisher: PublisherDep):
-    try:
-        user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
+
     try:
         await publisher.publish(
             'user.registered',
@@ -57,3 +56,8 @@ async def register_bad(data: RegisterWithProfile, session: SessionDep, redis: Re
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     await redis.delete('users:all')
     return user
+
+
+@router.get('/test')
+async def test():
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)

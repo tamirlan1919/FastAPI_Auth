@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPI · Урок 17 — Система обработки ошибок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+
+  /* скриншоты RabbitMQ */
+  figure.shot{margin:16px 0 22px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff;}
+  figure.shot .img{padding:10px; text-align:center; background:#fff; overflow-x:auto;}
+  figure.shot img{max-width:100%; height:auto; display:inline-block; vertical-align:top;}
+  figure.shot figcaption{font-size:13.8px; line-height:1.55; padding:10px 14px; border-top:1px solid var(--line); color:var(--ink); background:#FBF8F1;}
+  figure.shot figcaption .where{font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--ink-soft); display:block; margin-bottom:4px; letter-spacing:.02em;}
+  .num{display:inline-flex; width:19px; height:19px; border-radius:50%; background:#E5484D; color:#fff; font:700 11.5px Arial,sans-serif; align-items:center; justify-content:center; margin:0 3px 0 1px; vertical-align:1px;}
+  .terms{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0 18px;}
+  .terms div{background:#1E1B16; color:#E9E2D2; border-radius:10px; padding:10px 12px; font-family:"JetBrains Mono",monospace; font-size:12px; line-height:1.5;}
+  .terms div b{display:block; color:#7FC9C2; font-size:11px; letter-spacing:.05em; margin-bottom:4px;}
+  @media (max-width:800px){ .terms{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>FastAPI</div>
+  <p class="lead">Python · Ошибки · Урок 17</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и шаг 0</a>
+    <div class="grp">Часть 1 · Диагноз и лечение</div>
+    <a href="#audit"><span class="n theory-dot">01</span>4xx и 5xx, аудит auth-api</a>
+    <a href="#errors"><span class="n practice-dot">02</span>Свои исключения</a>
+    <a href="#handlers"><span class="n practice-dot">03</span>Обработчики и формат</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 2 · Логи, внешние сервисы, тесты</div>
+    <a href="#requestid"><span class="n practice-dot">04</span>Middleware и request_id</a>
+    <a href="#external"><span class="n practice-dot">05</span>Ошибки внешних API</a>
+    <a href="#rabbit"><span class="n practice-dot">06</span>Регистрация без брокера</a>
+    <a href="#tests"><span class="n practice-dot">07</span>Тесты ошибок</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">08</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">FastAPI · Урок 17 · 2 часа с перерывом · live-coding в auth-api</p>
+  <h1>Система обработки ошибок: от «400 с SQL-запросом» к единому формату</h1>
+  <p class="lead-p">В auth-api уже 11 роутеров, база, Redis, RabbitMQ, Celery, вход через Яндекс и Telegram-бот. А вот ошибки обрабатываются в каждом роутере по-своему, и некоторые из них прямо опасны. Сегодня сначала проводим <strong>аудит</strong>: ломаем свой API и смотрим, что видит клиент. Потом строим систему из четырёх частей: свои исключения, обработчики с единым форматом, middleware с <code>request_id</code> и правила для ошибок чужих сервисов.</p>
+
+  <div class="hero">
+    <h3>ЧТО ПОЯВИТСЯ В AUTH-API</h3>
+    <ul>
+      <li><b><code>app/core/errors.py</code></b> — иерархия исключений: <code>NotFoundError</code>, <code>ConflictError</code>, <code>ExternalServiceTimeout</code>… Сервисы бросают их и ничего не знают про HTTP-ответы.</li>
+      <li><b><code>app/core/error_handlers.py</code></b> — один формат для <b>всех</b> ошибок, включая 404 несуществующего маршрута, 422 валидации и 500: Problem Details (RFC 9457) с <code>code</code> и <code>request_id</code>.</li>
+      <li><b><code>app/core/request_context.py</code></b> — middleware: заголовок <code>X-Request-ID</code>, строка доступа на каждый запрос и <code>[request_id]</code> в каждой строке лога.</li>
+      <li><b>Клиент GitHub</b>, который переводит ошибки чужого сервиса в наши: лимит GitHub больше не превращается в «403 у вас нет прав».</li>
+      <li><b>Регистрация</b> без SQL в ответе, с защитой от гонки и с честным 201, когда RabbitMQ лежит.</li>
+      <li><b>8 тестов</b> без Redis, RabbitMQ и интернета.</li>
+    </ul>
+  </div>
+
+  <h3>Методичка и что мы поправим</h3>
+  <table class="cmp">
+    <thead><tr><th>В методичке</th><th>У нас</th><th>Блок</th></tr></thead>
+    <tbody>
+      <tr><td>4xx и 5xx, «клиенту — без деталей, в лог — всё»</td><td>то же, но на живом auth-api: находим, где эти правила нарушены</td><td>01</td></tr>
+      <tr><td><code>HTTPException</code> в эндпоинтах</td><td>оставляем для простых случаев в роутерах. В сервисах — свои исключения</td><td>02</td></tr>
+      <tr><td>обработчик для <code>InsufficientFundsError</code></td><td>один обработчик на всю иерархию <code>AppError</code> + обработчики для <code>HTTPException</code> и 422</td><td>03</td></tr>
+      <tr><td>глобальный обработчик «чтобы приложение не упало»</td><td>приложение и так не падает — оно отдаёт текст <code>Internal Server Error</code>. Обработчик нужен ради формата и лога. И он не отменяет лог uvicorn</td><td>03</td></tr>
+      <tr><td>middleware с <code>try/except</code> + глобальный обработчик</td><td>вместе они не работают: проверим, что глобальный обработчик тогда <b>не вызывается никогда</b>. Наш middleware ничего не ловит — он ставит <code>request_id</code></td><td>04</td></tr>
+      <tr><td><code>logger.error(…, exc_info=True)</code></td><td><code>logger.exception</code>, <code>raise … from e</code> и <code>request_id</code> в каждой строке</td><td>04–05</td></tr>
+      <tr><td>внешние API: свои исключения из сервисного слоя</td><td>делаем на <code>/github</code>, ловим лимит, таймаут, недоступность</td><td>05</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Обзор, шаг 0: чиним запуск тестов</td><td>—</td></tr>
+      <tr><td class="t">0:05</td><td>4xx и 5xx. Аудит: ломаем auth-api и смотрим ответы</td><td>теория + live</td></tr>
+      <tr><td class="t">0:20</td><td>Свои исключения: <code>errors.py</code>, сервисы, гонка регистраций</td><td>live-coding</td></tr>
+      <tr><td class="t">0:35</td><td>Обработчики и единый формат Problem Details</td><td>live-coding</td></tr>
+      <tr><td class="t">0:50</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:00</td><td>Middleware и <code>request_id</code>, кто ловит первым</td><td>live-coding</td></tr>
+      <tr><td class="t">1:15</td><td>Ошибки внешних API: клиент GitHub</td><td>live-coding</td></tr>
+      <tr><td class="t">1:32</td><td>Регистрация, когда RabbitMQ недоступен</td><td>live-coding</td></tr>
+      <tr><td class="t">1:39</td><td>Тесты ошибок</td><td>live-coding</td></tr>
+      <tr><td class="t">1:48</td><td>Игра, шпаргалка, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">ЧТО ПРОВЕРЕНО</span>
+    <p>Весь код я запускал на копии <b>вашего</b> auth-api (24 ноября, после коммита «add integration telegram to backend» и незакоммиченных правок Telegram), с настоящими SQLite, Redis и RabbitMQ: выводы в уроке настоящие. GitHub с моего сервера недоступен, поэтому вместо него работала имитация <code>scripts/fake_github.py</code> из архива: она отвечает в формате GitHub, включая настоящий текст ошибки лимита. Где ответ от имитации — подписано.</p>
+  </div></div>
+
+  <h3><span class="step">Шаг 0</span> Тесты не запускаются</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал → pytest</span><span class="role">настоящий вывод на вашей копии</span></figcaption>
+    <pre><code class="language-none">ImportError while loading conftest '.../auth-api/tests/conftest.py'.
+E   ImportError: cannot import name 'user_repo' from 'app.repositories.user_repo'</code></pre>
+  </figure>
+  <p>В <code>tests/conftest.py</code> удалите строку <code>from app.repositories.user_repo import user_repo</code>: такого объекта давно нет, а без этого не запускается ни один тест (разбирали в уроках 13 и 16). Сегодня тесты понадобятся в блоке 07.</p>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · Диагноз и лечение</span><span class="bar"></span></div>
+
+<!-- 01 AUDIT -->
+<section id="audit">
+  <div class="sec-head"><h2>01 · 4xx и 5xx. Аудит auth-api</h2><span class="tag theory">теория + live</span><span class="tag time">~15 мин</span></div>
+
+  <p>Код ответа отвечает на вопрос <b>«кто виноват и что делать клиенту»</b>:</p>
+  <table class="cmp">
+    <thead><tr><th>Код</th><th>Кто виноват</th><th>Что делать клиенту</th><th>Писать в лог?</th></tr></thead>
+    <tbody>
+      <tr><td>400 / 422</td><td>клиент: неверные данные</td><td>исправить запрос</td><td>нет (это нормальная жизнь API)</td></tr>
+      <tr><td>401 / 403</td><td>клиент: не вошёл / нет прав</td><td>войти / не пытаться</td><td>нет, но 403 стоит считать в метриках</td></tr>
+      <tr><td>404 / 409</td><td>клиент: нет такого / уже есть</td><td>поменять запрос</td><td>нет</td></tr>
+      <tr><td>500</td><td><b>мы</b>: баг, упала база</td><td>ничего, повторить позже</td><td><b>да, с traceback</b></td></tr>
+      <tr><td>502 / 503 / 504</td><td><b>сервис, от которого мы зависим</b>: ответил ошибкой / недоступен / не успел</td><td>повторить позже</td><td><b>да</b></td></tr>
+    </tbody>
+  </table>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">АНАЛОГИЯ: ОКОШКО В БАНКЕ</span>
+    <p>«Вы не заполнили поле „паспорт“» — 4xx: клиент может исправить сам. «У нас упала программа, приходите позже» — 5xx. Плохой операционист на ваш вопрос показывает экран с красной ошибкой и номером строки кода. Хороший говорит «технический сбой, номер обращения 4471», а сам пересылает скриншот в IT. Номер обращения — это наш будущий <code>request_id</code>.</p>
+  </div></div>
+
+  <h3>Ломаем свой API</h3>
+  <p>Запустите auth-api (Redis и RabbitMQ работают) и пройдите по сценариям — это и есть аудит.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · регистрация</span><span class="role">настоящий вывод auth-api до урока</span></figcaption>
+    <pre><code class="language-none">$ curl -X POST localhost:8000/auth/register -H 'Content-Type: application/json' \
+    -d '{"username":"anna","email":"anna@auth-api.dev","password":"Super-key123"}'
+{"id":47,"username":"anna","email":"anna@auth-api.dev","roles":["user"]}  [HTTP 201]
+
+# то же имя, другой email
+{"detail":"Username already exists"}  [HTTP 400]
+
+# другое имя, тот же email
+{"detail":"(sqlite3.IntegrityError) UNIQUE constraint failed: users.email\n[SQL: INSERT INTO users (username, email, hashed_password, is_active, roles, created_at, updated_at, telegram_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: ('anna2', 'anna@auth-api.dev', '$2b$12$NHwXYGyD1ECWOieT5hKFc.EZcjsSX2qwYIYevL8xcCkWnjjhQ3/O.', 1, '[\"user\"]', '2026-11-24 16:48:16.350144', '2026-11-24 16:48:16.350153', None)]\n(Background on this error at: https://sqlalche.me/e/21/gkpj)"}  [HTTP 400]
+
+# короткое имя, кривой email, короткий пароль
+{"detail":[{"type":"string_too_short","loc":["body","username"],"msg":"String should have at least 3 characters","input":"an","ctx":{"min_length":3}},{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: An email address must have an @-sign.","input":"not-email","ctx":{"reason":"An email address must have an @-sign."}},{"type":"string_too_short","loc":["body","password"],"msg":"String should have at least 8 characters","input":"123","ctx":{"min_length":8}}]}  [HTTP 422]</code></pre>
+  </figure>
+  <p>Третий ответ стоит разобрать на занятии вслух. Клиент получил: имя СУБД, таблицу, все колонки, SQL-запрос и <b>хеш пароля</b>. Источник — две строки в <code>auth.py</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">👀 app/api/routers/auth.py · сейчас</span></figcaption>
+    <pre><code class="language-python">    try:
+        user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))</code></pre>
+  </figure>
+  <p><code>except Exception</code> + <code>str(e)</code> = «покажи клиенту всё, что угодно, что пошло не так». Сервис проверяет только имя, email не проверяет — и до клиента долетает <code>IntegrityError</code> из SQLAlchemy со всеми потрохами. А четвёртый ответ (422) вернул обратно присланный пароль <code>"input":"123"</code>: если ответы логирует прокси или фронтенд, пароли окажутся в логах.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · RabbitMQ остановлен (rabbitmqctl stop_app), регистрируем Бориса дважды</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">{"detail":"&lt;aio_pika.robust_channel.RobustChannel object at 0x7f0018f7c980&gt; closed"}  [HTTP 400]
+{"detail":"Username already exists"}  [HTTP 400]</code></pre>
+  </figure>
+  <p>Первый ответ: «ошибка в вашем запросе» (400) с адресом объекта в памяти. Клиент честно повторяет — а Борис, оказывается, <b>уже зарегистрирован</b>: брокер упал после записи в базу. И ни одной строки в логах от нашего кода — только шум переподключения <code>aio_pika</code>.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · /github — вместо GitHub имитация с его настоящими ответами</span><span class="role">auth-api настоящий, «GitHub» — имитация</span></figcaption>
+    <pre><code class="language-none"># GitHub: «лимит запросов исчерпан» (так он отвечает после 60 запросов в час без токена)
+$ curl localhost:8000/github/torvalds
+{"detail":"Внешний сервис вернул ошибку: {\"message\":\"API rate limit exceeded for 203.0.113.7. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)\",\"documentation_url\":\"https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting\"}"}  [HTTP 403]
+
+# GitHub отвечает дольше 5 секунд
+$ curl localhost:8000/github/linus
+{"detail":"Внешний сервис не ответил вовремя."}  [HTTP 504] за 5.014632с</code></pre>
+  </figure>
+  <p>403 для нашего клиента значит «у <b>вас</b> нет прав». Фронтенд покажет «доступ запрещён» или разлогинит пользователя. А на самом деле это <b>наш</b> сервер исчерпал лимит у GitHub. Код чужого сервиса нельзя просто переслать: <code>status_code=e.response.status_code</code> в <code>github.py</code> и <code>weather.py</code> — та же ошибка. Плюс в тексте — внутренности чужого ответа, включая IP нашего сервера.</p>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · Redis остановлен</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ curl -i localhost:8000/users/anna
+HTTP/1.1 500 Internal Server Error
+content-type: text/plain; charset=utf-8
+Internal Server Error
+
+# лог uvicorn:
+ERROR:    Exception in ASGI application
+redis.exceptions.ConnectionError: Connection closed by server.</code></pre>
+  </figure>
+  <p>Здесь всё «правильно» — 500 без деталей. Но это <b>текст</b>, а не JSON: фронтенд, который делает <code>await r.json()</code>, упадёт второй раз уже у себя. И по жалобе «у меня ошибка в 14:32» строку в логе не найти: в ней нет ни пути, ни пользователя, ни идентификатора.</p>
+
+  <h3>Итог аудита</h3>
+  <table class="cmp">
+    <thead><tr><th>Проблема</th><th>Где</th><th>Чиним в блоке</th></tr></thead>
+    <tbody>
+      <tr><td>SQL и хеш пароля в ответе, код 400 на всё подряд</td><td><code>auth.py</code>: <code>except Exception</code> + <code>str(e)</code></td><td>02, 03</td></tr>
+      <tr><td>гонка двух одновременных регистраций</td><td><code>auth_service</code>: проверка «занято?» без страховки</td><td>02</td></tr>
+      <tr><td>422 возвращает присланный пароль</td><td>формат FastAPI по умолчанию</td><td>03</td></tr>
+      <tr><td>три формата ошибок: <code>detail</code>-строка, <code>detail</code>-список, текст</td><td>везде</td><td>03</td></tr>
+      <tr><td>ошибку не найти в логах</td><td>нет <code>request_id</code></td><td>04</td></tr>
+      <tr><td>чужой 403 становится нашим, чужой текст — в ответе</td><td><code>github.py</code>, <code>weather.py</code></td><td>05</td></tr>
+      <tr><td>400 и потерянный пользователь, когда лежит RabbitMQ</td><td><code>auth.py</code>: <code>publish</code></td><td>06</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<hr>
+
+<!-- 02 ERRORS -->
+<section id="errors">
+  <div class="sec-head"><h2>02 · Свои исключения</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Почему не <code>HTTPException</code> везде? Потому что <code>register_user</code> вызывается не только из роутера: его может вызвать Celery-задача, бот или скрипт <code>seed.py</code>. «HTTP 409» для них бессмысленно. Сервис должен сказать <b>что</b> случилось («такой пользователь уже есть»), а <b>как</b> это показать клиенту — дело слоя API.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · app/core/errors.py</span></figcaption>
+    <pre><code class="language-python">"""Ошибки приложения: что случилось, какой HTTP-код и машинный code для фронтенда.
+
+Сервисы и клиенты бросают эти исключения и ничего не знают про JSONResponse.
+Превращением в ответ занимаются обработчики в app/core/error_handlers.py.
+"""
+
+
+class AppError(Exception):
+    status_code: int = 500
+    code: str = 'internal_error'
+    message: str = 'Внутренняя ошибка сервера'
+
+    def __init__(self, message: str | None = None, *, extra: dict | None = None) -&gt; None:
+        self.message = message or self.message
+        self.extra = extra or {}
+        super().__init__(self.message)
+
+
+# --- 4xx: клиент может исправить запрос --------------------------------------
+class BadRequestError(AppError):
+    status_code = 400
+    code = 'bad_request'
+    message = 'Некорректный запрос'
+
+
+class NotFoundError(AppError):
+    status_code = 404
+    code = 'not_found'
+    message = 'Не найдено'
+
+
+class ConflictError(AppError):
+    status_code = 409
+    code = 'conflict'
+    message = 'Конфликт с текущим состоянием данных'
+
+
+# --- 5xx: проблема на нашей стороне или у сервиса, от которого мы зависим ------
+class ExternalServiceError(AppError):
+    status_code = 502
+    code = 'external_service_error'
+    message = 'Внешний сервис ответил ошибкой'
+
+    def __init__(self, service: str, message: str | None = None) -&gt; None:
+        super().__init__(message, extra={'service': service})
+
+
+class ExternalServiceUnavailable(ExternalServiceError):
+    status_code = 503
+    code = 'external_service_unavailable'
+    message = 'Внешний сервис временно недоступен, попробуйте позже'
+
+
+class ExternalServiceTimeout(ExternalServiceError):
+    status_code = 504
+    code = 'external_service_timeout'
+    message = 'Внешний сервис не ответил вовремя'</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>status_code</code>, <code>code</code>, <code>message</code> — атрибуты класса</td><td>у каждого вида ошибки свои значения по умолчанию</td><td>наследник меняет одну строку: <code>class UserAlreadyExists(ConflictError): code = 'user_already_exists'</code></td></tr>
+      <tr><td><code>code</code></td><td>машинное имя ошибки</td><td>для фронтенда: <code>if (err.code === 'user_already_exists')</code> — подсветить поле. Текст <code>message</code> можно переписать, <code>code</code> — контракт API</td></tr>
+      <tr><td><code>extra</code></td><td>дополнительные поля ответа</td><td>например, <code>service: "github"</code> — какой внешний сервис подвёл</td></tr>
+      <tr><td>4xx и 5xx в разных ветках иерархии</td><td>можно ловить «все внешние» одним <code>except ExternalServiceError</code></td><td>таймаут — частный случай «внешний сервис подвёл»</td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>Сервис: проверяем и имя, и email</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/services/auth_service.py · заменяем файл</span></figcaption>
+    <pre><code class="language-python">from app.core.errors import ConflictError
+from app.core.security import hash_password, verify_password
+from app.db.models import User
+from app.repositories.user_repo import UserRepo
+
+
+class UserAlreadyExists(ConflictError):
+    code = 'user_already_exists'
+
+
+async def register_user(user_repo: UserRepo, username: str, email: str, password: str) -&gt; User:
+    if await user_repo.get_by_username(username):
+        raise UserAlreadyExists('Пользователь с таким именем уже существует')
+    if await user_repo.get_by_email(email):
+        raise UserAlreadyExists('Пользователь с таким email уже существует')
+    return await user_repo.create(
+        username=username,
+        email=email,
+        hashed_password=hash_password(password),
+        roles=['user']
+    )
+
+
+async def authenticate_user(user_repo: UserRepo, username: str, password: str) -&gt; User | None:
+    user = await user_repo.get_by_username(username)
+    if user is None or not verify_password(password, user.hashed_password):
+        return None
+    return user</code></pre>
+  </figure>
+  <p>Было <code>raise ValueError('Username already exists')</code> — <code>ValueError</code> бросает пол-Python, и <code>except ValueError</code> в роутере поймал бы что угодно. Своё исключение ловится только там, где его ждут.</p>
+
+  <h3>Гонка: проверка не спасает</h3>
+  <p>Два запроса с одним email пришли одновременно. Оба проверили «email занят?» — оба получили «нет», оба делают <code>INSERT</code>. Один победит, второй упадёт на <code>UNIQUE</code> в базе — тем самым <code>IntegrityError</code>. Последнее слово всегда за ограничением в базе, поэтому ловим его там, где делаем <code>commit</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/repositories/user_repo.py · + импорты, метод create</span></figcaption>
+    <pre><code class="language-python">from app.core.errors import ConflictError
+from sqlalchemy.exc import IntegrityError
+# ...
+
+    async def create(self, username: str, email: str, hashed_password: str,
+                    roles: list[str]) -&gt; User:
+        user = User(username=username, email=email, hashed_password=hashed_password, roles=roles)
+        self.session.add(user)
+        try:
+            await self.session.commit()
+        except IntegrityError as e:
+            # Проверка «занято ли» в сервисе не спасает от гонки двух одновременных регистраций:
+            # последнее слово за UNIQUE в базе
+            await self.session.rollback()
+            raise ConflictError('Пользователь с таким именем или email уже существует') from e
+        await self.session.refresh(user)
+        return user</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">проверка · пять одновременных регистраций с одним email (asyncio.gather)</span><span class="role">настоящий вывод после урока</span></figcaption>
+    <pre><code class="language-none">409 Пользователь с таким именем или email уже существует     ← IntegrityError из базы
+201 racer1                                                    ← победитель
+409 Пользователь с таким именем или email уже существует     ← IntegrityError
+409 Пользователь с таким именем или email уже существует     ← IntegrityError
+409 Пользователь с таким email уже существует                 ← проверка в сервисе</code></pre>
+  </figure>
+  <p>Три из пяти запросов прошли проверку в сервисе, и только UNIQUE в базе их остановил. Без <code>try/except</code> в репозитории эти три получили бы 500.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/services/registration_service.py · три правки</span></figcaption>
+    <pre><code class="language-python">from app.core.errors import BadRequestError
+from app.services.auth_service import UserAlreadyExists     # вместо своего class UserAlreadyExists(Exception)
+# ...
+            raise UserAlreadyExists('Пользователь с таким именем или email уже существует')
+# ...
+            raise BadRequestError('Атлантида утонула — такого города нет')   # было ValueError</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">except Exception — ТОЛЬКО ТАМ, ГДЕ ВЫ ЗНАЕТЕ, ЧТО ДЕЛАТЬ ДАЛЬШЕ</span>
+    <p>Широкий <code>except Exception</code> оправдан в двух местах: в последнем обработчике (блок 03) и там, где ошибку <b>осознанно</b> гасим и логируем (блок 06). Во всех остальных случаях он прячет баги: <code>KeyError</code> из-за опечатки превратится в «400 Bad Request», и вы будете месяц искать, почему у пользователей «неверный запрос».</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 03 HANDLERS -->
+<section id="handlers">
+  <div class="sec-head"><h2>03 · Обработчики и единый формат</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Фронтенду нужен <b>один</b> формат ошибки, чтобы написать один обработчик в <code>fetch</code>-обёртке. Придумывать свой не будем: есть стандарт <a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener">RFC 9457 «Problem Details for HTTP APIs»</a>. Поля <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>, <code>instance</code> — из стандарта, а <code>code</code> и <code>request_id</code> — наши расширения, стандарт это разрешает. Бонус: <code>detail</code> остаётся строкой, как у <code>HTTPException</code>, — старый фронтенд, который читает <code>err.detail</code>, не сломается.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · app/core/error_handlers.py</span></figcaption>
+    <pre><code class="language-python">"""Единый формат ошибок auth-api — Problem Details (RFC 9457).
+
+    {"type": "about:blank", "title": "Conflict", "status": 409,
+     "detail": "Пользователь с таким email уже существует",
+     "instance": "/auth/register", "code": "user_already_exists", "request_id": "3f9c…"}
+"""
+import logging
+from http import HTTPStatus
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from app.core.errors import AppError
+
+logger = logging.getLogger(__name__)
+
+
+def problem(request: Request, status: int, detail: str, code: str,
+            headers: dict | None = None, **extra) -&gt; JSONResponse:
+    request_id = getattr(request.state, 'request_id', None)
+    body = {
+        'type': 'about:blank',
+        'title': HTTPStatus(status).phrase,
+        'status': status,
+        'detail': detail,
+        'instance': request.url.path,
+        'code': code,
+        'request_id': request_id,
+        **extra,
+    }
+    headers = {**(headers or {}), **({'X-Request-ID': request_id} if request_id else {})}
+    return JSONResponse(body, status_code=status, headers=headers, media_type='application/problem+json')
+
+
+async def app_error_handler(request: Request, exc: AppError) -&gt; JSONResponse:
+    if exc.status_code &gt;= 500:
+        # 5xx — повод разбираться: пишем в лог с причиной (__cause__ виден в traceback)
+        logger.error('%s: %s %s', exc.code, exc.message, exc.extra, exc_info=exc)
+    return problem(request, exc.status_code, exc.message, exc.code, **exc.extra)
+
+
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -&gt; JSONResponse:
+    # HTTPException из наших роутеров и 404/405 самого роутинга FastAPI
+    detail = exc.detail if isinstance(exc.detail, str) else HTTPStatus(exc.status_code).phrase
+    code = HTTPStatus(exc.status_code).name.lower()
+    return problem(request, exc.status_code, detail, code, headers=exc.headers)
+
+
+async def validation_error_handler(request: Request, exc: RequestValidationError) -&gt; JSONResponse:
+    # Без 'input': иначе в ответ (и в логи прокси) уходит то, что прислал клиент, включая пароль
+    errors = [
+        {'field': '.'.join(str(p) for p in err['loc'][1:]) or err['loc'][0], 'message': err['msg'], 'type': err['type']}
+        for err in exc.errors()
+    ]
+    return problem(request, 422, 'Проверьте поля запроса', 'validation_error', errors=errors)
+
+
+async def unhandled_error_handler(request: Request, exc: Exception) -&gt; JSONResponse:
+    # Последняя линия обороны: клиенту — ничего лишнего, в лог — всё
+    logger.exception('Необработанная ошибка: %s %s', request.method, request.url.path)
+    return problem(request, 500, 'Внутренняя ошибка сервера. Сообщите request_id в поддержку', 'internal_error')
+
+
+def install_error_handlers(app: FastAPI) -&gt; None:
+    app.add_exception_handler(AppError, app_error_handler)
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
+    app.add_exception_handler(Exception, unhandled_error_handler)</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>add_exception_handler(AppError, …)</code></td><td>один обработчик на всех наследников</td><td>FastAPI ищет обработчик по цепочке классов: для <code>UserAlreadyExists</code> найдёт <code>AppError</code></td></tr>
+      <tr><td><code>StarletteHTTPException</code>, не <code>fastapi.HTTPException</code></td><td>родительский класс</td><td>404 несуществующего маршрута и 405 бросает сам Starlette, а не наш код. С <code>fastapi.HTTPException</code> они остались бы в старом формате</td></tr>
+      <tr><td><code>headers=exc.headers</code></td><td>сохранить заголовки исключения</td><td>иначе пропадёт <code>WWW-Authenticate: Bearer</code> из 401 — Swagger и клиенты OAuth2 на него смотрят</td></tr>
+      <tr><td>в 422 нет <code>input</code></td><td>не возвращаем присланное</td><td>пароль «123» больше не уходит обратно</td></tr>
+      <tr><td><code>add_exception_handler(Exception, …)</code></td><td>всё непредвиденное</td><td>клиенту — общий текст и <code>request_id</code>, в лог — traceback (<code>logger.exception</code>)</td></tr>
+      <tr><td><code>media_type='application/problem+json'</code></td><td>тип из RFC 9457</td><td>клиент по заголовку понимает: это ошибка в стандартном формате</td></tr>
+      <tr><td>5xx из <code>AppError</code> → <code>logger.error(…, exc_info=exc)</code></td><td>лог с traceback</td><td>4xx — норма, их не логируем. 5xx — повод разбираться</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/main.py · + импорты, setup_logging вместо basicConfig, две строки после app = FastAPI(...)</span></figcaption>
+    <pre><code class="language-python">from app.core.error_handlers import install_error_handlers
+from app.core.request_context import request_id_middleware, setup_logging
+# ...
+setup_logging()  # формат с [request_id] — вместо logging.basicConfig
+# ...
+app = FastAPI(lifespan=lifespan)
+install_error_handlers(app)
+app.middleware('http')(request_id_middleware)      # сам middleware — в блоке 04</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · app/core/request_context.py (пока только скопируйте — разберём в блоке 04)</span></figcaption>
+    <pre><code class="language-python">"""Request ID: один короткий идентификатор на запрос — в заголовке ответа, в теле ошибки и в каждой строке лога."""
+import logging
+import time
+import uuid
+from contextvars import ContextVar
+
+from fastapi import Request
+
+request_id_var: ContextVar[str] = ContextVar('request_id', default='-')
+logger = logging.getLogger('app.access')
+
+
+async def request_id_middleware(request: Request, call_next):
+    # Пришёл от прокси/фронтенда — берём его, нет — создаём свой
+    request_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex[:12]
+    request.state.request_id = request_id
+    # reset не нужен: каждый запрос uvicorn обрабатывает в своей задаче asyncio со своим контекстом,
+    # а обработчику 500 (он сработает уже после выхода из middleware) значение ещё понадобится
+    request_id_var.set(request_id)
+    started = time.perf_counter()
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        response.headers['X-Request-ID'] = request_id
+        return response
+    finally:
+        took = (time.perf_counter() - started) * 1000
+        logger.info('%s %s → %s за %.0f мс', request.method, request.url.path, status, took)
+
+
+class RequestIdFilter(logging.Filter):
+    """Добавляет request_id в каждую запись лога, даже из чужих библиотек."""
+
+    def filter(self, record: logging.LogRecord) -&gt; bool:
+        record.request_id = request_id_var.get()
+        return True
+
+
+def setup_logging(level: int = logging.INFO) -&gt; None:
+    handler = logging.StreamHandler()
+    handler.addFilter(RequestIdFilter())
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-7s [%(request_id)s] %(name)s: %(message)s'))
+    root = logging.getLogger()
+    root.handlers[:] = [handler]
+    root.setLevel(level)</code></pre>
+  </figure>
+  <p>И роутер регистрации становится короче — никаких <code>try/except</code> вокруг сервиса:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py · /register-with-profile</span></figcaption>
+    <pre><code class="language-python">@router.post('/register-with-profile', response_model=UserWithProfileOut,
+             status_code=status.HTTP_201_CREATED)
+async def register_bad(data: RegisterWithProfile, session: SessionDep, redis: RedisDep):
+    user = await register_with_profile(session, data)   # 409 и 400 — через обработчики
+    await redis.delete('users:all')
+    return user</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · те же запросы, что в аудите</span><span class="role">настоящий вывод после урока</span></figcaption>
+    <pre><code class="language-none"># то же имя
+{"type":"about:blank","title":"Conflict","status":409,"detail":"Пользователь с таким именем уже существует","instance":"/auth/register","code":"user_already_exists","request_id":"eb23d98be6a7"}  [HTTP 409]
+
+# тот же email — больше никакого SQL
+{"type":"about:blank","title":"Conflict","status":409,"detail":"Пользователь с таким email уже существует","instance":"/auth/register","code":"user_already_exists","request_id":"32468688a02e"}  [HTTP 409]
+
+# 422 — поля по-человечески, пароля в ответе нет
+{"type":"about:blank","title":"Unprocessable Content","status":422,"detail":"Проверьте поля запроса","instance":"/auth/register","code":"validation_error","request_id":"162d3a02752b","errors":[{"field":"username","message":"String should have at least 3 characters","type":"string_too_short"},{"field":"email","message":"value is not a valid email address: An email address must have an @-sign.","type":"value_error"},{"field":"password","message":"String should have at least 8 characters","type":"string_too_short"}]}  [HTTP 422]
+
+# несуществующий маршрут — тот же формат
+{"type":"about:blank","title":"Not Found","status":404,"detail":"Not Found","instance":"/nope","code":"not_found","request_id":"12537895c709"}  [HTTP 404]
+
+# 401 — заголовок WWW-Authenticate на месте
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer
+x-request-id: b4736dade23d
+content-type: application/problem+json
+{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Not authenticated","instance":"/users/me","code":"unauthorized","request_id":"b4736dade23d"}
+
+# бизнес-правило из урока про транзакции
+{"type":"about:blank","title":"Bad Request","status":400,"detail":"Атлантида утонула — такого города нет","instance":"/auth/register-with-profile","code":"bad_request","request_id":"e40349faa848"}  [HTTP 400]
+
+# Redis остановлен — 500 теперь JSON и с номером обращения
+HTTP/1.1 500 Internal Server Error
+x-request-id: 5a0eb1014212
+content-type: application/problem+json
+{"type":"about:blank","title":"Internal Server Error","status":500,"detail":"Внутренняя ошибка сервера. Сообщите request_id в поддержку","instance":"/users/anna","code":"internal_error","request_id":"5a0eb1014212"}</code></pre>
+  </figure>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ФРОНТЕНДЕРАМ: ОДИН ОБРАБОТЧИК НА ВСЁ</span>
+    <p><code>if (!r.ok) { const p = await r.json(); showToast(p.detail); if (p.code === 'validation_error') highlight(p.errors); }</code> — и так для любого эндпоинта. А <code>request_id</code> показываем мелким текстом под сообщением: пользователь пришлёт его в поддержку.</p>
+  </div></div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ГЛОБАЛЬНЫЙ ОБРАБОТЧИК НЕ «СПАСАЕТ ОТ ПАДЕНИЯ»</span>
+    <p>Методичка пишет, что обработчик <code>Exception</code> нужен, «чтобы избегать падения приложения». Приложение не падало и до него: Starlette и так отвечает 500 текстом. Обработчик меняет только <b>формат ответа</b> и даёт нам свой лог. Более того, Starlette после нашего обработчика <b>снова выбрасывает</b> исключение — специально, чтобы его увидел сервер. Поэтому в логе две записи об одной ошибке:</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">лог uvicorn · Redis остановлен</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">2026-11-24 16:51:26,970 INFO    [5a0eb1014212] app.access: GET /users/anna → 500 за 2 мс
+2026-11-24 16:51:26,970 ERROR   [5a0eb1014212] app.core.error_handlers: Необработанная ошибка: GET /users/anna
+redis.exceptions.ConnectionError: Connection closed by server.          ← наш лог, с request_id
+ERROR:    Exception in ASGI application
+redis.exceptions.ConnectionError: Connection closed by server.          ← лог uvicorn, тот же traceback</code></pre>
+  </figure>
+  <p>Это нормально. По той же причине в тестах <code>TestClient</code> по умолчанию пробрасывает такую ошибку в тест — для проверки ответа 500 нужен <code>TestClient(app, raise_server_exceptions=False)</code> (блок 07).</p>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — request_id в каждой строке лога и кто кого ловит первым, ошибки GitHub, регистрация при упавшем RabbitMQ и тесты.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Логи, внешние сервисы, тесты</span><span class="bar"></span></div>
+
+<!-- 04 REQUEST ID -->
+<section id="requestid">
+  <div class="sec-head"><h2>04 · Middleware и request_id</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Пользователь пишет в поддержку: «в 14:32 вылезла ошибка». В логе за эту минуту — 3000 строк от десятка запросов вперемешку. Нужна метка, которая связывает <b>ответ клиенту</b> и <b>все строки лога одного запроса</b>. Это и есть <code>request_id</code>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/core/request_context.py · уже скопировали в блоке 03</span></figcaption>
+    <pre><code class="language-python">"""Request ID: один короткий идентификатор на запрос — в заголовке ответа, в теле ошибки и в каждой строке лога."""
+import logging
+import time
+import uuid
+from contextvars import ContextVar
+
+from fastapi import Request
+
+request_id_var: ContextVar[str] = ContextVar('request_id', default='-')
+logger = logging.getLogger('app.access')
+
+
+async def request_id_middleware(request: Request, call_next):
+    # Пришёл от прокси/фронтенда — берём его, нет — создаём свой
+    request_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex[:12]
+    request.state.request_id = request_id
+    # reset не нужен: каждый запрос uvicorn обрабатывает в своей задаче asyncio со своим контекстом,
+    # а обработчику 500 (он сработает уже после выхода из middleware) значение ещё понадобится
+    request_id_var.set(request_id)
+    started = time.perf_counter()
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        response.headers['X-Request-ID'] = request_id
+        return response
+    finally:
+        took = (time.perf_counter() - started) * 1000
+        logger.info('%s %s → %s за %.0f мс', request.method, request.url.path, status, took)
+
+
+class RequestIdFilter(logging.Filter):
+    """Добавляет request_id в каждую запись лога, даже из чужих библиотек."""
+
+    def filter(self, record: logging.LogRecord) -&gt; bool:
+        record.request_id = request_id_var.get()
+        return True
+
+
+def setup_logging(level: int = logging.INFO) -&gt; None:
+    handler = logging.StreamHandler()
+    handler.addFilter(RequestIdFilter())
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-7s [%(request_id)s] %(name)s: %(message)s'))
+    root = logging.getLogger()
+    root.handlers[:] = [handler]
+    root.setLevel(level)</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>request.headers.get('X-Request-ID') or uuid4().hex[:12]</code></td><td>взять готовый или создать</td><td>если перед API стоит nginx или фронтенд уже сгенерировал id — один id пройдёт через всю цепочку</td></tr>
+      <tr><td><code>request.state.request_id</code></td><td>«карман» запроса</td><td>обработчики ошибок берут id оттуда: <code>request.state.request_id</code></td></tr>
+      <tr><td><code>ContextVar</code></td><td>переменная, своя у каждой задачи asyncio</td><td>логгер не знает про <code>request</code>, а id нужен ему в каждой строке. Глобальная переменная перепутала бы id параллельных запросов</td></tr>
+      <tr><td><code>try / finally</code> без <code>except</code></td><td>строка доступа пишется всегда</td><td>middleware <b>ничего не ловит</b> — ошибки уходят дальше, к обработчикам</td></tr>
+      <tr><td><code>RequestIdFilter</code> на обработчике root-логгера</td><td>добавляет поле <code>request_id</code> в каждую запись</td><td>даже в записи SQLAlchemy, httpx и aio_pika — им ничего не надо передавать</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">лог auth-api · обычные запросы</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">2026-11-24 16:51:28,031 INFO    [b71ef040b5ee] app.access: GET /github/octocat → 200 за 31 мс
+2026-11-24 16:51:28,052 INFO    [108ee8acdc1e] app.access: GET /github/no-such-user-xyz → 404 за 11 мс
+2026-11-24 16:51:52,887 ERROR   [-] aiormq.connection: Unexpected connection close from remote ...</code></pre>
+  </figure>
+  <p><code>[-]</code> — запись вне запроса (фоновое переподключение к RabbitMQ): значение <code>ContextVar</code> по умолчанию. Теперь по <code>request_id</code> из ответа клиента находим в логе все строки этого запроса: <code>grep 5a0eb1014212 app.log</code>.</p>
+  <div class="callout why"><div class="ic">?</div><div>
+    <span class="lbl">ПОЧЕМУ НЕТ request_id_var.reset()</span>
+    <p>Аккуратный код со <code>ContextVar</code> обычно делает <code>token = var.set(…)</code> и в <code>finally</code> — <code>var.reset(token)</code>. Здесь это сломает лог 500: обработчик <code>Exception</code> срабатывает <b>после</b> выхода из нашего middleware (он снаружи всех middleware), и увидел бы <code>[-]</code>. Сбрасывать и не нужно: uvicorn обрабатывает каждый запрос в своей задаче asyncio, а у задачи своя копия контекста.</p>
+  </div></div>
+
+  <h3>Кто ловит первым: middleware или обработчик?</h3>
+  <p>Методичка предлагает middleware с <code>try/except Exception</code>, который возвращает 500, — и рядом глобальный обработчик <code>Exception</code>. Проверим, как они уживаются. Отдельный файл, auth-api не трогаем:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">👀 order_demo.py · отдельный файл для эксперимента</span></figcaption>
+    <pre><code class="language-python">class ErrorHandlingMiddleware(BaseHTTPMiddleware):          # как в методичке
+    async def dispatch(self, request: Request, call_next):
+        try:
+            return await call_next(request)
+        except Exception as e:
+            print(f'  middleware поймал: {type(e).__name__}')
+            return JSONResponse(status_code=500, content={'by': 'middleware'})
+
+app = FastAPI()
+app.add_middleware(ErrorHandlingMiddleware)
+
+@app.exception_handler(InsufficientFundsError)
+async def funds_handler(request, exc):
+    print('  сработал обработчик InsufficientFundsError')
+    return JSONResponse(status_code=400, content={'by': 'funds_handler'})
+
+@app.exception_handler(Exception)
+async def global_handler(request, exc):
+    print('  сработал глобальный обработчик Exception')
+    return JSONResponse(status_code=500, content={'by': 'global_handler'})
+
+@app.get('/withdraw')
+async def withdraw():
+    raise InsufficientFundsError()
+
+@app.get('/bug')
+async def bug():
+    return 1 / 0</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал → python order_demo.py</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">GET /withdraw
+  сработал обработчик InsufficientFundsError
+  → 400 {'by': 'funds_handler'}
+GET /bug
+  middleware поймал: ZeroDivisionError
+  → 500 {'by': 'middleware'}</code></pre>
+  </figure>
+  <p>Строка «сработал глобальный обработчик Exception» <b>не появилась ни разу</b>. Почему — видно по слоям приложения:</p>
+  <div class="diagram"><pre class="ascii">
+  запрос →  ServerErrorMiddleware       ← здесь живёт обработчик Exception (самый внешний слой)
+              └ ваши middleware          ← try/except методички
+                  └ ExceptionMiddleware  ← обработчики конкретных классов (AppError, HTTPException, 422)
+                      └ роутер → эндпоинт  ← raise
+</pre></div>
+  <p>Исключение всплывает изнутри наружу. Конкретные обработчики стоят ближе всех к эндпоинту — их ничто не перехватит. А <code>Exception</code> FastAPI отдаёт самому внешнему слою: до него ошибка дойдёт, только если по дороге её никто не поймал. Middleware с <code>try/except</code> ловит раньше — и глобальный обработчик становится мёртвым кодом.</p>
+  <div class="callout tip"><div class="ic">✓</div><div>
+    <span class="lbl">ПРАВИЛО</span>
+    <p>Выберите <b>одно</b> место для непредвиденных ошибок. В auth-api это обработчик <code>Exception</code>: он видит <code>request</code>, и его легко проверить тестом. Middleware делает то, что умеет только он: что-то <b>до и после</b> каждого запроса (id, время, заголовки), но не глотает исключения.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 05 EXTERNAL -->
+<section id="external">
+  <div class="sec-head"><h2>05 · Ошибки внешних API</h2><span class="tag practice">live-coding</span><span class="tag time">~17 мин</span></div>
+
+  <p>У чужого сервиса четыре способа подвести нас, и для каждого у клиента свой смысл:</p>
+  <table class="cmp">
+    <thead><tr><th>Что случилось с GitHub</th><th>Наш ответ</th><th>Почему</th></tr></thead>
+    <tbody>
+      <tr><td>404 — нет такого пользователя</td><td><b>404</b> <code>not_found</code></td><td>это правда ответ на вопрос клиента</td></tr>
+      <tr><td>403 / 429 — лимит запросов</td><td><b>503</b> <code>external_service_unavailable</code></td><td>проблема на нашей стороне, клиенту — «попробуйте позже», а не «у вас нет прав»</td></tr>
+      <tr><td>другой 4xx/5xx</td><td><b>502</b> <code>external_service_error</code></td><td>Bad Gateway: «тот, кто за нами, ответил ерундой»</td></tr>
+      <tr><td>не ответил за 5 секунд</td><td><b>504</b> <code>external_service_timeout</code></td><td>Gateway Timeout</td></tr>
+      <tr><td>не подключились вообще</td><td><b>503</b> <code>external_service_unavailable</code></td><td>сервис недоступен</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Адрес GitHub — в настройки</h3>
+  <p>Чтобы проверить все сценарии, подменим GitHub имитацией. Для этого адрес должен браться из настроек, а не быть зашит в код:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">.env · добавляем строку</span></figcaption>
+    <pre><code class="language-none">GITHUB_API_URL=http://127.0.0.1:9100</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал → uvicorn app.main:app</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">pydantic_core._pydantic_core.ValidationError: 1 validation error for Settings
+github_api_url
+  Extra inputs are not permitted [type=extra_forbidden, input_value='http://127.0.0.1:9100', input_type=str]</code></pre>
+  </figure>
+  <div class="callout fun"><div class="ic">☺</div><div>
+    <span class="lbl">ТОЖЕ ОБРАБОТКА ОШИБОК</span>
+    <p><code>pydantic-settings</code> по умолчанию не пускает в <code>.env</code> неизвестные ключи. Это защита от опечаток: <code>SECRET_KEYY=…</code> без неё молча проигнорировался бы, и приложение работало бы с ключом по умолчанию. Лучше упасть при старте, чем на проде. Сначала поле в <code>Settings</code>, потом строка в <code>.env</code>.</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/core/config.py · class Settings, после celery_result_backend</span></figcaption>
+    <pre><code class="language-python">    github_api_url: str = 'https://api.github.com'   # в уроке 17 подменяем на имитацию</code></pre>
+  </figure>
+
+  <h3>Клиент переводит чужие ошибки в наши</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/clients/github.py · заменяем файл</span></figcaption>
+    <pre><code class="language-python">import logging
+
+import httpx
+
+from app.core.config import settings
+from app.core.errors import (ExternalServiceError, ExternalServiceTimeout,
+                             ExternalServiceUnavailable, NotFoundError)
+
+logger = logging.getLogger(__name__)
+SERVICE = 'github'
+
+
+async def get_user(username: str, transport: httpx.AsyncBaseTransport | None = None) -&gt; dict:
+    """Профиль пользователя GitHub. Ошибки httpx и чужие статусы → наши исключения."""
+    try:
+        async with httpx.AsyncClient(base_url=settings.github_api_url, timeout=5.0,
+                                     transport=transport) as client:
+            response = await client.get(f'/users/{username}')
+    except httpx.TimeoutException as e:
+        raise ExternalServiceTimeout(SERVICE) from e
+    except httpx.TransportError as e:            # не соединились: DNS, отказ, прокси
+        raise ExternalServiceUnavailable(SERVICE) from e
+
+    if response.status_code == 404:
+        # Ответ GitHub «нет такого» — честный 404 и для нашего клиента
+        raise NotFoundError(f'Пользователь GitHub «{username}» не найден')
+    if response.status_code in (403, 429):
+        # Лимит запросов GitHub — НЕ «у вас нет прав». Наш клиент тут ни при чём
+        logger.warning('GitHub ограничил запросы: %s %s', response.status_code, response.text[:200])
+        raise ExternalServiceUnavailable(SERVICE, 'GitHub временно ограничил запросы, попробуйте позже')
+    if response.is_error:
+        logger.error('GitHub ответил %s: %s', response.status_code, response.text[:200])
+        raise ExternalServiceError(SERVICE)
+    return response.json()</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>timeout=5.0</code></td><td>явный таймаут</td><td>по умолчанию у httpx те же 5 секунд, но то, что влияет на ответ клиенту, лучше видеть в коде</td></tr>
+      <tr><td><code>transport=None</code></td><td>параметр для тестов</td><td>в тесте подставим <code>httpx.MockTransport</code> и проверим каждую ветку без сети (блок 07)</td></tr>
+      <tr><td><code>except httpx.TimeoutException</code> <b>до</b> <code>TransportError</code></td><td>порядок важен</td><td>таймаут — наследник <code>TransportError</code>. Наоборот — ветка таймаута не сработает никогда</td></tr>
+      <tr><td><code>raise … from e</code></td><td>сохранить причину</td><td>в логе будет и наше исключение, и исходное <code>httpx.ReadTimeout</code></td></tr>
+      <tr><td><code>logger.warning</code> на лимит, <code>logger.error</code> на 5xx</td><td>лог с телом чужого ответа</td><td>чужие подробности — в лог, клиенту — наш текст</td></tr>
+      <tr><td><code>if response.is_error</code> вместо <code>raise_for_status()</code></td><td>проверка без исключения</td><td>не нужно ловить <code>HTTPStatusError</code>, чтобы тут же бросить другое</td></tr>
+    </tbody></table>
+  </div>
+  <p>Роутер теперь вообще без <code>try/except</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/github.py · заменяем файл</span></figcaption>
+    <pre><code class="language-python">import json
+
+from fastapi import APIRouter, Response
+
+from app.api.deps import RedisDep
+from app.clients.github import get_user
+from app.schemas.github import GithubUser
+
+router = APIRouter(prefix="/github", tags=["github"])
+
+GITHUB_CACHE_TTL = 600  # секунд
+
+
+@router.get("/{username}", response_model=GithubUser)
+async def get_github_user(username: str, redis: RedisDep, response: Response):
+    key = f'github:card:{username.lower()}'
+
+    # Смотрим в кеш
+    cached = await redis.get(key)
+    if cached is not None:
+        response.headers['X-Cache'] = 'HIT'
+        return json.loads(cached)
+
+    # Все ошибки GitHub клиент уже превратил в наши (404/502/503/504) — try/except не нужен
+    raw = await get_user(username)
+
+    # Ответ GitHub -&gt; только нужные поля -&gt; JSON-строка в Redis на 10 минут
+    user = GithubUser.model_validate(raw)
+    await redis.set(key, user.model_dump_json(), ex=GITHUB_CACHE_TTL)
+
+    response.headers['X-Cache'] = 'MISS'
+    return user</code></pre>
+  </figure>
+
+  <h3>Проверяем на имитации GitHub</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">второй терминал · из архива урока</span></figcaption>
+    <pre><code class="language-bash">uvicorn scripts.fake_github:app --port 9100
+curl -X POST localhost:9100/_mode/ratelimit     # normal | ratelimit | slow | down</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · /github в разных режимах имитации</span><span class="role">auth-api настоящий, «GitHub» — имитация</span></figcaption>
+    <pre><code class="language-none"># normal
+{"login":"octocat","name":"The Octocat","avatar_url":"https://avatars.githubusercontent.com/u/583231?v=4","html_url":"https://github.com/octocat","public_repos":8,"followers":22000,"created_at":"2011-01-25T18:44:36Z"}  [HTTP 200]
+{"type":"about:blank","title":"Not Found","status":404,"detail":"Пользователь GitHub «no-such-user-xyz» не найден","instance":"/github/no-such-user-xyz","code":"not_found","request_id":"108ee8acdc1e"}  [HTTP 404]
+
+# ratelimit
+{"type":"about:blank","title":"Service Unavailable","status":503,"detail":"GitHub временно ограничил запросы, попробуйте позже","instance":"/github/torvalds","code":"external_service_unavailable","request_id":"55e9f65f0f25","service":"github"}  [HTTP 503]
+
+# slow
+{"type":"about:blank","title":"Gateway Timeout","status":504,"detail":"Внешний сервис не ответил вовремя","instance":"/github/linus","code":"external_service_timeout","request_id":"e8ff603b90e6","service":"github"}  [HTTP 504]
+
+# down (GitHub отвечает 503)
+{"type":"about:blank","title":"Bad Gateway","status":502,"detail":"Внешний сервис ответил ошибкой","instance":"/github/guido","code":"external_service_error","request_id":"37f899b54b48","service":"github"}  [HTTP 502]
+
+# имитация выключена (Ctrl+C)
+{"type":"about:blank","title":"Service Unavailable","status":503,"detail":"Внешний сервис временно недоступен, попробуйте позже","instance":"/github/defunkt","code":"external_service_unavailable","request_id":"810cc92d2d4b","service":"github"}  [HTTP 503]</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">лог auth-api за те же запросы</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">INFO    [b71ef040b5ee] app.access: GET /github/octocat → 200 за 31 мс
+INFO    [108ee8acdc1e] app.access: GET /github/no-such-user-xyz → 404 за 11 мс
+WARNING [55e9f65f0f25] app.clients.github: GitHub ограничил запросы: 403 {"message":"API rate limit exceeded for 203.0.113.7. (But here's the good news: ...
+ERROR   [55e9f65f0f25] app.core.error_handlers: external_service_unavailable: GitHub временно ограничил запросы, попробуйте позже {'service': 'github'}
+INFO    [55e9f65f0f25] app.access: GET /github/torvalds → 503 за 11 мс
+ERROR   [e8ff603b90e6] app.core.error_handlers: external_service_timeout: Внешний сервис не ответил вовремя {'service': 'github'}
+INFO    [e8ff603b90e6] app.access: GET /github/linus → 504 за 5017 мс
+ERROR   [37f899b54b48] app.clients.github: GitHub ответил 503: {"message":"Service Unavailable"}
+ERROR   [37f899b54b48] app.core.error_handlers: external_service_error: Внешний сервис ответил ошибкой {'service': 'github'}
+INFO    [37f899b54b48] app.access: GET /github/guido → 502 за 14 мс</code></pre>
+  </figure>
+  <p>Всё, что клиенту знать не нужно (IP сервера, тело ответа GitHub), осталось в логе — и рядом с ним id запроса. 404 в лог не попал: это не ошибка сервера.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">лог · traceback таймаута (сокращён)</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">httpx.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File ".../auth-api/app/clients/github.py", line 18, in get_user
+    response = await client.get(f'/users/{username}')
+  ...
+app.core.errors.ExternalServiceTimeout: Внешний сервис не ответил вовремя</code></pre>
+  </figure>
+  <p>«The above exception was the direct cause» — это и есть <code>from e</code>: видно и что мы ответили, и что случилось на самом деле. Без <code>from e</code> Python напишет «During handling of the above exception, another exception occurred» — как будто при обработке ошибки случилась новая, случайная.</p>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ТО ЖЕ САМОЕ ВЫ ВИДЕЛИ В ПРОЕКТЕ</span>
+    <p>Яндекс OAuth (урок 12) и Telegram (уроки 15–16) — тоже внешние API. Telegram отвечает 429 с <code>retry_after</code>, Яндекс — 400 <code>invalid_grant</code> на просроченный код. Правило то же: перевести в наше исключение, чужие подробности — в лог. Это одно из заданий домашки.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 06 RABBIT -->
+<section id="rabbit">
+  <div class="sec-head"><h2>06 · Регистрация, когда RabbitMQ недоступен</h2><span class="tag practice">live-coding</span><span class="tag time">~7 мин</span></div>
+  <p>Вспомним аудит: брокер лежит → клиент получил 400 с адресом объекта, а пользователь при этом <b>создан</b>. Что правильно ответить? Регистрация — главное действие, и оно удалось. Письмо «добро пожаловать» — второстепенное. Значит: <b>201</b>, а сбой отправки события — в лог с traceback, чтобы его увидели и дослали.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">app/api/routers/auth.py · /register</span></figcaption>
+    <pre><code class="language-python">@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def register(data: UserCreate, user_repo: UserRepoDep, publisher: PublisherDep):
+    # UserAlreadyExists (409) превратит в ответ обработчик — здесь try/except не нужен
+    user = await auth_service.register_user(user_repo, data.username, data.email, data.password)
+    try:
+        await publisher.publish(
+            'user.registered',
+            {
+                'user_id': user.id,
+                'username': user.username,
+                'email': user.email,
+            }
+        )
+    except Exception:
+        # Пользователь УЖЕ создан. Ответить ошибкой — значит соврать клиенту и спровоцировать повтор.
+        # Регистрация удалась, не ушло только событие (письмо) — фиксируем в логе с traceback
+        logger.exception('Событие user.registered не отправлено, user_id=%s', user.id)
+    return user</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · RabbitMQ остановлен</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ curl -X POST localhost:8000/auth/register -H 'Content-Type: application/json' \
+    -d '{"username":"vera","email":"vera@auth-api.dev","password":"Super-key123"}'
+{"id":49,"username":"vera","email":"vera@auth-api.dev","roles":["user"]}  [HTTP 201]
+
+# лог
+ERROR   [8925064e092e] app.api.routers.auth: Событие user.registered не отправлено, user_id=49
+INFO    [8925064e092e] app.access: POST /auth/register → 201 за 254 мс
+Traceback (most recent call last):
+  File ".../auth-api/app/api/routers/auth.py", line 26, in register
+  File ".../auth-api/app/broker/rabbit.py", line 43, in publish
+aiormq.exceptions.ChannelInvalidStateError: &lt;aio_pika.robust_channel.RobustChannel object at 0x7faf8611c830&gt; closed</code></pre>
+  </figure>
+  <p>Это тот самый оправданный <code>except Exception</code> из блока 02: мы <b>знаем</b>, что делать дальше (ответить 201), и <b>не молчим</b> (<code>logger.exception</code>).</p>
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">А ПИСЬМО ТАК И НЕ УЙДЁТ?</span>
+    <p>Сейчас — нет, только строка в логе. Надёжное решение называется <b>outbox</b>: в той же транзакции, что и пользователя, записываем событие в таблицу <code>outbox</code>, а отдельная задача Celery раз в минуту отправляет неотправленные в RabbitMQ. Брокер лежит час — письма уйдут через час, но не потеряются. Это задание со звёздочкой.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 07 TESTS -->
+<section id="tests">
+  <div class="sec-head"><h2>07 · Тесты ошибок</h2><span class="tag practice">live-coding</span><span class="tag time">~9 мин</span></div>
+  <p>Ошибки — самый плохо протестированный код: «счастливый путь» проверяют руками каждый день, а таймаут GitHub — никогда. Наши обработчики и клиент можно проверить без Redis, RabbitMQ и сети: маленькое приложение только с обработчиками и <code>httpx.MockTransport</code> вместо GitHub.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · tests/test_errors.py</span></figcaption>
+    <pre><code class="language-python">"""Обработчики ошибок и клиент GitHub — без Redis, RabbitMQ и интернета."""
+import httpx
+import pytest
+from fastapi import FastAPI, HTTPException
+from fastapi.testclient import TestClient
+from pydantic import BaseModel
+
+from app.clients.github import get_user
+from app.core.error_handlers import install_error_handlers
+from app.core.errors import ExternalServiceTimeout, ExternalServiceUnavailable, NotFoundError
+from app.core.request_context import request_id_middleware
+from app.services.auth_service import UserAlreadyExists
+
+
+# --- маленькое приложение только с нашими обработчиками -----------------------
+app = FastAPI()
+install_error_handlers(app)
+app.middleware('http')(request_id_middleware)
+
+
+class Body(BaseModel):
+    password: str
+
+
+@app.get('/conflict')
+async def conflict():
+    raise UserAlreadyExists('Пользователь с таким email уже существует')
+
+
+@app.get('/http')
+async def http_error():
+    raise HTTPException(status_code=403, detail='Нет доступа')
+
+
+@app.post('/validate')
+async def validate(body: Body):
+    return body
+
+
+@app.get('/bug')
+async def bug():
+    return 1 / 0
+
+
+# raise_server_exceptions=False: иначе TestClient пробросит ZeroDivisionError в тест
+client = TestClient(app, raise_server_exceptions=False)
+
+
+def test_app_error_becomes_problem_json():
+    r = client.get('/conflict')
+    assert r.status_code == 409
+    assert r.headers['content-type'] == 'application/problem+json'
+    body = r.json()
+    assert body['code'] == 'user_already_exists'
+    assert body['request_id'] == r.headers['x-request-id']
+
+
+def test_http_exception_keeps_format():
+    r = client.get('/http')
+    assert r.status_code == 403
+    assert r.json()['detail'] == 'Нет доступа'
+
+
+def test_validation_error_does_not_echo_input():
+    r = client.post('/validate', json={'password': 123})
+    assert r.status_code == 422
+    assert r.json()['errors'][0]['field'] == 'password'
+    assert '123' not in r.text            # пароль не вернулся клиенту
+
+
+def test_unknown_route_is_problem_json():
+    assert client.get('/nope').json()['code'] == 'not_found'
+
+
+def test_unhandled_error_hides_details():
+    r = client.get('/bug', headers={'X-Request-ID': 'test-42'})
+    assert r.status_code == 500
+    assert r.json()['request_id'] == 'test-42'
+    assert 'division' not in r.text       # текст исключения клиенту не уходит
+
+
+# --- клиент GitHub через MockTransport ----------------------------------------
+def github(status: int, json: dict | None = None):
+    return httpx.MockTransport(lambda request: httpx.Response(status, json=json or {}))
+
+
+async def test_github_404_is_not_found():
+    with pytest.raises(NotFoundError):
+        await get_user('ghost', transport=github(404, {'message': 'Not Found'}))
+
+
+async def test_github_rate_limit_is_503_not_403():
+    with pytest.raises(ExternalServiceUnavailable):
+        await get_user('octocat', transport=github(403, {'message': 'API rate limit exceeded'}))
+
+
+async def test_github_timeout():
+    def timeout(request):
+        raise httpx.ReadTimeout('timeout', request=request)
+    with pytest.raises(ExternalServiceTimeout):
+        await get_user('octocat', transport=httpx.MockTransport(timeout))</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td>своё <code>app = FastAPI()</code> в тесте</td><td>только обработчики и middleware</td><td>тест не зависит от Redis, RabbitMQ и lifespan auth-api</td></tr>
+      <tr><td><code>raise_server_exceptions=False</code></td><td>не пробрасывать 500 в тест</td><td>помните повторный raise из блока 03? Без флага тест упадёт с <code>ZeroDivisionError</code>, а мы хотим проверить ответ</td></tr>
+      <tr><td><code>assert '123' not in r.text</code></td><td>проверка «чего нет»</td><td>тест защищает от регрессии: кто-то вернёт <code>input</code> — тест упадёт</td></tr>
+      <tr><td><code>httpx.MockTransport(lambda request: …)</code></td><td>подделка сети на уровне httpx</td><td>клиент работает как обычно, но ответ приходит из функции. Можно вернуть любой статус или бросить <code>ReadTimeout</code></td></tr>
+      <tr><td><code>async def test_…</code> без декоратора</td><td>асинхронный тест</td><td>в <code>pytest.ini</code> проекта уже стоит <code>asyncio_mode = auto</code></td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал → pytest tests/test_errors.py -v</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">tests/test_errors.py::test_app_error_becomes_problem_json PASSED
+tests/test_errors.py::test_http_exception_keeps_format PASSED
+tests/test_errors.py::test_validation_error_does_not_echo_input PASSED
+tests/test_errors.py::test_unknown_route_is_problem_json PASSED
+tests/test_errors.py::test_unhandled_error_hides_details PASSED
+tests/test_errors.py::test_github_404_is_not_found PASSED
+tests/test_errors.py::test_github_rate_limit_is_503_not_403 PASSED
+tests/test_errors.py::test_github_timeout PASSED
+========================= 8 passed, 1 warning in 0.04s =========================</code></pre>
+  </figure>
+  <p>Тест дубликата в <code>tests/test_auth.py</code> тоже меняется — теперь там 409 и код ошибки:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">tests/test_auth.py · test_register_duplicate</span></figcaption>
+    <pre><code class="language-python">    assert response.status_code == 409
+    assert response.json()['code'] == 'user_already_exists'
+    assert response.json()['detail'] == 'Пользователь с таким именем уже существует'</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал → pytest (весь набор)</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">FAILED tests/test_weather.py::test_get_weather_data - AssertionError: expecte...
+=================== 1 failed, 19 passed, 1 warning in 1.63s ====================</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ЭТОТ ТЕСТ ПАДАЛ И ДО УРОКА</span>
+    <p><code>test_weather</code> ждёт запрос на <code>api.weather.com/forecast/Paris</code>, а клиент ходит на <code>openweathermap.org/data/2.5/weather</code>. Тест и код разъехались давно — и в клиенте погоды та же болезнь, что была в GitHub: <code>except HTTPStatusError: raise err</code>, чужой статус наружу. Починить и то, и другое — первое задание домашки.</p>
+  </div></div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ТЕСТЫ И dev-БАЗА</span>
+    <p><code>tests/test_auth.py</code> работает с тем же <code>db.sqlite3</code>, что и <code>uvicorn</code>. Второй запуск <code>test_register_success</code> падает с 409: <code>testuser</code> уже есть с прошлого раза. Тесты, зависящие от остатков прошлого запуска, — источник «у меня проходит, у тебя нет». Отдельная тестовая база — в домашке со звёздочкой.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Итоги</span><span class="bar"></span></div>
+
+<!-- 08 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>08 · Игра «Какой код ответа?», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~12 мин</span></div>
+  <p>Читаем ситуацию вслух, группа называет код и <code>code</code> ошибки, потом открываем ответ.</p>
+
+  <details class="quiz"><summary>Регистрация с email, который уже занят.</summary><div class="ans"><b>409</b> <code>user_already_exists</code>. Не 400: запрос корректный, он конфликтует с данными.</div></details>
+  <details class="quiz"><summary>Пароль из 3 символов.</summary><div class="ans"><b>422</b> <code>validation_error</code>, в <code>errors</code> — поле <code>password</code>. Сам пароль в ответ не возвращаем.</div></details>
+  <details class="quiz"><summary>GitHub ответил нам 403 «API rate limit exceeded».</summary><div class="ans"><b>503</b> <code>external_service_unavailable</code>. 403 клиенту означал бы «у вас нет прав» — а лимит исчерпал наш сервер.</div></details>
+  <details class="quiz"><summary>GitHub думает 30 секунд.</summary><div class="ans"><b>504</b> <code>external_service_timeout</code> через 5 секунд. Клиент не должен ждать 30.</div></details>
+  <details class="quiz"><summary>Redis не запущен, клиент запросил <code>/users/anna</code>.</summary><div class="ans"><b>500</b> <code>internal_error</code> + <code>request_id</code>. Наша поломка, деталей наружу не даём, в лог — traceback.</div></details>
+  <details class="quiz"><summary>Пользователь создан, но RabbitMQ не принял событие.</summary><div class="ans"><b>201</b>. Регистрация удалась; сбой события — <code>logger.exception</code> (а надёжно — outbox).</div></details>
+  <details class="quiz"><summary>Город «Атлантида» в регистрации с профилем.</summary><div class="ans"><b>400</b> <code>bad_request</code>. Бизнес-правило, а не формат поля — поэтому не 422.</div></details>
+  <details class="quiz"><summary>Запрос на <code>/usres/me</code> (опечатка в пути).</summary><div class="ans"><b>404</b> <code>not_found</code> — и в нашем формате, потому что обработчик повешен на <code>StarletteHTTPException</code>.</div></details>
+  <details class="quiz"><summary>Добавили middleware с <code>try/except Exception</code> — и логи «Необработанная ошибка» пропали.</summary><div class="ans"><b>Middleware ловит раньше глобального обработчика</b>, тот больше не вызывается. Убрать <code>except</code> из middleware.</div></details>
+  <details class="quiz"><summary>В логе ошибка 500 записана дважды.</summary><div class="ans"><b>Так и должно быть.</b> Наш <code>logger.exception</code> + uvicorn: Starlette снова выбрасывает исключение после обработчика.</div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Задача</th><th>Как</th></tr></thead>
+    <tbody>
+      <tr><td>своё исключение</td><td><code>class UserAlreadyExists(ConflictError): code = 'user_already_exists'</code></td></tr>
+      <tr><td>бросить из сервиса</td><td><code>raise NotFoundError('Пользователь не найден')</code></td></tr>
+      <tr><td>один обработчик на иерархию</td><td><code>app.add_exception_handler(AppError, app_error_handler)</code></td></tr>
+      <tr><td>404/405 маршрутов в том же формате</td><td>обработчик на <code>starlette.exceptions.HTTPException</code></td></tr>
+      <tr><td>422 без пароля в ответе</td><td>обработчик <code>RequestValidationError</code>: <code>loc</code>, <code>msg</code>, <code>type</code> — без <code>input</code></td></tr>
+      <tr><td>всё остальное</td><td><code>add_exception_handler(Exception, …)</code> + <code>logger.exception</code></td></tr>
+      <tr><td>формат</td><td>RFC 9457: <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>, <code>instance</code> + <code>code</code>, <code>request_id</code>; <code>application/problem+json</code></td></tr>
+      <tr><td>id запроса</td><td><code>@app.middleware('http')</code>: заголовок <code>X-Request-ID</code>, <code>request.state</code>, <code>ContextVar</code></td></tr>
+      <tr><td>id в каждой строке лога</td><td><code>logging.Filter</code> на обработчике + <code>%(request_id)s</code> в формате</td></tr>
+      <tr><td>сохранить причину</td><td><code>raise ExternalServiceTimeout('github') from e</code></td></tr>
+      <tr><td>гонка на UNIQUE</td><td><code>except IntegrityError: await session.rollback(); raise ConflictError(...) from e</code></td></tr>
+      <tr><td>подделать внешний API в тесте</td><td><code>httpx.AsyncClient(transport=httpx.MockTransport(fn))</code></td></tr>
+      <tr><td>проверить 500 в тесте</td><td><code>TestClient(app, raise_server_exceptions=False)</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание</h3>
+  <ol>
+    <li><b>Клиент погоды.</b> Перепишите <code>app/clients/weather.py</code> по образцу GitHub: адрес и ключ в настройках, таймаут, 404 → <code>NotFoundError('Город не найден')</code>, 401 от сервиса погоды (неверный ключ) → <b>502</b>, а не 401 — почему? Уберите <code>try/except</code> из роутера. Почините <code>test_weather</code> через <code>MockTransport</code>.</li>
+    <li><b>Кеш не должен ронять API.</b> Если Redis недоступен, <code>/github/{username}</code> и <code>/users/{username}</code> сейчас отвечают 500. Сделайте так, чтобы при ошибке Redis запрос шёл мимо кеша (с <code>logger.warning</code>), а клиент получал данные. Какие эндпоинты так делать <b>нельзя</b> (подсказка: одноразовые коды привязки Telegram)?</li>
+    <li><b>Яндекс и Telegram.</b> Найдите в проекте все вызовы внешних API (OAuth Яндекса, Bot API, Telethon). Для каждого — таблица «что может случиться → наше исключение → код». <code>FloodWaitError</code> из урока 16 переведите в 429 с заголовком <code>Retry-After</code> через <code>AppError</code> (подсказка: <code>headers</code> в <code>problem(...)</code>).</li>
+    <li><b>Свои коды на фронтенде.</b> Короткая страница с формой регистрации на <code>fetch</code>: для <code>user_already_exists</code> подсветить поле, для <code>validation_error</code> — показать <code>errors</code> под полями, для 5xx — «попробуйте позже» и <code>request_id</code> мелким шрифтом.</li>
+    <li><b>Отдельная тестовая база — со звёздочкой.</b> Переопределите зависимость сессии в <code>conftest.py</code> на SQLite в памяти (<code>app.dependency_overrides</code>), чтобы <code>test_register_success</code> проходил при любом количестве запусков.</li>
+    <li><b>Outbox — со звёздочкой.</b> Таблица <code>outbox</code> (миграция), запись события в той же транзакции, что пользователь, задача Celery Beat раз в минуту отправляет неотправленное. Проверьте: остановили RabbitMQ, зарегистрировали трёх пользователей, запустили — пришли три письма.</li>
+    <li><b>👀 Sentry — для любопытных.</b> <code>sentry_sdk.init(dsn=…)</code> — и необработанные ошибки с traceback, request_id и пользователем приходят в веб-интерфейс, с группировкой и уведомлениями. Бесплатного тарифа хватит на учебный проект.</li>
+  </ol>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Объясняю разницу 4xx и 5xx и что из этого логировать.</li>
+    <li>☐ Нахожу в коде <code>except Exception</code> + <code>str(e)</code> и объясняю, почему это утечка.</li>
+    <li>☐ Строю иерархию исключений с <code>status_code</code> и <code>code</code> и бросаю их из сервисов.</li>
+    <li>☐ Ловлю <code>IntegrityError</code> на <code>commit</code> и объясняю гонку двух регистраций.</li>
+    <li>☐ Подключаю обработчики для <code>AppError</code>, <code>HTTPException</code>, 422 и <code>Exception</code> с единым форматом.</li>
+    <li>☐ Знаю, почему обработчик вешается на Starlette <code>HTTPException</code>, а не на FastAPI.</li>
+    <li>☐ Добавляю <code>request_id</code> в заголовок, тело ошибки и каждую строку лога.</li>
+    <li>☐ Объясняю, почему middleware с <code>try/except</code> отключает глобальный обработчик.</li>
+    <li>☐ Перевожу ошибки внешнего API в 404 / 502 / 503 / 504 и не пересылаю чужой статус.</li>
+    <li>☐ Использую <code>raise … from e</code> и читаю «direct cause» в traceback.</li>
+    <li>☐ Тестирую обработчики и клиент без сети: <code>raise_server_exceptions=False</code>, <code>MockTransport</code>.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://fastapi.tiangolo.com/tutorial/handling-errors/" target="_blank" rel="noopener">FastAPI: Handling Errors</a> — <code>HTTPException</code>, свои обработчики, <code>RequestValidationError</code>.</li>
+    <li><a href="https://www.starlette.io/exceptions/" target="_blank" rel="noopener">Starlette: Exceptions</a> — почему 500 идёт в <code>ServerErrorMiddleware</code> и повторно выбрасывается.</li>
+    <li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener">RFC 9457: Problem Details for HTTP APIs</a>.</li>
+    <li><a href="https://docs.python.org/3/library/contextvars.html" target="_blank" rel="noopener">contextvars</a> и <a href="https://docs.python.org/3/howto/logging-cookbook.html#using-filters-to-impart-contextual-information" target="_blank" rel="noopener">Logging Cookbook: фильтры для контекста</a>.</li>
+    <li><a href="https://www.python-httpx.org/advanced/transports/#mock-transports" target="_blank" rel="noopener">httpx: MockTransport</a> и <a href="https://www.python-httpx.org/exceptions/" target="_blank" rel="noopener">иерархия исключений httpx</a>.</li>
+    <li><a href="https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api" target="_blank" rel="noopener">GitHub REST API: лимиты запросов</a>.</li>
+  </ul>
+
+  <p class="foot">Методичка · FastAPI · Урок 17 · аудит ошибок auth-api, 4xx и 5xx, иерархия AppError, гонка на UNIQUE и IntegrityError, обработчики AppError / StarletteHTTPException / RequestValidationError / Exception, Problem Details (RFC 9457), application/problem+json, request_id: middleware, ContextVar, logging.Filter, порядок middleware и обработчиков, ошибки внешних API (404 / 502 / 503 / 504), raise from, extra_forbidden в pydantic-settings, регистрация при недоступном RabbitMQ, outbox, тесты: raise_server_exceptions=False, httpx.MockTransport.</p>
+</section>
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

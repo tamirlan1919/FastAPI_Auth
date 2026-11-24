@@ -62,7 +62,7 @@ class UserRepo():
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def set_telegram_id(self, user: User, telegram_id: int) -> User:
+    async def set_telegram_id(self, user: User, telegram_id: int | None) -> User:
         user.telegram_id = telegram_id
         await self.session.commit()
         await self.session.refresh(user)

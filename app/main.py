@@ -8,6 +8,8 @@ from app.api.routers import users, auth, todos, stats, posts, reports, github, w
 from app.bot.setup import create_bot, create_dispatcher, BOT_COMMANDS
 from app.clients.yandex_oauth import YandexOauthClient
 from app.core.config import settings
+from app.core.error_handler import install_error_handler
+from app.core.request_id import request_id_middleware
 from app.db.database import Base, engine
 from app.db import models  # noqa: F401 — регистрирует модели в Base.metadata для create_all
 from contextlib import asynccontextmanager
@@ -16,6 +18,7 @@ from app.broker.rabbit import connect_rabbit, declare_events_exchange, EventPubl
 
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)  # SQL-запросы в лог (один раз, без echo=True)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
@@ -82,6 +85,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+install_error_handler(app=app)
 app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(todos.router)
@@ -92,6 +96,8 @@ app.include_router(github.router)
 app.include_router(weather.router)
 app.include_router(yandex_auth.router)
 app.include_router(telegram.router)
+app.middleware('http')(request_id_middleware)
+
 
 # Prometheus: middleware считает запросы/латентность, GET /metrics отдаёт их в формате Prometheus
 Instrumentator(

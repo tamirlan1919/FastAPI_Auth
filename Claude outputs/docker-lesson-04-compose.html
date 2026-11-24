@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker · Compose: весь стек одной командой</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFAF5; --panel:#FFFFFF; --ink:#241E17; --ink-soft:#5C5347;
+    --line:#E7E0D2; --line-soft:#F0EADD;
+    --amber:#B8730A; --amber-bright:#E0961F; --amber-soft:#FBF0DC;
+    --hop:#5E7A3D; --hop-soft:#EEF3E3;
+    --teal:#0d7a74; --teal-soft:#E3F1F0; --teal-line:#BFE0DD;
+    --code-bg:#211C17; --code-ink:#EDE6D8;
+    --danger:#A5462B; --danger-soft:#FBEAE3;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .layout{display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; max-width:1260px; margin:0 auto;}
+  .toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:34px 24px 40px; border-right:1px solid var(--line); background:linear-gradient(180deg,#EAF4F3,#FCFAF5);}
+  .toc .brand{display:flex; align-items:center; gap:9px; font-family:"Fraunces",serif; font-weight:700; font-size:20px; color:var(--ink); letter-spacing:-.01em; margin-bottom:4px;}
+  .toc .brand .mark{width:26px;height:26px;border-radius:7px;background:radial-gradient(circle at 35% 30%,#22b3a9,var(--teal)); display:inline-block; box-shadow:0 2px 6px rgba(13,122,116,.35);}
+  .toc .lead{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px 35px;}
+  .toc .grp{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 4px 10px; opacity:.75;}
+  .toc nav a{display:block; text-decoration:none; color:var(--ink-soft); font-size:13px; padding:5px 10px; border-radius:8px; margin:1px 0; border-left:2px solid transparent; transition:.15s;}
+  .toc nav a .n{color:var(--teal); font-weight:600; font-family:"JetBrains Mono",monospace; font-size:11.5px; margin-right:7px;}
+  .toc nav a:hover{background:#fff; color:var(--ink);}
+  .toc nav a.active{background:#fff; color:var(--ink); border-left-color:var(--teal); font-weight:600;}
+  .toc .theory-dot{color:#16a89f;}
+  .toc .practice-dot{color:var(--hop);}
+  main{padding:52px 56px 120px; min-width:0;}
+  .wrap{max-width:var(--maxw); margin:0 auto;}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.06em; color:var(--teal); margin:0 0 10px;}
+  h1{font-family:"Fraunces",serif; font-weight:700; font-size:43px; line-height:1.08; letter-spacing:-.02em; margin:0 0 14px;}
+  h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; line-height:1.15; letter-spacing:-.015em; margin:56px 0 6px; scroll-margin-top:20px;}
+  h3{font-size:18.5px; font-weight:700; margin:30px 0 8px; letter-spacing:-.01em;}
+  h4{font-size:15px; font-weight:700; margin:22px 0 6px; color:var(--ink);}
+  p{margin:12px 0;}
+  a{color:var(--teal); text-underline-offset:2px;}
+  .lead-p{font-size:18px; color:var(--ink-soft); line-height:1.6;}
+  code:not([class*=language]){font-family:"JetBrains Mono",monospace; font-size:.86em; background:var(--teal-soft); color:#0a5f5a; padding:.12em .42em; border-radius:5px; border:1px solid var(--teal-line);}
+  strong{font-weight:700;}
+  ul,ol{margin:12px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  hr{border:none; border-top:1px solid var(--line); margin:44px 0;}
+  .part-divider{display:flex; align-items:center; gap:16px; margin:60px 0 10px;}
+  .part-divider .bar{height:1px; background:var(--teal-line); flex:1;}
+  .part-divider .lbl{font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--teal); text-transform:uppercase; background:var(--teal-soft); padding:5px 14px; border-radius:999px; border:1px solid var(--teal-line);}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .tag{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .tag.theory{background:var(--teal-soft); color:#0a5f5a; border:1px solid var(--teal-line);}
+  .tag.practice{background:var(--hop-soft); color:#3f5527; border:1px solid #D7E3C2;}
+  .tag.time{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .hero{background:linear-gradient(135deg,#12403c,#0d7a74 62%,#16938c); color:#EAF6F5; border-radius:20px; padding:34px 36px; margin:26px 0 10px; box-shadow:0 18px 40px -22px rgba(13,122,116,.6);}
+  .hero h3{color:#9FE0DA; margin:0 0 14px; font-size:15px; font-family:"JetBrains Mono",monospace; font-weight:500; letter-spacing:.04em;}
+  .hero ul{margin:0; padding-left:18px;}
+  .hero li{margin:7px 0; color:#DAF0EE;}
+  .hero li b{color:#fff;}
+  table.timing,table.cmp{width:100%; border-collapse:collapse; margin:18px 0; font-size:14.5px;}
+  table.timing td,table.timing th,table.cmp td,table.cmp th{border-bottom:1px solid var(--line); padding:9px 8px; text-align:left; vertical-align:top;}
+  table.timing th,table.cmp th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  table.timing td.t{font-family:"JetBrains Mono",monospace; color:var(--teal); white-space:nowrap; width:70px;}
+  table.cmp td:first-child{font-weight:600;}
+  table.cmp code{font-size:.82em;}
+  .callout{border-radius:12px; padding:15px 18px 15px 16px; margin:18px 0; border:1px solid; display:grid; grid-template-columns:22px 1fr; gap:12px; font-size:14.7px;}
+  .callout .ic{font-weight:700; line-height:1.5;}
+  .callout.tip{background:var(--hop-soft); border-color:#D7E3C2;} .callout.tip .ic{color:var(--hop);}
+  .callout.note{background:var(--teal-soft); border-color:var(--teal-line);} .callout.note .ic{color:var(--teal);}
+  .callout.warn{background:var(--danger-soft); border-color:#F2CDBE;} .callout.warn .ic{color:var(--danger);}
+  .callout.why{background:#FBF0DC; border-color:#F0DDBB;} .callout.why .ic{color:var(--amber);}
+  .callout.why .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--amber); letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout p{margin:5px 0;} .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .expect{border-left:3px solid var(--hop); background:#fff; padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14.5px; box-shadow:0 1px 0 var(--line-soft);}
+  .expect b{color:var(--hop);}
+  figure.code{margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid #33291F; box-shadow:0 10px 26px -18px rgba(33,28,23,.8);}
+  figure.code figcaption{background:#171310; color:#C6B9A5; font-family:"JetBrains Mono",monospace; font-size:12.5px; padding:9px 15px; display:flex; align-items:center; gap:9px; border-bottom:1px solid #2C241C;}
+  figure.code figcaption .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:14px 0 0 #6b6152, 28px 0 0 #6b6152; margin-right:20px; flex:none;}
+  figure.code figcaption .path{color:#7FC9C2;}
+  figure.code figcaption .role{margin-left:auto; color:#7d7264; font-size:11px;}
+  pre[class*=language]{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  pre[class*=language] code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none; border:none; padding:0; color:var(--code-ink);}
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 18px; margin:18px 0; overflow-x:auto;}
+  .diagram pre{margin:0; font-family:"JetBrains Mono",monospace; font-size:12.8px; line-height:1.5; color:var(--ink); white-space:pre;}
+  .diagram .fk{color:var(--danger); font-weight:700;}
+  .diagram .pk{color:var(--teal); font-weight:700;}
+  .diagram .tn{color:var(--amber); font-weight:700;}
+  .token.comment,.token.prolog,.token.doctype,.token.cdata{color:#8A8172; font-style:italic;}
+  .token.punctuation{color:#B7A98F;}
+  .token.keyword,.token.rule,.token.important,.token.atrule{color:#E0961F;}
+  .token.builtin,.token.class-name,.token.function{color:#EAC46A;}
+  .token.string,.token.char,.token.attr-value,.token.regex{color:#AEC17E;}
+  .token.number,.token.boolean,.token.constant,.token.symbol{color:#E09B57;}
+  .token.operator,.token.entity,.token.url{color:#C7BCA8;}
+  .token.tag,.token.selector{color:#E0961F;}
+  .token.attr-name,.token.property{color:#EAC46A;}
+  .token.decorator,.token.annotation{color:#7FC9C2;}
+  .foot{margin-top:70px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-soft);}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+    main{padding:34px 22px 90px;}
+    h1{font-size:33px;}
+  }
+  .callout.story{background:#F2EDFA; border-color:#DDD0F2;} .callout.story .ic{color:#6B4FA0;}
+  .callout.fun{background:#FDEEF3; border-color:#F4CADB;} .callout.fun .ic{color:#B03A6A;}
+  .callout.seen{background:#fff; border-color:var(--line);} .callout.seen .ic{color:var(--amber);}
+  .callout .lbl{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; display:block; margin-bottom:2px;}
+  .callout.story .lbl{color:#6B4FA0;} .callout.fun .lbl{color:#B03A6A;} .callout.seen .lbl{color:var(--amber);} .callout.warn .lbl{color:var(--danger);} .callout.tip .lbl{color:var(--hop);} .callout.note .lbl{color:var(--teal);}
+  .tag.creat{background:#FBF0DC; color:#8a5606; border:1px solid #F0DDBB;}
+  .tag.struct{background:#F2EDFA; color:#5a3f8c; border:1px solid #DDD0F2;}
+  .tag.extra{background:#fff; color:var(--ink-soft); border:1px dashed var(--line);}
+  .oneliner{font-family:"Fraunces",serif; font-size:20px; line-height:1.4; color:var(--ink); border-left:4px solid var(--teal); padding:4px 0 4px 16px; margin:14px 0 18px;}
+  .oneliner small{display:block; font-family:"Inter",sans-serif; font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+  .twocol .box{border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; font-size:14.5px;}
+  .twocol .box h5{margin:0 0 6px; font-size:12px; font-family:"JetBrains Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .twocol .bad h5{color:var(--danger);} .twocol .good h5{color:var(--hop);}
+  details.quiz{border:1px solid var(--line); border-radius:12px; background:#fff; margin:10px 0; padding:0 16px;}
+  details.quiz summary{cursor:pointer; padding:12px 0; font-weight:600; list-style:none;}
+  details.quiz summary::-webkit-details-marker{display:none;}
+  details.quiz summary::before{content:"?"; display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--teal-soft); color:var(--teal); font-family:"JetBrains Mono",monospace; font-size:12px; margin-right:10px; border:1px solid var(--teal-line);}
+  details.quiz[open] summary::before{content:"✓"; background:var(--hop-soft); color:var(--hop); border-color:#D7E3C2;}
+  details.quiz .ans{padding:0 0 14px 32px; font-size:14.7px; color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--ink);}
+  @media (max-width:700px){ .twocol{grid-template-columns:1fr;} }
+  figure.code pre{margin:0; padding:16px 18px; background:var(--code-bg); overflow-x:auto; font-size:13.4px; line-height:1.6;}
+  figure.code pre code{font-family:"JetBrains Mono",monospace; font-size:inherit; background:none !important; border:none !important; padding:0 !important; color:var(--code-ink) !important;}
+  .fileinfo{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; background:#fff; border:1px dashed var(--teal-line); border-radius:12px; padding:12px 16px; margin:18px 0 8px; font-size:14.5px;}
+  .fileinfo .k{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--teal); text-transform:uppercase;}
+  .fileinfo code{font-size:.9em;}
+  details.classic{border:1px solid var(--line); border-radius:12px; background:#fff; margin:14px 0; padding:0 16px;}
+  details.classic summary{cursor:pointer; padding:11px 0; font-weight:600; font-size:14.5px; color:var(--ink-soft);}
+  details.classic[open]{padding-bottom:12px;}
+  .breakbox{text-align:center; margin:56px 0; padding:26px; border-radius:18px; background:repeating-linear-gradient(45deg,#FBF0DC,#FBF0DC 14px,#FCF5E8 14px,#FCF5E8 28px); border:1px solid #F0DDBB;}
+  .breakbox b{font-family:"Fraunces",serif; font-size:26px; display:block;}
+  .breakbox span{color:var(--ink-soft); font-size:14.5px;}
+  .tag.blitz{background:#fff; color:#B03A6A; border:1px dashed #F4CADB;}
+  .step{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:#fff; background:var(--teal); padding:3px 9px; border-radius:999px;}
+  .syn{border:1px solid #D7E3C2; background:#F7FAF1; border-radius:12px; margin:-6px 0 20px; padding:10px 14px 12px; font-size:14px;}
+  .syn .h{font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:700; color:var(--hop); letter-spacing:.05em; margin-bottom:4px;}
+  .syn table{width:100%; border-collapse:collapse;}
+  .syn th,.syn td{padding:6px 6px; border-bottom:1px solid #E4ECD6; vertical-align:top; text-align:left;}
+  .syn tr:last-child td{border-bottom:none;}
+  .syn th{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .syn td:nth-child(1){width:36%;} .syn td:nth-child(3){width:32%;}
+  .syn code{font-size:.8em; white-space:pre-wrap; word-break:break-word;}
+  .syn .note{margin:8px 0 0; font-size:13.8px; padding-top:8px; border-top:1px dashed #D7E3C2;}
+  .links{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .links a{display:block; text-decoration:none; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.8px;}
+  .links a b{display:block; color:var(--teal); font-size:15px; margin-bottom:3px;}
+  .links a:hover{border-color:var(--teal);}
+  @media (max-width:700px){ .links{grid-template-columns:1fr;} }
+  figure.shot{margin:16px 0 22px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff;}
+  figure.shot .img{padding:10px; text-align:center; background:#fff; overflow-x:auto;}
+  figure.shot img{max-width:100%; height:auto; display:inline-block; vertical-align:top;}
+  figure.shot figcaption{font-size:13.8px; line-height:1.55; padding:10px 14px; border-top:1px solid var(--line); color:var(--ink); background:#FBF8F1;}
+  figure.shot figcaption .where{font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--ink-soft); display:block; margin-bottom:4px; letter-spacing:.02em;}
+  .num{display:inline-flex; width:19px; height:19px; border-radius:50%; background:#E5484D; color:#fff; font:700 11.5px Arial,sans-serif; align-items:center; justify-content:center; margin:0 3px 0 1px; vertical-align:1px;}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- TOC -->
+<aside class="toc">
+  <div class="brand"><span class="mark"></span>Docker</div>
+  <p class="lead">Модуль Backend · Docker · урок 4</p>
+  <nav id="toc">
+    <a href="#intro"><span class="n">00</span>Обзор и подготовка</a>
+    <div class="grp">Часть 1 · От хаоса к одному файлу</div>
+    <a href="#chaos"><span class="n theory-dot">01</span>Хаос ручного запуска</a>
+    <a href="#first"><span class="n practice-dot">02</span>Первый compose.yaml</a>
+    <a href="#api"><span class="n practice-dot">03</span>API, сеть, healthcheck</a>
+    <a href="#env"><span class="n practice-dot">04</span>.env и переменные</a>
+    <a href="#break"><span class="n">☕</span>Перерыв</a>
+    <div class="grp">Часть 2 · Фронтенд, разработка, эксплуатация</div>
+    <a href="#web"><span class="n practice-dot">05</span>Фронтенд и CORS</a>
+    <a href="#dev"><span class="n practice-dot">06</span>Режим разработки</a>
+    <a href="#ops"><span class="n practice-dot">07</span>Команды, отладка, scale</a>
+    <div class="grp">Итоги</div>
+    <a href="#game"><span class="n">08</span>Игра, шпаргалка, домашка</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+
+<!-- 00 INTRO -->
+<section id="intro">
+  <p class="eyebrow">Модуль Backend · Docker · урок 4 · 2 часа с перерывом · для фронтенд-разработчиков</p>
+  <h1>Docker Compose: весь стек одной командой</h1>
+  <p class="lead-p">У нас есть три кусочка: база Pagila, API <code>films-api</code> и фронтенд <code>films-web</code> с прошлого урока. Каждый умеет жить в контейнере, но запускать их — это десяток длинных команд в правильном порядке. Сегодня описываем весь стек в одном файле <code>compose.yaml</code> и поднимаем его командой <code>docker compose up</code>. По дороге наступим на все грабли, на которые наступают в реальных проектах: «API стартовал раньше базы», CORS, «поменял пароль — не работает», «масштабировал — порт занят».</p>
+
+  <div class="hero">
+    <h3>ЧТО СДЕЛАЕМ ЗА УРОК</h3>
+    <ul>
+      <li><b>Поднимем Pagila из compose-файла</b> и поймём, откуда берутся имена контейнеров, сетей и томов.</li>
+      <li><b>Подключим API по имени сервиса</b> <code>db</code> и увидим гонку: 4 секунды API отвечает <code>ECONNREFUSED</code>, пока база грузится. Лечим <code>healthcheck</code> + <code>depends_on: condition</code> — и находим healthcheck, который врёт.</li>
+      <li><b>Вынесем пароль в <code>.env</code></b> и поймаем ошибку «поменял пароль — база не пускает».</li>
+      <li><b>Добавим фронтенд</b>: увидим настоящую ошибку CORS в браузере, разберём, почему <code>fetch('http://api:3000')</code> из методички не работает, и починим всё прокси в nginx.</li>
+      <li><b>Сделаем режим разработки</b> через <code>compose.override.yaml</code>: код с диска, <code>node --watch</code> для API, Vite с горячей перезагрузкой.</li>
+      <li><b>Освоим ежедневные команды</b> и масштабирование: три копии API и nginx, который раздаёт им запросы по очереди.</li>
+    </ul>
+  </div>
+
+  <h3>Методичка и что мы поправим</h3>
+  <table class="cmp">
+    <thead><tr><th>В методичке</th><th>У нас</th><th>Блок</th></tr></thead>
+    <tbody>
+      <tr><td>файл <code>docker-compose.yml</code>, команда <code>docker-compose</code></td><td>файл <code>compose.yaml</code>, команда <code>docker compose</code> (через пробел) — это Compose v2, встроенный в Docker. Старое имя файла тоже работает</td><td>02</td></tr>
+      <tr><td><code>version: '3.8'</code> в начале файла</td><td>не пишем: Compose выдаёт предупреждение «<code>version</code> is obsolete»</td><td>02</td></tr>
+      <tr><td><code>depends_on: - postgres-db</code> «ждать запуска БД»</td><td>это ждёт только <b>старта контейнера</b>, а не готовности базы. Нужен <code>healthcheck</code> + <code>condition: service_healthy</code></td><td>03</td></tr>
+      <tr><td>том <code>/var/lib/postgresql/data</code>, <code>postgres:15</code></td><td>у Postgres 18 том монтируют в <code>/var/lib/postgresql</code> (урок 1)</td><td>02</td></tr>
+      <tr><td>фронтенд делает <code>fetch('http://backend:3000')</code></td><td>так не работает: код фронтенда выполняется <b>в браузере</b>, а браузер не знает имён сервисов. Проверим и починим прокси</td><td>05</td></tr>
+      <tr><td><code>ping database</code> для отладки сети</td><td><code>ping</code> во многих образах нет; надёжнее <code>getent hosts db</code></td><td>03</td></tr>
+      <tr><td><code>--scale api-server=3</code>, «нужен балансировщик»</td><td>сделаем: ошибка занятого порта, затем nginx сам раскидывает запросы на три копии</td><td>07</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Тайминг</h3>
+  <table class="timing">
+    <thead><tr><th>Время</th><th>Блок</th><th>Формат</th></tr></thead>
+    <tbody>
+      <tr><td class="t">0:00</td><td>Обзор, подготовка папки проекта</td><td>—</td></tr>
+      <tr><td class="t">0:05</td><td>Хаос ручного запуска: сеть, том, три <code>docker run</code></td><td>теория</td></tr>
+      <tr><td class="t">0:12</td><td>Первый <code>compose.yaml</code>: Pagila, YAML, <code>up</code>/<code>ps</code>/<code>logs</code>/<code>down</code>, имена</td><td>live-coding</td></tr>
+      <tr><td class="t">0:27</td><td>API: сборка, сеть по именам, гонка при старте, <code>healthcheck</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:42</td><td><code>.env</code>, обязательные переменные, <code>docker compose config</code></td><td>live-coding</td></tr>
+      <tr><td class="t">0:50</td><td><strong>☕ Перерыв 10 минут</strong></td><td>—</td></tr>
+      <tr><td class="t">1:00</td><td>Фронтенд: CORS, «браузер не в Docker», прокси в nginx</td><td>live-coding</td></tr>
+      <tr><td class="t">1:17</td><td>Режим разработки: <code>compose.override.yaml</code>, hot reload</td><td>live-coding</td></tr>
+      <tr><td class="t">1:32</td><td>Ежедневные команды, <code>down -v</code>, масштабирование</td><td>live</td></tr>
+      <tr><td class="t">1:47</td><td>Игра, шпаргалка, домашка</td><td>интерактив</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОДГОТОВКА — ПАПКА ПРОЕКТА</span>
+    <p>Распакуйте архив урока в папку <code>films-stack</code> рядом с папкой <code>pagila</code>. Внутри уже лежат <code>films-api</code> и <code>films-web</code> с прошлого урока (плюс два файла, которые разберём сегодня). Скопируйте SQL-файлы Pagila (инструкция в <code>db/README.md</code>):</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · папка films-stack</span><span class="role">PowerShell: Copy-Item ..\pagila\pagila-schema.sql db\1-schema.sql</span></figcaption>
+    <pre><code class="language-bash">cp ../pagila/pagila-schema.sql db/1-schema.sql
+cp ../pagila/pagila-data.sql   db/2-data.sql
+cp .env.example .env</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">структура проекта к концу урока</span></figcaption>
+    <pre><code class="language-none">films-stack/
+├── compose.yaml            ← весь стек (пишем сегодня)
+├── compose.override.yaml   ← режим разработки (пишем сегодня)
+├── .env.example  .env      ← пароль базы (.env — в .gitignore)
+├── db/
+│   ├── 1-schema.sql        ← из папки pagila
+│   └── 2-data.sql
+├── films-api/              ← Dockerfile, server.js (урок 3)
+└── films-web/              ← Dockerfile, nginx.conf, src/ (урок 3)</code></pre>
+  </figure>
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">КАК ЧИТАТЬ БЛОКИ КОДА И ЧТО Я ПРОВЕРИЛ</span>
+    <p>В заголовке блока написано, где вводить или какой файл менять. «👀 только посмотреть» — не вводим. Все команды я выполнил на Docker Engine 29.9 и Docker Compose v5.7: выводы настоящие. Как и в прошлых уроках, Docker Hub с моего сервера закрыт, поэтому <code>pgvector/pgvector:pg18</code>, <code>node:22-alpine</code> и <code>nginx:alpine</code> у меня — самодельные замены на Ubuntu (внутри «Postgres» — PostgreSQL 16 с официальным скриптом запуска). У вас будут другие размеры образов и время загрузки базы, а сообщения Compose и ошибки — такие же.</p>
+  </div></div>
+</section>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 1 · От хаоса к одному файлу</span><span class="bar"></span></div>
+
+<!-- 01 CHAOS -->
+<section id="chaos">
+  <div class="sec-head"><h2>01 · Хаос ручного запуска</h2><span class="tag theory">теория</span><span class="tag time">~7 мин</span></div>
+
+  <p>Вспомним, как мы запускали стек в уроках 1–3. Чтобы поднять три контейнера, нужно помнить вот это:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">👀 только посмотреть · стек руками</span></figcaption>
+    <pre><code class="language-bash">docker network create films-net
+docker volume create films-pgdata
+
+docker run -d --name films-db --network films-net \
+  -e POSTGRES_PASSWORD=123456 -e POSTGRES_DB=pagila \
+  -v films-pgdata:/var/lib/postgresql \
+  -v ./db/1-schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro \
+  -v ./db/2-data.sql:/docker-entrypoint-initdb.d/2-data.sql:ro \
+  pgvector/pgvector:pg18
+
+docker build -t films-api ./films-api
+docker run -d --name films-api --network films-net \
+  -e DB_HOST=films-db -e DB_PASSWORD=123456 -p 3000:3000 films-api
+
+docker build -t films-web ./films-web
+docker run -d --name films-web --network films-net -p 8080:80 films-web
+
+# а вечером — убрать за собой:
+docker rm -f films-web films-api films-db
+docker network rm films-net</code></pre>
+  </figure>
+  <p>Девять команд, и в каждой можно ошибиться: забыть <code>--network</code>, перепутать имя хоста, запустить API раньше базы. А новый человек в команде должен всё это где-то прочитать.</p>
+  <div class="callout story"><div class="ic">✦</div><div>
+    <span class="lbl">АНАЛОГИЯ: ПАРТИТУРА</span>
+    <p><code>Dockerfile</code> — это ноты для одного музыканта: как собрать один образ. <code>compose.yaml</code> — партитура оркестра: кто играет, в каком порядке вступает, кто кого слышит. Вы не раздаёте музыкантам указания по одному — вы кладёте партитуру и говорите «играем» (<code>docker compose up</code>).</p>
+  </div></div>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">ФРОНТЕНДЕРАМ ЭТО ЗНАКОМО</span>
+    <p>Это как <code>package.json</code> со скриптами: вместо «запусти <code>vite</code> с такими флагами» вы пишете <code>"dev": "vite --host"</code> и запускаете <code>npm run dev</code>. Описали один раз — запускает любой. Только Compose описывает не команды, а <b>желаемое состояние</b>: «должны работать три сервиса вот с такими настройками». Если что-то уже работает как надо, Compose это не трогает.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 02 FIRST -->
+<section id="first">
+  <div class="sec-head"><h2>02 · Первый compose.yaml: только база</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Начнём с одного сервиса — Pagila. Это та же команда <code>docker run</code> из блока 01, только записанная в YAML.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · films-stack/compose.yaml (первая версия)</span></figcaption>
+    <pre><code class="language-yaml">services:
+  db:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: pagila
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./db/1-schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+      - ./db/2-data.sql:/docker-entrypoint-initdb.d/2-data.sql:ro
+
+volumes:
+  pgdata:</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР · ТА ЖЕ КОМАНДА DOCKER RUN</div>
+    <table><thead><tr><th>compose.yaml</th><th>docker run</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>services:</code> → <code>db:</code></td><td><code>--name</code> (почти)</td><td><code>db</code> — имя <b>сервиса</b>. По нему другие контейнеры найдут базу в сети</td></tr>
+      <tr><td><code>image:</code></td><td>последний аргумент</td><td>какой образ запускать</td></tr>
+      <tr><td><code>environment:</code></td><td><code>-e</code></td><td>словарь <code>КЛЮЧ: значение</code> (можно и списком <code>- КЛЮЧ=значение</code>)</td></tr>
+      <tr><td><code>volumes:</code> в сервисе</td><td><code>-v</code></td><td><code>pgdata:…</code> — именованный том, <code>./db/…</code> — файл с диска (bind mount). Путь <code>./</code> считается от папки с <code>compose.yaml</code></td></tr>
+      <tr><td><code>volumes:</code> внизу файла</td><td><code>docker volume create</code></td><td>именованные тома нужно объявить. Создаст их сам Compose</td></tr>
+      <tr><td>сети нет</td><td><code>--network</code></td><td>Compose сам создаёт сеть проекта и подключает к ней все сервисы</td></tr>
+    </tbody></table>
+  </div>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ПОЧЕМУ pgvector, А НЕ postgres:18</span>
+    <p>Свежая схема Pagila делает <code>CREATE EXTENSION vector</code> — в ней есть таблица <code>film_embedding</code> с векторами. В чистом <code>postgres:18</code> такого расширения нет, и загрузка схемы упадёт: <code>ERROR: extension "vector" is not available</code>. Поэтому в репозитории Pagila стоит <code>build: .</code> с Dockerfile, который доставляет расширение. Нам проще взять готовый образ <code>pgvector/pgvector:pg18</code> — это официальный <code>postgres:18</code> с уже установленным расширением.</p>
+  </div></div>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">YAML ЗА МИНУТУ</span>
+    <p>Вложенность — <b>пробелами</b> (табы запрещены), обычно по два. <code>ключ: значение</code> — словарь, <code>- элемент</code> — список. Строки можно без кавычек, но порты пишите в кавычках (<code>"8080:80"</code>): YAML 1.1 читает некоторые числа с двоеточием как время. Ошибка в отступе — самая частая ошибка новичка: Compose скажет, на какой строке.</p>
+  </div></div>
+
+  <h3>Запускаем</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · папка films-stack</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose up -d
+ Volume films-stack_pgdata Created
+ Network films-stack_default Created
+ Container films-stack-db-1 Created
+ Container films-stack-db-1 Started
+
+$ docker compose ps
+NAME               IMAGE                    COMMAND                  SERVICE   CREATED                  STATUS                  PORTS
+films-stack-db-1   pgvector/pgvector:pg18   "docker-entrypoint.s…"   db        Less than a second ago   Up Less than a second   5432/tcp
+
+$ docker compose logs db | grep -E "running|complete|ready"
+db-1  | ... LOG:  database system is ready to accept connections
+db-1  | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/1-schema.sql
+db-1  | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/2-data.sql
+db-1  | PostgreSQL init process complete; ready for start up.
+db-1  | ... LOG:  database system is ready to accept connections
+
+$ docker compose exec db psql -U postgres -d pagila -c "SELECT count(*) FROM film"
+ count
+-------
+  1000
+(1 row)</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР · ОТКУДА ЭТИ ИМЕНА</div>
+    <table><thead><tr><th>Что</th><th>Имя</th><th>Как получилось</th></tr></thead><tbody>
+      <tr><td>проект</td><td><code>films-stack</code></td><td>по умолчанию — имя папки</td></tr>
+      <tr><td>сеть</td><td><code>films-stack_default</code></td><td>проект + <code>_default</code></td></tr>
+      <tr><td>том</td><td><code>films-stack_pgdata</code></td><td>проект + имя тома из файла</td></tr>
+      <tr><td>контейнер</td><td><code>films-stack-db-1</code></td><td>проект + сервис + номер копии (их может быть несколько, блок 07)</td></tr>
+      <tr><td><code>exec db</code>, <code>logs db</code></td><td>имя сервиса</td><td>в командах compose пишем имя сервиса, а не контейнера</td></tr>
+    </tbody></table>
+  </div>
+  <p>Имя папки — ненадёжная штука: склонировали репозиторий в <code>films-stack-main</code>, и у вас другой том, «пустая» база. Зафиксируем имя проекта в первой строке файла:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">compose.yaml · + первая строка</span></figcaption>
+    <pre><code class="language-yaml">name: films
+
+services:
+  # ...</code></pre>
+  </figure>
+  <p>Теперь всё называется <code>films_pgdata</code>, <code>films-db-1</code> и так далее. А вот что будет, если по методичке написать сверху <code>version: '3.8'</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose ps
+time="2026-11-19T13:58:50+03:00" level=warning msg="/root/films-stack/compose.yaml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"</code></pre>
+  </figure>
+  <p>Поле <code>version</code> было нужно старому <code>docker-compose</code> (v1, на Python). Нынешний Compose его игнорирует — просто не пишем.</p>
+
+  <h3>down и down -v: что переживает остановку</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose down
+ Container films-stack-db-1 Removed
+ Network films-stack_default Removed
+                                       ← том НЕ удалён
+
+$ docker compose up -d
+$ docker compose logs db | grep -iE "skipping|ready"
+db-1  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+db-1  | ... LOG:  database system is ready to accept connections
+
+$ docker compose down -v
+ Container films-stack-db-1 Removed
+ Network films-stack_default Removed
+ Volume films-stack_pgdata Removed     ← -v: и тома тоже. Данные удалены</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Команда</th><th>Контейнеры</th><th>Сеть</th><th>Тома (данные)</th></tr></thead><tbody>
+      <tr><td><code>docker compose stop</code></td><td>остановлены, не удалены</td><td>остаётся</td><td>остаются</td></tr>
+      <tr><td><code>docker compose down</code></td><td>удалены</td><td>удалена</td><td><b>остаются</b></td></tr>
+      <tr><td><code>docker compose down -v</code></td><td>удалены</td><td>удалена</td><td><b>удалены</b></td></tr>
+    </tbody></table>
+  </div>
+  <p>«Skipping initialization» — скрипты из <code>docker-entrypoint-initdb.d</code> выполняются <b>только на пустом томе</b>. Это мы видели в уроке 1, а сегодня это ещё аукнется в блоке 04.</p>
+</section>
+
+<hr>
+
+<!-- 03 API -->
+<section id="api">
+  <div class="sec-head"><h2>03 · API: сборка, сеть по именам, healthcheck</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">compose.yaml · + сервис api (после db, перед volumes)</span></figcaption>
+    <pre><code class="language-yaml">  api:
+    build: ./films-api          # собрать по films-api/Dockerfile
+    environment:
+      DB_HOST: db               # ← имя сервиса базы
+      DB_PASSWORD: 123456
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>build: ./films-api</code></td><td><code>docker build ./films-api</code></td><td>Compose соберёт образ при первом <code>up</code>. После правок кода — <code>up --build</code></td></tr>
+      <tr><td><code>DB_HOST: db</code></td><td>адрес базы — имя сервиса</td><td>в сети проекта работает встроенный DNS Docker: <code>db</code> → IP контейнера базы. Не <code>localhost</code>: localhost внутри контейнера API — это сам контейнер API</td></tr>
+      <tr><td><code>depends_on: - db</code></td><td>сначала запустить <code>db</code>, потом <code>api</code></td><td>…и всё. Подождать, пока база <b>готова</b>, эта форма не умеет — проверим</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · база с нуля (том удалён в блоке 02), сразу дёргаем API</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose up -d --build
+ Image films-api Built
+ Volume films_pgdata Created
+ Network films_default Created
+ Container films-db-1 Created
+ Container films-api-1 Created
+ Container films-db-1 Started
+ Container films-api-1 Started
+
+$ curl "localhost:3000/films?limit=2"       ← каждые полсекунды
+14:00:31.065  {"error":"connect ECONNREFUSED 172.18.0.2:5432"}
+14:00:31.591  {"error":"connect ECONNREFUSED 172.18.0.2:5432"}
+14:00:32.110  {"error":"connect ECONNREFUSED 172.18.0.2:5432"}
+   ... ещё 4 таких же ...
+14:00:34.701  [{"film_id":1,"title":"ACADEMY DINOSAUR","rental_rate":"0.99"},{"film_id":2,"title":"ACE GOLDFINGER","rental_rate":"4.99"}]
+
+$ docker compose logs db | grep "ready to accept" | tail -1
+db-1  | 2026-11-19 11:00:34.329 UTC [1] LOG:  database system is ready to accept connections</code></pre>
+  </figure>
+  <p>Почти 4 секунды API отвечал 500: контейнер базы уже «запущен», но Postgres ещё грузит Pagila и не принимает подключения по сети. У меня загрузка заняла 4 секунды, на ноутбуке с Docker Desktop — может и 20. Если бы API при старте сразу шёл в базу (миграции, например), он бы просто упал.</p>
+  <p>Заметьте: <code>172.18.0.2</code> — это IP контейнера <code>db</code>. Имя превратилось в адрес — DNS работает. Проверить можно изнутри:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose exec api getent hosts db
+172.18.0.2      db
+$ docker compose exec api getent hosts api
+172.18.0.3      api</code></pre>
+  </figure>
+
+  <h3>healthcheck: «жив» ≠ «готов»</h3>
+  <p>Научим Docker проверять, что база действительно готова, и скажем API ждать именно этого:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">compose.yaml · + healthcheck в db, новая форма depends_on в api</span></figcaption>
+    <pre><code class="language-yaml">  db:
+    # ... image, environment, volumes ...
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d pagila"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
+
+  api:
+    # ...
+    depends_on:
+      db:
+        condition: service_healthy</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>test: ["CMD-SHELL", "…"]</code></td><td>команда внутри контейнера; код выхода 0 = здоров</td><td><code>pg_isready</code> есть в образе Postgres: «принимает ли сервер подключения»</td></tr>
+      <tr><td><code>interval</code> / <code>timeout</code> / <code>retries</code></td><td>проверять каждые 5 с, ждать ответа 3 с, 10 неудач подряд = unhealthy</td><td>статус виден в <code>docker compose ps</code>: <code>(healthy)</code>, <code>(unhealthy)</code>, <code>(health: starting)</code></td></tr>
+      <tr><td><code>start_period: 60s</code></td><td>первые 60 с неудачи не считаются</td><td>первая загрузка Pagila — это нормально, а не авария</td></tr>
+      <tr><td><code>condition: service_healthy</code></td><td>стартовать <code>api</code>, только когда <code>db</code> healthy</td><td>есть ещё <code>service_started</code> (как короткая форма) и <code>service_completed_successfully</code> (для разовых задач вроде миграций)</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · снова с пустым томом: docker compose down -v, затем</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose up -d
+ Container films-db-1 Started
+ Container films-db-1 Healthy          ← Compose ждал здесь ~5 секунд
+ Container films-api-1 Started
+
+$ docker compose ps
+NAME          SERVICE   STATUS                   PORTS
+films-api-1   api       Up Less than a second    0.0.0.0:3000->3000/tcp
+films-db-1    db        Up 5 seconds (healthy)   5432/tcp</code></pre>
+  </figure>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">HEALTHCHECK, КОТОРЫЙ ВРЁТ: ПОЧЕМУ -h 127.0.0.1</span>
+    <p>В интернете почти везде пишут <code>pg_isready -U postgres</code>. Посмотрите, что он отвечает, пока Pagila ещё загружается (я опрашивал оба варианта каждые полсекунды):</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">pg_isready во время первой загрузки</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">11:02:06.510  socket: no response                      tcp: no response
+11:02:07.652  socket: accepting connections            tcp: no response    ← загрузка схемы
+11:02:08.847  socket: accepting connections            tcp: no response    ← загрузка данных
+11:02:10.831  socket: accepting connections            tcp: no response
+11:02:11.434  socket: accepting connections            tcp: accepting connections
+
+db-1  | 11:02:07.790 running /docker-entrypoint-initdb.d/1-schema.sql
+db-1  | 11:02:08.502 running /docker-entrypoint-initdb.d/2-data.sql
+db-1  | 11:02:11.586 PostgreSQL init process complete; ready for start up.</code></pre>
+  </figure>
+  <p>Во время загрузки скриптов официальный образ запускает <b>временный</b> Postgres, который слушает только unix-сокет внутри контейнера. <code>pg_isready</code> без <code>-h</code> ходит как раз через сокет — и честно говорит «готов», хотя по сети (а API ходит по сети) база ещё недоступна. С <code>-h 127.0.0.1</code> проверка идёт по TCP — как у API — и врать перестаёт.</p>
+</section>
+
+<hr>
+
+<!-- 04 ENV -->
+<section id="env">
+  <div class="sec-head"><h2>04 · .env и переменные</h2><span class="tag practice">live-coding</span><span class="tag time">~8 мин</span></div>
+
+  <p>Пароль <code>123456</code> записан в <code>compose.yaml</code> дважды, а этот файл лежит в git. Вынесем его. Compose сам читает файл <code>.env</code> из папки проекта и подставляет переменные в <code>${…}</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">.env · уже создан из .env.example на подготовке</span></figcaption>
+    <pre><code class="language-bash">DB_PASSWORD=123456</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">compose.yaml · меняем две строки</span></figcaption>
+    <pre><code class="language-yaml">  db:
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?задайте DB_PASSWORD в файле .env}
+  # ...
+  api:
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Запись</th><th>Если переменной нет</th></tr></thead><tbody>
+      <tr><td><code>${DB_PASSWORD}</code></td><td>предупреждение и пустая строка — легко не заметить</td></tr>
+      <tr><td><code>${DB_PASSWORD:-123456}</code></td><td>значение по умолчанию</td></tr>
+      <tr><td><code>${DB_PASSWORD:?текст}</code></td><td><b>ошибка</b> с вашим текстом, ничего не запускается</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · переименовали .env, чтобы проверить</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose up -d
+time="2026-11-19T14:02:21+03:00" level=warning msg="The \"DB_PASSWORD\" variable is not set. Defaulting to a blank string."
+error while interpolating services.db.environment.POSTGRES_PASSWORD: required variable DB_PASSWORD is missing a value: задайте DB_PASSWORD в файле .env</code></pre>
+  </figure>
+  <p>Предупреждение — от строки в <code>api</code>, ошибка — от строки в <code>db</code>. Что Compose реально подставил, показывает <code>docker compose config</code> — итоговый файл после всех подстановок:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · .env вернули</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose config
+  api:
+    environment:
+      DB_HOST: db
+      DB_PASSWORD: "123456"
+  ...
+  db:
+    environment:
+      POSTGRES_DB: pagila
+      POSTGRES_PASSWORD: "123456"</code></pre>
+  </figure>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ДВА РАЗНЫХ .env</span>
+    <p><b>Файл <code>.env</code> рядом с <code>compose.yaml</code></b> — для подстановки <code>${…}</code> в сам compose-файл. В контейнеры он <b>не</b> попадает. <b><code>env_file: .env</code> в сервисе</b> — передать все переменные файла в контейнер. Методичка их смешивает. Мы используем первый: так в <code>compose.yaml</code> видно, какой сервис какие переменные получает. И, конечно, <code>.env</code> — в <code>.gitignore</code>, а в git — <code>.env.example</code>.</p>
+  </div></div>
+
+  <h3>«Поменял пароль — база не пускает»</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · стек работает, меняем DB_PASSWORD в .env</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose up -d          # DB_PASSWORD=new-strong-pass
+ Container films-db-1 Recreated
+ Container films-api-1 Recreated
+ Container films-db-1 Healthy
+ Container films-api-1 Started
+
+$ curl "localhost:3000/films?limit=1"
+{"error":"password authentication failed for user \"postgres\""}
+
+$ docker compose logs db | grep FATAL
+db-1  | ... FATAL:  password authentication failed for user "postgres"</code></pre>
+  </figure>
+  <p>Compose увидел новую переменную и пересоздал оба контейнера. API пришёл с новым паролем. Но <code>POSTGRES_PASSWORD</code> используется <b>только при первой инициализации</b> — а том уже не пустой, там старый пароль. Варианты: вернуть старый пароль; сменить его в самой базе (<code>ALTER USER postgres PASSWORD '…'</code>); или, если данные не жалко, <code>docker compose down -v</code>.</p>
+</section>
+
+<div class="breakbox" id="break"><b>☕ Перерыв 10 минут</b><span>После перерыва — фронтенд: настоящая ошибка CORS в браузере, почему браузер не знает имени <code>api</code>, прокси в nginx. Потом режим разработки с горячей перезагрузкой и масштабирование.</span></div>
+
+<div class="part-divider"><span class="bar"></span><span class="lbl">Часть 2 · Фронтенд, разработка, эксплуатация</span><span class="bar"></span></div>
+
+<!-- 05 WEB -->
+<section id="web">
+  <div class="sec-head"><h2>05 · Фронтенд и CORS: браузер не живёт в Docker</h2><span class="tag practice">live-coding</span><span class="tag time">~17 мин</span></div>
+
+  <p>Добавим <code>films-web</code> из прошлого урока — многоэтапный Dockerfile: Node собирает, nginx раздаёт. Сначала «в лоб», как есть:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">compose.yaml · + сервис web (первая попытка)</span></figcaption>
+    <pre><code class="language-yaml">  web:
+    build: ./films-web     # VITE_API_URL по умолчанию http://localhost:3000 (ARG в Dockerfile)
+    ports:
+      - "8080:80"
+    depends_on:
+      - api</code></pre>
+  </figure>
+  <figure class="shot">
+    <div class="img"><img src="data:image/webp;base64,UklGRr40AABXRUJQVlA4ILI0AABwFQGdASrcBUABPlEokUajoqQhITLpOIAKCWdu8p8eLer6Qn9B+SvjFyX8D/Q/lP43Gt3x/41/sPL0Wz5bfKP+i/uf7s/4v5r/8//ae177vvcA/Uf/W/2X9zu39/bfQH/Nv6//2v8Z7sf+8/4f+d9yn9U/yn/Z/tPwAfyb+wetz/ufZM9Ab+bf4f/xeuh+0Pwj/1b/cft98DP8y/xn/l9gD0AOoP6Of1D8mPAT+x/lT/cfIx9C/bPya5O3Uf/C9Ev439XPwf9c/cX4y/uP+G/rf7Oflh7X/JT/E9QL8c/k39q/sX7Z/mVx+O4f7v0AvbD6P/r/7V/mv+v/l/TB/qv7R6m/nf+B/1vuAfzD+rf8D+6e1P+l8GH79/y/1u+AP+X/2n/v/6P8u/pd/jv+n/of9Z+2ntW/OP8T/4f85/pPkJ/mP9X/6P97/0fvf+wD9vf/V7kv7Df/EQM2rnWiU959o+bVzrRKe8+0fNq51olPefaPm1c60SnvPtHzaudaJT3n2j5tXOtEp7z7R82rnWiU959o+bVzrRKe8+0fNq51olPefaPm1c60SnvPtHzaudaJT3n2GqBBiKgorVc60SnvPtHzaudaJT3n2j5tXOtEp7z7R82rnWiU959o+bVzrRKe7AeHnAwu30nxYwOHapYjVvbrraHArIjGRLI82n5+cyVIhxwuY1zifaPm1cfaBK3O/dlIyRCwkhocmAJY3O8jebomfk959o+bVzrRKe8+0fNq51olPefaPm1c60SnvPtDp1p31AMKlu64EoN+E+i7usKeo/thDET3vuuXs7OEKYCCccc3kmEmwyPW2jFCGhwlOVVLBA56J6P+44ydzzjURtHYnk7Xjl4gJ9vnv+vSje7yRs6uewTJlenDtsNaX4YbtHxHWF2KFLV63+bqZqXRXtk0ap2nI16Tq/zLpAB+2q4zcN5iPaK1Rv91JqAhxRjE0jAsa/S7dK2GA4p0Y/1IgnXzNlfXD6bg6DdDpaWiU959o+bVzrRKe8+0fNq51olPefaPm1c6zjYFWDbxjbaiKmSMODIreWYOVGmjSsnmQrJMnw4Fxu+WVbYkajZYljmjj6rW3IzQPpVlCwsm22APealdOPD3E4Kebc1y/rsOtI+9lnt/HV+lFyCT5edo6c2BqEIGaI4LJluxCnp2CAJQLIl/Xl/B1HMWhsQVr3CitVzrRKe8+0fNq51olPefaPm1c60SnvPtHzTDwVAOudYXPdyCXhLWWr9UzrjBJ+iWPW5RW85S88qyTaCleOmTwdzpuHWGctLeHcoR7wpvSx1TBOYXVM/2HNh+jFnwli3RDclXdBvFo6yZJQKCQROVMeDPQDcAt2KJTJnOmzVHnggSzTutJ0k8AUmALLoKrVKF9o+bVzrRKe8+0fNq51olPefaPm1c60SnvPtDp3nO6Sz/Xv9EJpDgte/84xc2yQuLesALwjVeDKMdXHS/nGSi4RgIET+MJOBX6ckVljRp9aJT3n2j5tXOtEp7z7R82rnWiU959o+bVzrRKe7A85V3gYokk+T+sZGwnFpp0f4yjoTrroVR4bPwNbBvV2hCHDuO/AVAbVUB1CJGOxThZGDnX9LxYB9Tf03J0BT3ASMoXg158SqBCQEJdPD7nAtdMTmoN1tvVAk3w2cJ5w6VCZIa7RQd59o+bVzrRKe8+0fNq51olPefaPm1c60SnvPtE3hRjQu/G/p7KB3VevlvfOWJTEpvtVQm1HYyGbIHg/8DFIB4gQi6yiD5s2cTo55nXEKczF6lEULBVdLTCyxng9QIgUlVFXfjZ35Ft+UHJl04gqHkNr8FgWCnGfoW6PIZYxsvNRWOCNfeuREwCEItcrOExzee9m4nM74sajeeNhlWeDEy6xGNW7nALlLA+w7mO3vm3eUK4F3qtxrwp/g83P2yqGPNsFE+Gj5tXOtEp7z7R82rnWiU959o+bVzrRKe8+0fOWBYrDhBeqaxZxPBkYMBdP3cf3dLfYaX84xeXCNL+zox1MNL+cTR0BD0oRkov49XuNLHwFTphHQ8eJ3OnvPtHzaudaJT3n2j5tXOtEp7z7R82rnWiU959o+aXc6G60DTZtEv7PVOdx+BN9co82irwZqnO4Tpa4huYKK1XOtEp7z7R82rnWiU959o+bVzrRKe8+0fNq5xYUPzaKvBmqc7j8Cb65R5tFXgtWs0R82rnWiU959o+bVzrRKe8+0fNq51olPefaPm1c60SnvPsLjuastDaDheAg63w6WGmzaKvBmqc7j8Cb65R5s9i18nrEmbqwMFFarnWiU959o+bVzrRKe8+0fNq51olPefaPm1c60SWublgPCh4jsBzTj8OAu3wA/KJ9ejpa+ZpdMb4i2mjRRyv1QnOaB0SU+OBgRMseG9R4C3ebINXjPtCJO6RoN9ZMaMITADEQTjV4obemWcg+vt0VE5pcQzaJJTYyqV1YGCitVzrRKe8+0fNq51olPefaPm1c60SnvPtHzaudaHjPnGWSwabKi580CBYIWsVm493nyUtLA2PPnEoo6w80krICzUrmK6aMdKDAiDCWBrO6NvZ0S/tRFB3THGmwJVCd9Lm3Ti/oAotDvLHKugOkwQy5vBuKkAsp81rE/7ROhJ/g+FBRPho+bVzrRKe8+0fNq51olPefaPm1c60SnvPtHzaucRWwxDUESDBypXgi2mAZQBuyNOIZ/Z0Y6mGl+8f0kImRmSVmbKjsKofHEw7giQnw0fNq51olPefaPm1c60SnvPtHzaudaJT3n2j5tXOtEp8b8QYjC4Khg8tzuhqR1rwMQbEda7/H64RX3/XCK+/64RX3/XCK+/64RX3/XCK+/64RX3/WyJTZoKJ8NHzaudaJT3n2m6+Gj5tXOtEp7z7R82rnWiU959o+bVzrRKe8+0fNq51olPefaPm1c60SnvPtHzaudaJT3n2j5tXOtEp7z7R82rnWiU959o+bVzrRKe8+0MAAD+/+TfAAAAAAAAAAAAAMIBVHV6CcD/p0gnIATyxvw/s5eeSNxi+5weiSCEcV9v7IAAAAAVOYV9staZYhuGUHykB6EnyMY5E6K7aTaIGXmh531Ve+hwJMR+/BqBScvIl4kzqL+sYltSeqnVKSE8ZqDfafKqwjywsZETx9ptjMS803T9NfpdrvEa1E0YK3jYpiLcPeLnQAmIIV3qyINLhQHbt0Jm51kgTJTMBC2Q1KuGaquXK6D+SCGHaCNt2CcNw6VJ5q8RI8j797yD/c5bk6R5iKzzLsyXB78fu2y0VtU+M5c8SMBzVUyfR/rk/jZW/omVqp8u2d7W9Xc0X8jgkEdc8p8vEijakQr1mGG9IH5ivgPHoajMZBKqS2vTp7AzaGbrmSoXmKl0ZccbT7mwzYunlfFfJMG8IVeXzqgKR9nP8tBV2EVa9TSJjgsHA/Cvd+TRsZAK8Tu7nwViiAnlyUMcEPVly54D/He8S6MV/aJl2A1AD+yCujdmEwVvz37JRaNRrxeKrabVJkMAHDu2uOsM5jZAPlxKc01huLFyny4MpjMi1RgOFfVljnYYiqjRnZ/yKA1S8Ha9n4lxlV9QnUDnK6WdwHyMPw75xSKQ0aAhjI61ZoIeXMIfnPgZDP3rPa0dL8p+zmt9Z1D8l7Vvb7nnhfMBx2wjj9CukrVdODMiBoxRhVqnG8IUGXzng8UdrG+5ZPt1WME8Za7sTLNRM8mwEdHk5f4CS7tKROCcRMIlKoNdJlgEbUe6/XDPkiWAAADR/3dWxWDSgkB00nug4md0bjD8eMAtW/pYzFbt6fteviiipBmNPnLJn7NAQJmbLqnrR3yWMFWPHXbQTkCy4MCkKwJqLP2eG9MsnmHbq5bnyQwb3uoz/7tG/sPWo5CWOO2+DoTDu1kqdrBvCf8+YV2094olEqqo8KR1TUy1yj7/L4xHWkNyrqkDQCn5wWsZ9Yyla+iaHsYUS8v0ef+9pGYu6ypUur7N8+h4nNTHYV57WeF2dbZYtNIEDgbQfq8th3A0Jxc99i/P5qBxQdYBpmJxkghfJJG5+GbPFZ4PVWn2H8nTv/yeUhZU0XhE3qIwcG5/ZxfN+3Sn0yzh8cXHXDMFFi687pe4AkRum91o2ojJ/33YQkrT3w2fCGsFE02GyRXgUMmlZHzaxjGJd0DW7Ob+w42dNde69emmcgOKj8Pb/WwlXG4U/tUSqFFedOJ/+J145zzWVRtJCs0eBX+jJAhm6aw6jpYhXV9QEJ+HjKCu9YaEgsBLT8bkIOoLnRT4kkJLuKjULRGeNCqqWny9HpbK490GSyAO6DsjM9zMMpfdzCUNrpC46qcpO+4a2RqpFkEgb0FOFKmD8oHT9ef3APAofzZ0HWo/K9MmnBn8nip+2jWELQtiCJrEJ2pDt1qRMnmzXoE4cijhp4xJDK/kQiFMdD40TtskCcS1Bexbtm1KgEHcGE8M8iPxWzAFcKDKHJ4oWdka8ULIIb/YRXCSUxYrzQ3QVFuxZIEFjG4Erbqaa1mYG8mdCRFQiBkROFUXwV/VdObjVknQgrljbzXZj/vVwEhuMj3lWxiGFBHFOl99y05wFHB4ZZGhmICcOmsaaapy8AgrIyRqk27H8ivQ+qQuElXX4UPAa4MTJnpl5eZlL0pjedtQbmKB5KD/yVFuKLdWbxikUFebyrfh9WK35I6BRImtG+AMN8qLbKYAWIH/6aq7STla0ECAf9sYqxdIqaLGrnFOp9XCRXGO7QReB3vouFNUBc60g6tM9K4WUPakdb4445Rr8Odf42U0uZLYFInu8uDlkYGfLNTbztulLFkc6/8pgE+lUbNKXBtrkghol7tZhkdaH7twtWFtjZqzQlkG47i66TtiSBszLeAz92I1HTbd/4Y55Av+yiELApgcaTLJHu4QS3Q/wSf0rqr8mYjwnauu0Jzow0KzYAU686UoHTlfRYPCmtIqP+VXfIqhz37XuvCFq9jdtVzAihTI0fdlJL7Xt4PrBHhaiKLj0YFPLDb6BV1Wl8YyMG7OfGZCx4KB55udk8eM+3MOKEgZ4RFxglJtBPLy/YOPPfQ4WrbHDgrwExWjIWpes1T/kdo/ZLM7WX9evDGFdSoCeGxb4c5HjWR9iZYGyMDPyvHUQxNDhYj9orYezjipjdbbRc3zSBeZt++qzuhQgWG0LeODGVy0KFt+/OhORafYHlndNa3QSi+yTheNHleZrGcKeh5BmtDVNmRMOWtXRXT0LGxTlxMTdxhcw0zIoompHu68SGaDpacLq3mn2Y3tkIvy+AM1qtPrDV01q9uUuOqVAJIEvJhuM9PMhDUkccEZRCDA00Lv+nVXJ/2fXCDzovXenqLCRZazOvyKVUNjgcrBJDWSNzkiOixuZ6F7xqHOFY9EPBE5VGsiE7c3gpKjahNpS3HPHyljKZk2Xo3AGUawoaGhAt8JoOawu+5/7xoER1TgvpBZ7/ZS2C+LAbeYZnJMFC7VhAgfbfK2zp/dk0iIqaiBLWTJ3BptYizzhaaGgrKwfagxggGhnbBbf1baDK9eyzqofVG4/Ewd1z2aLOWKyVPnRrNMRP0Vn9Tpu84BDv1o5clLRHgOldCKk9h0pvtqJxMr0QFJfUVvu5be0UysQMl7JjMOZVmO+KjypPUs/itKdU57h51OQYB9+duMcV86tz2Co6Bpexm50WHgK8OnlGTS3KnqwsFdfSIgVDJnaNbtue67KmyTBXmMuWLppIF1oBYVmSfjvywdnhz3tOt93NnCFwCZ5cf7u+ORyOIjOu4jsSzGRTNnBs5XVcmFHuJdDCVD7j1kmyjKPnkDLbYwz1IYAAAADVDDXc53XzTicKDcTD7Qwaot9Sw4HRFCQDc2i4nUNYBI6AuM1daCrFw1bCyhvxTcOGrd54RrEbM2h9stE1xTaa6GdXI3/LZVU59qmd+0fniTANQ6dUIlmz00WBuycWv99Hh6u+SMdJxS6RlTt027MHMJEM7LhC0YL+ptA5qmooZ/rfL0UhhBT5CrgTKt36bE2j6FcpVG8a5Ruo1r0I4HcCS/IzyqVK0PNCboJuRYvmxHwwRcw6oufWNCH6/O1j+kDDcQuvyLeXz10NdGuIN8wz2B+9FswKyoHNASvvaBZDzCMd8qzexNKh6Vp2inS/sJeuK4VpdTOaIpFmo4Kl+3KxWVl7NnybwXt4f/6KURahZ1Hc/opSrbY+W7n9R3rptU8riGAT1m5WSVstimxX7ncwrWNlt6LkWXteGrSosiFXsWd4RAFrJ7i9xXdmI50Uen+23DvmKLRBX86iLVs1DRNMXdjJ8FLXK7aYCArO9xtWLamkOw0Ev/wuCkW+ZScV+3jDsn7yNAc6vWMHiydcTHnTr8vjcCZMCyu3kf547RJELrZULtvnmxAisuiaQKHllEJ1a/2NbBZZKBiyqCAsrM/ticFcGWVRas2Ou1O+nB3O/alskCHZTKZ/Ead3FQ0OHG715cqRkJerwnDjIsmWmPtIs1jvqItR5wpL4zToZnGheqslDhgRvmfz2qMVH7AloQO59xyQ55JXId1bwWFSBmi7h/t5zspI02XiRWCZ8VutNpAcIae4bEgXip31nSt4aMamFAk6Z+ftgxrF/ssk/j7F/QwhVPKsct2r7an0RfzrEsLMJNlUOoj8Xly0hoqI95ETi3Jcbu1ScyOnINX08EJPLopUjmi32c1QWMepbn3fhPctEZuru1yyIbP02dvJbpVPlz9tlHVKsZPRAuS39UAQ8WPzQEw3dz/XwsQCBA5xcZqvTHzMqJs6kCP7RJI13mDgxpfjPiDtRhKjekvs/m3WZ5QSgqOavDLjn9UjP1a1728Vlk/Hpe0mmbqkcYGhdzj8PeBTVlE8hadna1IYAnSskS7fJUIH94xQ2KQwPilE4XY3XOFUhKTJhpSItb6bkqv+fM+9swNZI3Lz9ZambcT8tAL/F3E3xio1oBo/jntZ99x0rRizxJmlcI/oEYHnBCh/RRWuVCucLDTCdgeOzvsMPsdz8sDlZXmCvZH1iEbFX4wA7g5Gw0z+29WmpMlqUWiqzfruHG0jorivaVxHNgy5MFv6p1An8h1VVTuySJUXWmyWhT3ISwhxLX4gA809hFM9b4uSUC5iKjUj1x4FkGqkF5AxFjqU471S+WnzaZ8yKsQg4/LUcsIuiUg2wxfzKjIXsdCbZ6pg3lJ7dMAAAJYftTCWr0S+Xa4LqxnFWXLSnyRdkyBh1pcNRxHvhW6SL2ktyho0OUz4vsl/5YfeKhHxc2rZkynWqtp7/KRyurUHl89/Cj5MqqqkAq4coBgk2GG14wjZ3sJfux6q7+Qaj/2zm2s9Z2FvMwVj9gV78uQRiWxCqBwcbfBff6exBB/Bkn8R6E7Fwe0lrRBqdJ0kByRXPytEwusQyMONm7teeqjZyeAAH7N36jVPyWLPCTr0XZDvjGwOaPoQMC/8Q3TViRY1k+IVUVvT8CfVunBUSYSF9L+6L4OCtk6ssNCT122zOG80SNAKL8lFnyQDEUJ0xwXbzr7bXA/6tyJ0DQT2OgLroTnJxEZ8zsM3CIMOfe8yTp7u/iHTfxobfhT8CAXexcweEkvtW0W9wtx/WJN2i/Waf09v60xM8LPUzBSK0d5Sy5JC2mMX8AAfl2DyeKewuTdRomjuxcZv2pO50GTCnG5U4LTN6s7UE7pNp+WqhzsE2QTvAskGDrQIguJRPcf8Kgfv17NspVkJnkrht3KMIwY/4zNuy//8t9fmgGi7oaTlgLeKVCNDYCxUHalN/4yF1aZz9dau1Y18Qwikq5bEPWQMfjKupgmA7lQ5l2YfP1QnLNfDt3g1ev5j6RSmtLyga11NnFl5i/kvwR8YVumAEgCaTTGNGvNOQNcwiHTOOG6IeKiTPri/nubHW0APDzJZOzIosV7+Dzh3007IATvoNgSJgHfG3qYRE8pSpWmmgIStPkdTtVt/o+nwPFldnGQuSVbxEaPnX2wEBqrsxzuLYOWMTPTVs4HRb9le5Rrdkt3InzbjUyp8+kv+S6QI1SdY2KLMrrcWEkB4SjoQimmbz96q1ykQ42sfkJghfNVJrS0ctWFVk+gIWLC98dVmX8wVgig5LFnaoJfXerd/OON7FjOYZKqi90YSPCcLAZdlChfKp1hKhBlv3owyhbocbVGPXBMUUOWef213fivpso4C0eH9EAyb0Pck3TIf8Jg3Vv1UBaqWQFK7ZO4Ao6N2Nl/zmMpCziMqxOhSC9doC52WQxX3jmUvxIQ2lpXNSYlsecQxTTnI+2rNrEi3rsDXeq0/GMA/SQmPCSW1RPpegAAAHYrsuc0eVShe76Tww9OPBVev86kPuTHH1u//dRcd8/R+iCnnwgmjYzegK7/FSQvAansSXtV/oBPXecqKLKRN4a3lB9iuFGR3/Povwt8A/ccDh3ULeLrDPuWwnlLUdbD6bvePMwh9z3hFQoAAA46mLz4d3fQUTzFVEExT+5cb+6EDEFSOxtSKAMe9L/uYLcXmdBW7vHjglFT0+jO9ZwaDNhW6JknHgTS9U5Rv5eUqLMNPomhZ2WGa0N7gl+s0Enp1J4w3Q4iUGR5LMCiO/khM6gwAAAAFPn/TNT2MK662FHpeEany8NZOB79QpdPtz5GrsucpWvY0u6IBvTr/BqHx0CUSqZyzA2GjO1hoqE6xP0UtSfIbchl8TmA7NTaDNNMFJw8t/tm8BDqdXrJ7gONc7JeNqZGoLRBUvwkUy+ET4n9QdWSAIVsF26ChFxSLnxP2c5289rKQIAE7Z5A12aZlO2PVegzJZIjQsYrr5R4yZGe4EgRffzenhydWbmIsDsy0Go5GAw3w13wyHCQgwMDH52tFBrJXzpD/TUVbuFRCnbLsMQfmAQHicAZXUkIhX3qjJdYb25VGXL98nsxi4RSNzyrg+nLdeawHzGFvF/UWyqmy8zIZCT8xaQ3PtJvo5n5V81LfvGBL4+wvo1h6kZulj9jlAo30tEMsBXdvVZnu/qM6kwhDASa755TbyflAEvwKKQzTeofoyBmbC/r1U4TSc9TIZBWW942Czx4Jt1x9/8XjidEkxo4BSlAePNpW5EVTxyooUmvbSX2EWOKWG5vPOwtOesq2kU4t/UqRXYuw97rACbPdK4L1UussPvNWLrNQihoYyyfhjCqSC+CeHdkdKoDKa6Q0ZOIzCMfxRzFeCIIJiQkUn5iZ1TY+c7oxmJKm29qBCI1o9+MY0k1qCn33sXtQd2uupTQVuKj6RH1vhqWmYKEI/vXzqzhFXJxi9AibBr5UScZEqwglTYF5K6qN1ghbYhVkM80nFVTEFYNry6H92onO2xswvQEjlEBhSu3gNVGfh0DuNoLCQ3x2Ptu3/248OLOsqpIm5HiZ5af6oBfvQ/5LtVNUBDE+XpxSjhC9uC4kmvWt10mzAj/HX1zT1RqsIy3+5Ak/vFUVl5/70B70h3Mt08q1Yzj4bX+iHafoh90LKsrEkL3bBXrOm7nr1SnACWg0qym71xlwoObxAUCSrrmRS+GLialaWSEo6oJBCb1O2Xe9gCwh9NNWTYlkZvbBDaBqE5F4XhbQ+jZYsgH4/8U5o9gt+trzC8LQD4SKCdUJhqN9cnxhLloVR4RjowAqCGxOahxqody43GP0hrBkPkm6zTFm8VJMS076YnSeqqc9QC2jL61tkBNgenq6Z3DcIsCl5Sy5XWbt9fxEoTsVeeHzvMCd6KBcTC5V2j2i8hPmOwVLh8Oda7LSuJyFVahZbNh/ZcTWK9EGukgdBV3cZzBWrqvGg7gw5sJnmLwPobJ50sFHP5GW2sblElOAT/TeM0Y0qZDGm6lX3bO+njcfIO6pvDY3Gv6mAbBGjXcZe4kcWJQCRaE1MwzaKvnCipV2Oq/JB7ww2RjTnt9BO+/WksdkQCfSuZcQZC3OlOwU9P2xDQsZnJakvkfthbcRTt+p3rNql09jCNj32pttQOoxxeIL/F1YB0lHJi7WX6Ed4i5tfvCiND3ob0xfodrVUDFQZ6FhfTnMgpOKOUPTZ6AAAAgE1xBm/eLvCpklmOnMJJ/flqmArXmmbnAcvWjBD+Eg0qcmotAmx957OChlVCY2X9/PAAUSw/F+PvQRzDoq35w0o7csAGPlbWLpkpDlypwL2vURRQwcOXjRzrzu38z81zIMaW+YJ11oho0Vqxk3LYGbKkeCXeJQeFezRd+GHNhHnB/yP1MVksVucusU137ckczCIvHfAmu0oNl+Ie5xxjUoqeUD/fHgjXHHFw1fVG+EETRYb40IWMh9Ln2IuNmLUkG1e8vwmy4ru27is1qj4DaY1BEtcqzcXARabU1lspPz8nwmi0qYPIuJu1il7HIPQT4orVKbKXSBS+CagEnbiTIX5tm1+3P5DU3q1MtfxroLXElY9bm6iYtPfYrC9rk5CN+n098MNTbHobv7eJUeGWB+W/i7MNiMjwjRF1T2hz4v1o3/LlI0y8Gmdk2mVaA0mXg1NfO1YKyJKis35xYIbt5xSfqhkkmBRxks80BhpDeJP115aX1KUKc15kJo6aSgoixIWtB/14dhOahYnVP/bUlcdijyV4+GsQVIvi1bzN1msgr+oFO7z2w+oQjP0cyZTFXsI/3rRN+WS2PnPLHs0sNrjzzuP5Qbsbt9YQZVqJSyffUXG1Sv4p5l3qzABEgH5VzQHztGXN5+8jppjL49hq2dgTP6125vd7B+xGO7KXg/a+Qq7peJcjCo05nL2sQIH/JiUsHJT8igBhXrVcWoE232WpVbtB37ZrX6nYFWk9GwBmqMH5pjbXEfkEUTQaVfwGsEEJHcXifUi0Q2y3/HscRtOO99NC6lJowqpzrukww3psEDCqK1+IICKFuUF55w+5gN8iHkLZuajhGVPnGDY26gwnkRfTtiQ9/2g9DH285+HQ3uPDsfVPLD6RpQa9D9sM/wH0g8Gm1ic7Srvw/3i1Jus6UxaRb6W0dfg7Rz+Aqm2hWbbg2YhtuuLhLDpT7KAiexsTOtFqqJMp9RHg1rqfZt6T2MSQ+AcQjQ66OAFJTyum/BeFDrxqLr1Jvyp7PeOGjJzftY7OW8+ld/vwS9gP4/kFyyWxqRmqNOvUZo8t+ClTu4XWNfjgpxQZkeisIPenDiIIHfHlUudxxuDvgFb8OJtXCQDaGeCpdpNkV7iV8nacqhsFB4FoNTFfD4OUpTuCsRKztQlNxBG28rc0hwx1QgLZB9EWXbyBtfmfROxzoS47OEayrssk5D6lAbv6vaOacF6OqeuRbG0oFnwZmLMp/f7PZJTghpuEVyNQjHb0VlJ67g2OBhLJyJJ2+sBt/ue/3767PW5BS6USXl0XwSnWBSL7lGOTlL1EbA3PEShXFzK9IzMtmqTmjqiUNBN/0DZOMCbU0dDPlbB9F/5tXpF779E9A/ktPIf6ensRtWeLYUGmL5457NHyGDwJW/vDJP9W2NfsO9ggjVTQR6ZUT70/csQYdKkFihj5flHA8aOh/zZP/7mQJ3dFaNiHSCZ2QNEi/NStWAPTStiq1ge6cmLPfJvohAfXzUK1AARuKVGp8JL+Kdj3WuPls5D9nzd4uBh2/vA5kYNPJZC/KWqKs0EIkGeBIcLKblfq3eecCAGta+O/L9/g7mWTK5TgaZ1GoXBPiZB/XgsOwQf9ZTKNJqqxCnn/EvVSatVHT0kqkgR4ziMUZTeG7kZOxSh+bUhLzTBL/k5lnMyU81kJ3sGBTzaptQvcklUiMzrNUCWpIIyFNPg+thUVCK7h6hJpG+AfWl7WPTtub+VR4g4i1SCNO7bp6rghNgc0uvZNufnjhEFAaNVRuQNQ/aYUQ0NBCvXb7WHDFnhYbjP+HznOhl+HaAHyOGoGoobKkgDed+JNOMJn2Fk96PQ0P79LbwGWKFYvboupexpCo3/3nw+mBMt9k+4sv4DiQi/GdIMcSGpZeLrMivzEkMCiAyW2330FlmTajMAB7PFib+niE8f65H/Ssvl389sfPlcTK5wtz9EEs7p/UaFw9O/R24GNTR4cV15lOW3sQ5NpeHWcyfYYu2+aD3zRVIVIwKSvsuHMcJcOCodWT8MZiJBccXbP0gX7sTxdW8ete+KK+Ybbvw/MTrmHOe5nmWhQMJYc5NQDSQjCg4tbogBkD4vKvNgRdzUzrMdjpSOUevnipmDfU5gHOa9nGe6c6vK2ef3ZDfhXB7SHJwKCTn+Q8v5teAWYl17RXJ7N46twjlShwheGRHbGHkHq/WJlftg7X7YbbFpdi2ehJ09dGow01hO3/KQ5LCiBTS+CignjMCo+uko4JXptP0RN64h72OjNA58KRukZHMv60QH8j60jIWauIXhfQQkWOqQekuMD8nE2W5vDO2UIFIxnMTs0DR8IF6vwV/Xx1TiSxEEFxJzImaUD4NqbbZbfCWlV7QZeCFb/l0NWzNV6YUMoKBufiDfh3XssjTp+w5VFGqCmlQqEnY2uuiz0gBqeRKRY0kx/zZmUPDabl9YWPIXZgn/c1Z8LG+tiW8axfqc3U+i60+9D2n0JJGxQp2Uc/iWlxyX3CIbN4AZDPwmQUp2vumPW6DRjTSrPQLtymBHIG1k+Vp8LtG3Aurazjq+SrJpCBbBu4nWDe2M/gMt6axOEXnYyQrv6bxiQxcRu/Rq7iHTNjqOEm5s/+5aunCmVFiAAAAAA2QrEcvjsD4tcxBN0BLQ57nFuiEVoFyvMSKxzAy7sXz9HBgN0Bi5R43/XSr1IaL4kTTXLuZdtYRTYadMg2Us2s5P5urZRMuA604L52VrtMCc2kcuDt4grFykoutZhoiCbVgGeqKgks21rfqKMOlpOu/Oh1+WqrSVtqGMarCxaELj/R3Z77EiFCq2HK5MiNqGXfI1NqnR//4FrwKsQK2Dz+06r8AzxoMDGw27twVuGrPi9LylFIcBXZobZkAa/ZR5ERnLjX0BnvkuKtEDYcJgMFCxdpIkv2gVwJTTLB5iZ7MREHcGGy6BSTQPaUjJkosAHCv1N7iCTwM3IWCH3JFCqJcXJefTPr0ZmXwJ03FjV10VqIx1r9tTX14sWv+2OXpzGfGn/oG+dJzDnRdp5MrNc8NmcWo3itD95JPnoOFR3SjddraeI32pGc8vda0QLjGil22Kj8eeOmA7Kk0Vt+5EkcOYAAABHCu0+2e58AMW3QHkCO7SxxoihXjh5PfHSIW8D70QgRWXDjIX1m44AAAAWxawLZ7nLtGX7kyHkAJVoRVgWFmpl21Omjj8qiByAAAAAAA8uH30fTTNWaQLXtxK2Bug8oyY11eLb9RSxdWyRBqj0pBNI2c0u3ghFKaGwRz92Yw/FDQAAAAThfIKru/jMnr62Djql9B4k9t+r/X6M+/3ZYhR+IPn/y3I7cnf41mK+b45E40P7El7ha4+gLMn/339O2/ZJ8uUz8uhxm2ip7aJ4Ya/SpNEvOmqZpoVyV0Jqr4OdlDdakvr71/Iu0fvMLfoeUed7DZrofHd4CBnsDr3z9nr9gVDeeb422SdXRSGvxPei75i/U+3FQI8snQGSMI6I+ABXqgja2blMBW516zWN+Y9Jkb5MfQ0ZXctGyAeNNZqj5+Gc15CaRbsN07IDxVBCxU/toos9hYWQLiHdxn8xse9Mz0veoR0d4utRg/SOs9c6w46z1zrDjrPXOsOOs9c6w46z1zrDjrPXOsOATfwDRoJK14u3jNHbFaDx/iorFBnnbLsorvh4uqu2nI+5F99vbBTDRw2edOIvA+hJMsH8YH8qT8fytFDNDQ+zaa0v1/5Rqto0aAwQAAAAFSlPMz9G6UnyKi7WVgElSNjyP9TnTWjk/2JX1kfNix+pzGSWC8rvn8w1Wos+nTGAfOfegbEuvktHHQcYJPTQyxZeSHHNfLp/0PB1jz8o73mkv2pteGxgz1ObeUoB/u/4zLQm4GqNuH+lUZkKWr4Wz2Ib8YVFsw/vjsAshSALRxVBX3djm351BHstVIFtxfDMOo5kmceRuOYM+xrn8Zcmq7Bk64IISRfA8MNC3Lh5qOGaixl8jvCF4FGqNzl8vDHix2+2D3mLMagtEgLr98GHeVu37Sn+/5SbASiBr+ON9v8JntMj4dC3lDOjl2W0DObsHO1NswfA6VcTS6XQQi7OC2KhANi4yBhFow9LiZn5NrGCKjrzlnG75oEFEUFUyDrf0blglkFYw8wLxxQoI5Py9Qa5QIuazcq/dB+4hve9GbB0C61uEu4awjo2VynwsPprDNI8lfiTNxYaF0I52pHtTXXNqDAdV9W5SxjHQu0NYl08qenKKLkrT5WWO9BwrW5SEtQy8R9ttP3eB1//Ar0WeJGklbynwIMR1A4h0iMB3tuOZZDfSq+R0Ff7DPKQEbIiMluvGTb7CjXrp9cESeuJyfH0YMxwQLv/kIJlaFvuUauUnDa/bziBK4+2hkIMbwI370NfAUBahFB2BA+NAMqKxx2pa5zr9zu5wMbe3qtolF7fJM6cx1Hc72ueuOUSvhIGvHOa2Cv8bGeUkl2dU1w17ZNFTA8PIqG0Orwg+l+QCmjBPPI6sjRro8ytpnvU/yfLYWHN91BXE/SEWF7DTfBqkRF4eVaouv/7GaoGN5N+T8sYACL53LxpDMBhvzWo7Knatuk1GVbuHIMMZeEQfwqYs1kjYu16RKh1NS7X9YeJhoFjHTro2i9pH9QPPsxvm5vkle6fl+nSXbpU2h+nqUV2rO/3rZXnLZ0UD4Iw8r32CVLQcYOf7eLf/DO3zorgbNvG71AvCnqOXYvX6htlJGZb5T5/y9mx/RCmh81HOQ9f7bPBXJ5orBBKsm84fG1UPsfGM/vioHe4Xr24dA9UPYUHIAgd6mQJ6MPm7H635seLn3nZwMoPPzaYVO9MrK24NfHAqAd4RYljqf0hu6G45rFgG7J4Z/ttj9qoleD1VUnN3iQyO5cS2rx1SmT8GkcQEXia4rldlpXVvIhdYypUXXqUB3ohpChz0+HhIUcnFjPs8ScJs278jL6GkyMeuR9C7+sC3pp0ERGabrBfv7CBbi+nIP4mfdMsdXRVvEhen5zb0HkZIQLLgx+UP84/hRUYpDm+N8T5x6fS/WsXgzTVb8+ers3lgxVjT8DoldMNve4qu7AMPBj7o8gRI7tfgFw3VbcSlvkZ2/UmGGPqA+UXk2cdxz3Elvgv5NbUPb6nPy1iKY9wKGKzwVie2KiQQLeiD3FpvTPZ3hOQmmcWFzaBhkweoT+4GPUFcbwYMzNQeUgufKzxXT3dDpnEkKxfy3fBz/T57Z078MvJSGXucpvfBuCgjsWA0XCx+itpMrfPNDNBLMuIgv8TBaMmxC2+4HC3xcBWFW+9r55Noh9VR7HGaSIcYTwBAisQpNhQQDCcEA48wzXzi2/URFybVXwgv8QIT0XDt4JSrFVHW/yBZ/HqUZr4BVJj1wgx1G9Vryk5cm9M5DNUtiEiJgtbPWse4YKbgxjRlQQgANZyp2rW9v6HJdFefuMu9wcqtSzDk4/xr/8hlfzb3UvfQY/y8HPArpGUDkDbdM72WEr+mW8Nffvrt56AIZFC6loOqxkvcpfW5KAAAAA9eZPB8YU7QZ24dBgKOP+ozIO5VKnFK4qObTPY8YGbtOCH8Tm8jIyADmobVNMRUBqTDxkyE9lGqy/FzBNarsjrKpzc/5tJDSBVGpRvXwniZOeCL13I3NDvT1bV0n70/K1m95Ko0nUziQ4yQL4HKYz0aAJwr/iWlyXgRBpGuFR3sjxLHyNh3e17lDrE2NwStUhYEYnmrccAQjOYPmwBb3SCAzpsYfisj+C3eZIV39N4xIg1UJ0mhdtkKigGUF/AcWLLAoIKPhWUC1MnL7hbX6+uGdUzFwWM+Im7kw1DiYNlm9U+OYtzPPl9mBbRdChb9o1Ama9Ylq3Ah+7gBe5z+Glw/KJfo7kQYL+kSTktE5BEC5taQXZYYIEu+es1uZy7B+jBrm4sglR2m2haDNc2YX7JKBLAo7CCgWB1oRMoSXNj2RYrWcBZqhsnQ8PVYFcC9dwodBHkQg+mLcSiY3ynglV0bDz5+SQNxKGd9mINh5y5HPbsxIEeKiNiR8KDiyVMzYjf0YrD8rmfAao/oFJHxOd2M8f5PSqPmAHZnyqEi1loCtfyQXixg6ZZmcOLIIVHk/gpt4Ybipw59VEIBpAErzY2sTOgvmuPJy3fUBJbAk3+Ps/9g16Mj2lNbf9tMxVQgaGOgzS75dhCNrOYCuN2pohMoC5uxrvbf+eluYjDbgubZEelbiUg1qYOEQFqsSesayb3EUBuDePgkT1cxYwryZC7s0/HvhoAYGftUFbrO+huuGSRSOQWztk2VNRJSocDOkdWh2DvwA7Qj+6n0H5f7SJbfJ3uAYSb5EnEqwU8p0pXvqPRduXjU1oKwmoSQvT1TgkPidiPtult7YXhZ3+m2powgumq1XOuJnJXtqk8cSu1IyaSkVDb8UFLE0g34i+cg2fFEIxcANhM99g8Y7be3ugqpJzhcT49DjR5NLzbovHe92zvqjfeDBdOgD5eFOsa23CSA3aQZHe6XOhrznzZZDdYSqlvxY93o4Y3iDb1W6yq4uh3+oPolgNA9qeWmHkuVk++K6MrTrUwxUZZ3BHtpURr9kwYy0H5eq/yEJ8owh8G3DrkRsH23VIa+/MDBClX2UcZ7uL+phLJ9aUlyLNAoscX6LVIyW3/nMwzdegrG//r9nC0+whD/x/lJPVucV/23+DeeSGMl50B6BGHVHEzhYRG4z/T8B80fhIIPrsAZ7LYBg2m9vbk8s7a4cdarQ5vc05fil0/AolYOFE1ymMy2Ea0Zbrxq9PRKQECzDw+MGv7VHuZHNtqrISZYr4la4EJFkNw6eWbUe3O1Nq/rlgLqv7UMwGUEQXJQlzUvC26OhIBb45knr9Cpns6+8B04HCU4/oQlUpI2Eh2ndivmLqxPK/5rSLLq64yo2d4fvk1YS6Lxm5gtYXMTxRX4OmwY5CpvZxKdGdWZokuS8Yy2S61PtzgQLJAQ6f4DBJc19YdS2DVGxWCGPNT9bSFBzd4Sq6FY//+wdNiQRPi/sODddy72b4ot0nxrgt6lAnvdWj6ytiVHI5kRl0E67gjFX8nVt/43Rb0S2SIIFOKTZrYdNxjGRsc7JT0yXaKByNjGxDBXfhRAFubm556WQg/HP2U4BCondzs1XUUsJ4SnRjlWFnZRRe7+xbIOQKYWckaGAYL6L/gY7LPoIp5wQO8Kof6zp0DXuQjTgmwRanAC4T+UUACVZ8bvwxGCOX6g3JMf7GUaSyi6BwpgU1fruXTsDnpzYtd5QlPrHIh5v8CY+/F3shR5S5uK1UDwQCAjJIQu8oQowtcxO9X28jZQ1yrqnd6KjZlfAcl0eBnJMyVhBSOjn05SkNpDSAQfB6X7atAV2DtGiehM8kOsHqFAlYVilwhw9AMJTcAN7i+ksYq8wK99eEWCpOU4XPkc/LnAM83u5496IvNR5HIBjno1R94lGCrj6k60NaihFpv4FW3GB+B75e+HKdOACne9Z8a144QYM15+6N1HCCI43cENbK/wrWdJRJbMHcJgAAAAv2KFYPxRz4d9jNoS+kLtGlG5NcKOQCdw087CPvG5GApOsEUCeh4pzCBKnVzNkVoELBXwG7DHyD6r9hhStXaLok8/uVcO4aVxN+aAYOaDbQuU396TL+TmFDmny1Vs+vg4Vz86hDFE/R5faKoDOaSwQUsQLhw+m3uoIehysKag6r54NpBQv8N8nGc3LSz27m+Q34FGw/15uXvHx0oMtsEW7r2Tan7zxp1jyGToX0j5/EnUFWLcfQqHeWTnS6bTqiaaLItywoXepocCRRoB8mR+5rKLVeHGXfjmALgV0+RgJ1F4/j2qOr6V0w2gPg2YFHAc++QY+PSm5LAQfQYvKi+a+kCChqlQXNb3iVJrRm9pZ796JaQXhk34+M98lJEqL8N6TwAAAAKYYe2865F5ohpLpjgQO4WYOF+QJiP/V7qbTSycWACYriSblPp6X5NG8nKfT0vyaN5OU+npfk0bycp9PS/Jo3k5T6el+TRvJyn09L8mjeTlPp6X5NF0jSe/NIAAAAAAAAAAAAAAAAAAA==" alt="films-web: API недоступен из-за CORS"></div>
+    <figcaption><span class="where">http://localhost:8080 — после docker compose up -d --build</span><span class="num">1</span> Адрес API «запечён» при сборке (урок 3). <span class="num">2</span> Список фильмов не загрузился.</figcaption>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">консоль браузера (F12 → Console)</span><span class="role">настоящий вывод Chromium</span></figcaption>
+    <pre><code class="language-none">Access to fetch at 'http://localhost:3000/films?limit=10' from origin 'http://localhost:8080' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+GET http://localhost:3000/films?limit=10 net::ERR_FAILED</code></pre>
+  </figure>
+  <p>Страница пришла с <code>localhost:8080</code>, а запрос идёт на <code>localhost:3000</code> — другой порт = другой <b>origin</b>. Браузер такой ответ читать не даёт, пока сервер явно не разрешит (заголовок <code>Access-Control-Allow-Origin</code>). Наш API таких заголовков не ставит.</p>
+
+  <h3>«Тогда напишу http://api:3000, как в методичке»</h3>
+  <p>В методичке на схеме фронтенд делает <code>fetch('http://backend:3000')</code>. Попробуем — соберём с <code>VITE_API_URL=http://api:3000</code>:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">👀 только посмотреть · compose.yaml</span></figcaption>
+    <pre><code class="language-yaml">  web:
+    build:
+      context: ./films-web
+      args:
+        VITE_API_URL: http://api:3000</code></pre>
+  </figure>
+  <figure class="shot">
+    <div class="img"><img src="data:image/webp;base64,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" alt="films-web: браузер не знает имени api"></div>
+    <figcaption><span class="where">http://localhost:8080</span><span class="num">1</span> Теперь адрес — имя сервиса. <span class="num">2</span> Снова не работает, но по другой причине.</figcaption>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">консоль браузера и терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">GET http://api:3000/films?limit=10 net::ERR_NAME_NOT_RESOLVED        ← браузер
+
+$ docker compose exec web getent hosts api                            ← а внутри контейнера web
+172.18.0.3      api</code></pre>
+  </figure>
+  <div class="callout why"><div class="ic">◆</div><div>
+    <span class="lbl">ГДЕ ВЫПОЛНЯЕТСЯ КОД ФРОНТЕНДА</span>
+    <p>Контейнер <code>web</code> только <b>отдаёт файлы</b> — <code>index.html</code> и JS. Выполняет этот JS <b>браузер</b> на вашем компьютере, а он не в сети Docker и про имя <code>api</code> ничего не знает. Имена сервисов работают только между контейнерами. Это главная мысль блока: в Docker-сети живут nginx, API и база, а браузер — снаружи, и ему доступно только то, что открыто через <code>ports</code>.</p>
+  </div></div>
+  <div class="diagram">
+<pre> ваш компьютер                        сеть films_default (Docker)
+ ─────────────                        ───────────────────────────
+ браузер ── localhost:8080 ─────────▶ web (nginx) ── http://api:3000 ──▶ api ── db:5432 ──▶ db
+         ✗ http://api:3000            знает имена сервисов
+           (такого имени снаружи нет)</pre>
+  </div>
+
+  <h3>Решение: nginx проксирует /api</h3>
+  <p>Пусть браузер ходит туда же, откуда пришла страница — на <code>/api/…</code>, а nginx внутри Docker-сети передаёт эти запросы в <code>api</code>. Один origin — CORS не нужен. Это домашка №3 с прошлого урока, сделаем её вместе.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">films-web/nginx.conf · + блок location /api/ (остальное как в уроке 3)</span></figcaption>
+    <pre><code class="language-nginx">server {
+    listen 80;
+    root /usr/share/nginx/html;
+
+    # /api/films → http://api:3000/films. Браузер видит один адрес — CORS не нужен
+    location /api/ {
+        proxy_pass http://api:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # SPA: любой неизвестный путь отдаём как index.html — дальше разберётся роутер на фронте
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # файлы с хешем в имени можно кешировать «навсегда»
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>location /api/</code></td><td>все пути, начинающиеся с <code>/api/</code></td><td>остальное nginx отдаёт из папки как раньше</td></tr>
+      <tr><td><code>proxy_pass http://api:3000/;</code></td><td>передать запрос сервису <code>api</code></td><td>nginx — внутри сети, имя <code>api</code> он знает. <b>Слэш в конце</b> отрезает префикс: <code>/api/films</code> → <code>/films</code>. Без слэша API получил бы <code>/api/films</code> и ответил 404</td></tr>
+      <tr><td><code>proxy_set_header …</code></td><td>передать исходный Host и IP клиента</td><td>чтобы API в логах видел настоящий адрес, а не адрес nginx</td></tr>
+    </tbody></table>
+  </div>
+
+  <h3>Итоговый compose.yaml</h3>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">films-stack/compose.yaml · итоговый файл</span></figcaption>
+    <pre><code class="language-yaml"># Стек «Прокат Pagila»: база + API + фронтенд.
+# Запуск:  docker compose up -d --build      Остановка:  docker compose down
+name: films
+
+services:
+  db:
+    image: pgvector/pgvector:pg18            # postgres:18 + расширение vector (оно нужно схеме Pagila)
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?задайте DB_PASSWORD в файле .env}
+      POSTGRES_DB: pagila
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./db/1-schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+      - ./db/2-data.sql:/docker-entrypoint-initdb.d/2-data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d pagila"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 60s                      # первая загрузка Pagila — не считаем это падением
+    restart: unless-stopped
+
+  api:
+    build: ./films-api
+    image: films-api:compose
+    environment:
+      DB_HOST: db                            # имя сервиса = имя хоста в сети compose
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy           # ждать не «контейнер запущен», а «база готова»
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r =&gt; process.exit(r.ok ? 0 : 1)).catch(() =&gt; process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./films-web
+      args:
+        VITE_API_URL: /api                   # браузер ходит на тот же адрес, nginx проксирует в api
+    image: films-web:compose
+    ports:
+      - "8080:80"                            # наружу открыт только фронтенд
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР · ЧТО ДОБАВИЛОСЬ</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td><code>args: VITE_API_URL: /api</code></td><td><code>docker build --build-arg</code></td><td>относительный адрес: браузер ходит на тот же хост и порт, откуда пришла страница</td></tr>
+      <tr><td>у <code>api</code> нет <code>ports</code></td><td>API снаружи недоступен</td><td>в мир смотрит только nginx. Меньше открытых дверей — меньше атак. Для отладки порт откроем в режиме разработки (блок 06)</td></tr>
+      <tr><td><code>image: films-api:compose</code> рядом с <code>build</code></td><td>как назвать собранный образ</td><td>без этого имя было бы <code>films-api</code> по имени проекта и сервиса; с ним — понятный тег</td></tr>
+      <tr><td><code>healthcheck</code> у <code>api</code> через <code>node -e fetch(…)</code></td><td>проверка <code>/health</code></td><td>в образе Node нет <code>curl</code>, а Node есть всегда. <code>web</code> ждёт, пока API здоров</td></tr>
+      <tr><td><code>restart: unless-stopped</code></td><td>перезапускать при падении и после перезагрузки Docker, кроме ручной остановки</td><td>как <code>--restart</code> из урока 2</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · «как в проде» (почему -f — в блоке 06)</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose -f compose.yaml up -d --build
+ Image films-api:compose Built
+ Image films-web:compose Built
+ Container films-db-1 Started
+ Container films-db-1 Healthy
+ Container films-api-1 Started
+ Container films-api-1 Healthy
+ Container films-web-1 Started
+
+$ docker compose -f compose.yaml ps
+NAME          SERVICE   STATUS                    PORTS
+films-api-1   api       Up 5 seconds (healthy)    3000/tcp
+films-db-1    db        Up 11 seconds (healthy)   5432/tcp
+films-web-1   web       Up Less than a second     0.0.0.0:8080->80/tcp
+
+$ curl "localhost:8080/api/films?limit=2"
+[{"film_id":1,"title":"ACADEMY DINOSAUR","rental_rate":"0.99"},{"film_id":2,"title":"ACE GOLDFINGER","rental_rate":"4.99"}]
+
+$ curl localhost:3000/films
+curl: (7) Failed to connect to localhost port 3000 after 0 ms: Couldn't connect to server</code></pre>
+  </figure>
+  <p>Цепочка запуска стала строгой: база здорова → API стартует и здоров → nginx. В колонке <code>PORTS</code> видно, что наружу открыт только <code>8080</code>, у <code>api</code> и <code>db</code> — только внутренние порты.</p>
+  <figure class="shot">
+    <div class="img"><img src="data:image/webp;base64,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" alt="films-web: список фильмов загрузился"></div>
+    <figcaption><span class="where">http://localhost:8080</span><span class="num">1</span> Адрес API — относительный <code>/api</code>. <span class="num">2</span> Фильмы пришли: браузер → nginx → API → Postgres.</figcaption>
+  </figure>
+  <div class="callout tip"><div class="ic">→</div><div>
+    <span class="lbl">А ЕСЛИ ФРОНТЕНД И API НА РАЗНЫХ ДОМЕНАХ?</span>
+    <p>Бывает: <code>app.example.com</code> и <code>api.example.com</code>. Тогда прокси не поможет — API должен отвечать заголовками CORS (в Express — пакет <code>cors</code>, в FastAPI — <code>CORSMiddleware</code>). Но если можно сделать один домен с <code>/api</code>, так проще и быстрее: нет лишнего запроса <code>OPTIONS</code> перед каждым «сложным» запросом.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 06 DEV -->
+<section id="dev">
+  <div class="sec-head"><h2>06 · Режим разработки: compose.override.yaml</h2><span class="tag practice">live-coding</span><span class="tag time">~15 мин</span></div>
+
+  <p>Итоговый файл хорош для запуска, но не для работы: поменяли строчку в <code>server.js</code> — пересобирай образ. Для разработки нужно другое: код с диска, автоперезапуск, открытые порты API и базы. Писать второй файл целиком не нужно — Compose умеет <b>накладывать</b> файлы друг на друга.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · films-stack/compose.override.yaml</span></figcaption>
+    <pre><code class="language-yaml"># Режим разработки. docker compose подхватывает этот файл АВТОМАТИЧЕСКИ.
+# «Как в проде»:  docker compose -f compose.yaml up -d
+services:
+  db:
+    ports:
+      - "5433:5432"                          # DBeaver / psql с хоста (5432 занят вашей Pagila)
+
+  api:
+    command: ["node", "--watch", "server.js"] # перезапуск при сохранении файла
+    volumes:
+      - ./films-api:/app                     # код с хоста — правки видны сразу
+      - /app/node_modules                    # …но node_modules остаются из образа
+    ports:
+      - "3000:3000"                          # чтобы дёргать API curl'ом
+
+  web:
+    build:
+      target: build                          # этап сборки: там Node и node_modules, nginx не нужен
+    image: films-web:dev                     # не затираем прод-образ films-web:compose
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    environment:
+      VITE_API_URL: /api
+      API_PROXY_TARGET: http://api:3000      # Vite внутри контейнера ходит в api по имени сервиса
+    volumes:
+      - ./films-web:/app
+      - /app/node_modules
+    ports: !override
+      - "5173:5173"                          # Vite dev server с горячей перезагрузкой</code></pre>
+  </figure>
+  <div class="syn"><div class="h">РАЗБОР</div>
+    <table><thead><tr><th>Код</th><th>Что значит</th><th>Зачем так</th></tr></thead><tbody>
+      <tr><td>имя <code>compose.override.yaml</code></td><td>Compose читает его <b>сам</b>, вместе с <code>compose.yaml</code></td><td><code>docker compose up</code> = режим разработки. «Как в проде» — явно только основной файл: <code>docker compose -f compose.yaml up</code></td></tr>
+      <tr><td>как сливаются</td><td>словари объединяются, списки <code>ports</code>/<code>volumes</code> <b>дополняются</b></td><td>у <code>db</code> добавился порт, всё остальное — из основного файла</td></tr>
+      <tr><td><code>ports: !override</code></td><td>заменить список, а не дополнить</td><td>иначе у <code>web</code> были бы и <code>8080:80</code> (там nginx уже нет), и <code>5173:5173</code></td></tr>
+      <tr><td><code>./films-api:/app</code> + <code>/app/node_modules</code></td><td>код — с диска, <code>node_modules</code> — из образа</td><td>приём из урока 2: анонимный том «закрывает» папку от bind mount</td></tr>
+      <tr><td><code>node --watch server.js</code></td><td>Node сам перезапускает сервер при изменении файлов</td><td>встроен в Node 22, <code>nodemon</code> не нужен</td></tr>
+      <tr><td><code>build: target: build</code></td><td>собрать только первый этап Dockerfile</td><td>в нём есть Node и <code>node_modules</code> — то, что нужно Vite dev server</td></tr>
+      <tr><td><code>image: films-web:dev</code></td><td>отдельный тег для dev-образа</td><td>без него dev-сборка перезапишет прод-образ <code>films-web:compose</code> — история ниже</td></tr>
+      <tr><td><code>API_PROXY_TARGET: http://api:3000</code></td><td>куда Vite проксирует <code>/api</code></td><td>Vite работает <b>в контейнере</b> — ему имя <code>api</code> известно</td></tr>
+    </tbody></table>
+  </div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">новый файл · films-web/vite.config.ts</span></figcaption>
+    <pre><code class="language-typescript">import { defineConfig } from 'vite'
+
+// В режиме разработки /api проксирует сам Vite — как nginx в проде.
+// Внутри compose API доступен по имени сервиса, снаружи — на localhost.
+export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000',
+        rewrite: (path) =&gt; path.replace(/^\/api/, ''),
+      },
+    },
+  },
+})</code></pre>
+  </figure>
+  <p>В проде <code>/api</code> проксирует nginx, в разработке — Vite. Код фронтенда в обоих режимах одинаковый: <code>fetch('/api/films')</code>.</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал · docker compose up -d --build (без -f — значит, с override)</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose ps
+NAME          SERVICE   STATUS                    PORTS
+films-api-1   api       Up 5 seconds (healthy)    0.0.0.0:3000->3000/tcp
+films-db-1    db        Up 11 seconds (healthy)   0.0.0.0:5433->5432/tcp
+films-web-1   web       Up Less than a second     0.0.0.0:5173->5173/tcp
+
+$ docker compose logs web
+web-1  |   VITE v8.3.8  ready in 139 ms
+web-1  |   ➜  Local:   http://localhost:5173/
+web-1  |   ➜  Network: http://172.18.0.4:5173/  eth0</code></pre>
+  </figure>
+  <h3>Проверяем горячую перезагрузку</h3>
+  <p>Добавим в запрос API колонку <code>length</code> и сохраним файл — ничего не пересобирая:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">films-api/server.js · правим SQL в редакторе</span></figcaption>
+    <pre><code class="language-javascript">'SELECT film_id, title, rental_rate, length FROM film ORDER BY film_id LIMIT $1',</code></pre>
+  </figure>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">docker compose logs api и curl</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">api-1  | Restarting 'server.js'
+api-1  | Получен SIGTERM: закрываю сервер и соединения с БД
+api-1  | Готово, выхожу
+api-1  | films-api слушает порт 3000
+
+$ curl "localhost:3000/films?limit=1"
+[{"film_id":1,"title":"ACADEMY DINOSAUR","rental_rate":"0.99","length":86}]</code></pre>
+  </figure>
+  <p>А во фронтенде поменяли заголовок в <code>src/main.ts</code> — открытая страница обновилась сама (<code>[vite] (client) page reload src/main.ts</code> в логе). У меня заголовок сменился с «🎬 Прокат Pagila» на «🎬 Прокат Pagila — dev» без единой команды.</p>
+  <div class="callout note"><div class="ic">i</div><div>
+    <span class="lbl">НА WINDOWS И MAC ИНОГДА НЕ ЛОВИТ ИЗМЕНЕНИЯ</span>
+    <p>Я проверял на Linux, где изменения файлов в bind mount приходят мгновенно. В Docker Desktop это обычно тоже работает, но если правки не подхватываются (особенно когда проект лежит в файловой системе Windows, а не в WSL), включите опрос: для Vite — <code>server: {'{'} watch: {'{'} usePolling: true {'}'} {'}'}</code> в <code>vite.config.ts</code>. Есть и встроенная альтернатива — <a href="https://docs.docker.com/compose/how-tos/file-watch/" target="_blank" rel="noopener"><code>docker compose watch</code></a>: Compose сам копирует изменённые файлы в контейнер.</p>
+  </div></div>
+
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ИСТОРИЯ ИЗ ПОДГОТОВКИ: ПРОД-ОБРАЗ ПРЕВРАТИЛСЯ В NODE</span>
+    <p>В первой версии override не было строки <code>image: films-web:dev</code>. Я запустил режим разработки, потом «как в проде» — и <code>web</code> ушёл в бесконечный перезапуск без единой строки в логах:</p>
+  </div></div>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">films-web-1   Restarting (0) 2 seconds ago
+
+$ docker image inspect films-web:compose --format 'Cmd={{json .Config.Cmd}} WorkingDir={{.Config.WorkingDir}}'
+Cmd=["node"] WorkingDir=/app</code></pre>
+  </figure>
+  <p>Dev-сборка (этап <code>build</code> — там <code>CMD node</code>) записалась под тем же тегом <code>films-web:compose</code>. «Прод» запустил этот образ без нашей <code>command</code>: <code>node</code> без скрипта сразу выходит с кодом 0, а <code>restart: unless-stopped</code> поднимает его снова. Лечение: разные теги для разных сборок и <code>docker compose -f compose.yaml up -d --build web</code>, чтобы пересобрать прод-образ.</p>
+</section>
+
+<hr>
+
+<!-- 07 OPS -->
+<section id="ops">
+  <div class="sec-head"><h2>07 · Ежедневные команды, отладка, масштабирование</h2><span class="tag practice">live</span><span class="tag time">~15 мин</span></div>
+
+  <table class="cmp">
+    <thead><tr><th>Задача</th><th>Команда</th><th>Заметка</th></tr></thead>
+    <tbody>
+      <tr><td>поднять / обновить</td><td><code>docker compose up -d</code></td><td>пересоздаёт только то, что изменилось. После правок Dockerfile или кода в образе — <code>--build</code></td></tr>
+      <tr><td>что запущено</td><td><code>docker compose ps</code></td><td><code>-a</code> — и остановленные</td></tr>
+      <tr><td>логи</td><td><code>docker compose logs -f api</code></td><td>без имени — все сервисы вперемешку, с префиксом <code>api-1 |</code>. <code>--tail 50</code> — последние строки</td></tr>
+      <tr><td>внутрь</td><td><code>docker compose exec api sh</code></td><td>или сразу команда: <code>exec db psql -U postgres -d pagila</code></td></tr>
+      <tr><td>разовая команда</td><td><code>docker compose run --rm api node -v</code></td><td>новый контейнер сервиса, удаляется после выхода</td></tr>
+      <tr><td>перезапуск одного</td><td><code>docker compose restart api</code></td><td>не перечитывает <code>compose.yaml</code>! Поменяли файл — <code>up -d</code></td></tr>
+      <tr><td>что в итоге применилось</td><td><code>docker compose config</code></td><td>все файлы слиты, переменные подставлены</td></tr>
+      <tr><td>убрать</td><td><code>docker compose down</code> / <code>down -v</code></td><td><code>-v</code> удаляет данные (блок 02)</td></tr>
+    </tbody>
+  </table>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose exec db psql -U postgres -d pagila -c "SELECT title FROM film ORDER BY film_id DESC LIMIT 3"
+       title
+-------------------
+ ZORRO ARK
+ ZOOLANDER FICTION
+ ZHIVAGO CORE
+(3 rows)
+
+$ docker compose restart api
+ Container films-api-1 Started</code></pre>
+  </figure>
+  <div class="callout seen"><div class="ic">★</div><div>
+    <span class="lbl">БАЗА ИЗ DBEAVER</span>
+    <p>В режиме разработки база открыта на <code>localhost:5433</code> (5432 занят вашей Pagila из первого урока). Подключение в DBeaver: хост <code>localhost</code>, порт <code>5433</code>, база <code>pagila</code>, пользователь <code>postgres</code>, пароль из <code>.env</code>. В режиме «как в проде» порта нет — снаружи база недоступна, и это правильно.</p>
+  </div></div>
+
+  <h3>Отладка: чек-лист «не работает»</h3>
+  <ol>
+    <li><code>docker compose ps</code> — все ли <code>Up</code>? <code>Restarting</code>, <code>Exited (1)</code>, <code>(unhealthy)</code> → смотрим логи этого сервиса.</li>
+    <li><code>docker compose logs --tail 50 сервис</code> — первая ошибка обычно говорит всё.</li>
+    <li>Сервис не видит другой → <code>docker compose exec api getent hosts db</code>. Нет ответа — опечатка в имени или сервисы в разных проектах/сетях.</li>
+    <li>Настройки не те → <code>docker compose config</code>: что на самом деле подставилось.</li>
+    <li>Образ старый → <code>docker compose up -d --build</code>.</li>
+  </ol>
+
+  <h3>Масштабирование: три копии API</h3>
+  <p>Попробуем как в методичке, но в режиме разработки, где у <code>api</code> открыт порт 3000:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose up -d --scale api=3
+ Container films-api-2 Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint films-api-2 (5e7759b1…): Bind for 0.0.0.0:3000 failed: port is already allocated
+ Container films-web-1 not started: condition "service_healthy" of service "api" not reached: interrupted by the failure of Container films-api-2</code></pre>
+  </figure>
+  <p>Порт 3000 на компьютере один — вторая копия его не получит. В режиме «как в проде» у <code>api</code> портов нет, и всё получается:</p>
+  <figure class="code">
+    <figcaption><span class="dot"></span><span class="path">терминал</span><span class="role">настоящий вывод</span></figcaption>
+    <pre><code class="language-none">$ docker compose down
+$ docker compose -f compose.yaml up -d --scale api=3
+$ docker compose -f compose.yaml ps
+NAME          STATUS                    PORTS
+films-api-1   Up 6 seconds (healthy)    3000/tcp
+films-api-2   Up 5 seconds (healthy)    3000/tcp
+films-api-3   Up 5 seconds (healthy)    3000/tcp
+films-db-1    Up 11 seconds (healthy)   5432/tcp
+films-web-1   Up Less than a second     0.0.0.0:8080->80/tcp
+
+$ docker compose -f compose.yaml exec web getent ahostsv4 api | awk '{print $1}' | sort -u   ← одно имя — три адреса
+172.18.0.3
+172.18.0.5
+172.18.0.6
+
+# 6 запросов на localhost:8080/api/films — сколько получила каждая копия:
+api-1: 2
+api-2: 2
+api-3: 2</code></pre>
+  </figure>
+  <p>DNS Docker отдаёт на имя <code>api</code> все три адреса, а nginx, получив несколько адресов, сам раскидывает запросы по очереди (round-robin). Это и есть «балансировщик перед сервисами» из методички — он у нас уже был.</p>
+  <div class="callout warn"><div class="ic">!</div><div>
+    <span class="lbl">ДВЕ ЛОВУШКИ МАСШТАБИРОВАНИЯ</span>
+    <p><b>1. nginx узнаёт адреса один раз — при старте.</b> Если увеличить число копий, когда nginx уже работает, новые копии не получат запросов, пока не выполнить <code>docker compose restart web</code>. <b>2. Обычный <code>up -d</code> возвращает одну копию.</b> Я пересобрал <code>web</code> командой <code>up -d --build web</code> — и <code>api-2</code>, <code>api-3</code> исчезли: без <code>--scale</code> Compose приводит всё к описанному в файле. Нужно постоянно три — пишите в файле <code>deploy: replicas: 3</code>.</p>
+  </div></div>
+</section>
+
+<hr>
+
+<!-- 08 GAME -->
+<section id="game">
+  <div class="sec-head"><h2>08 · Игра «Что пошло не так?», шпаргалка, домашка</h2><span class="tag practice">интерактив</span><span class="tag time">~13 мин</span></div>
+
+  <details class="quiz"><summary>API в логах: <code>connect ECONNREFUSED 172.18.0.2:5432</code> первые секунды после <code>up</code>, потом всё работает.</summary><div class="ans"><b><code>depends_on</code> без условия.</b> Он ждёт старта контейнера, а не готовности базы. <code>healthcheck</code> + <code>condition: service_healthy</code>.</div></details>
+  <details class="quiz"><summary>Healthcheck есть, <code>db</code> healthy, а API всё равно пару секунд получает отказ.</summary><div class="ans"><b><code>pg_isready</code> без <code>-h</code></b> проверяет unix-сокет, а во время загрузки скриптов сервер слушает только его. <code>pg_isready -h 127.0.0.1</code>.</div></details>
+  <details class="quiz"><summary>Поменяли <code>DB_PASSWORD</code> в <code>.env</code> → <code>password authentication failed</code>.</summary><div class="ans"><b><code>POSTGRES_PASSWORD</code> работает только на пустом томе.</b> Вернуть пароль, <code>ALTER USER</code> или <code>down -v</code>.</div></details>
+  <details class="quiz"><summary>Склонировали проект в другую папку — база пустая, хотя «вчера всё было».</summary><div class="ans"><b>Имя проекта = имя папки → другой том.</b> <code>name:</code> в начале <code>compose.yaml</code>.</div></details>
+  <details class="quiz"><summary>Фронтенд: <code>net::ERR_NAME_NOT_RESOLVED</code> для <code>http://api:3000</code>.</summary><div class="ans"><b>JS выполняется в браузере</b>, а браузер не в сети Docker. Относительный <code>/api</code> + прокси в nginx (или Vite).</div></details>
+  <details class="quiz"><summary>Фронтенд: <code>blocked by CORS policy</code> при запросе на <code>localhost:3000</code>.</summary><div class="ans"><b>Другой порт = другой origin.</b> Прокси <code>/api</code> через тот же origin или CORS-заголовки в API.</div></details>
+  <details class="quiz"><summary><code>/api/films</code> через nginx отдаёт 404 от API.</summary><div class="ans"><b>Нет слэша в конце <code>proxy_pass http://api:3000/</code></b> — API получает <code>/api/films</code> вместо <code>/films</code>.</div></details>
+  <details class="quiz"><summary>После <code>docker compose down -v</code> пропали все пользователи из базы.</summary><div class="ans"><b><code>-v</code> удаляет тома.</b> Обычный <code>down</code> данные не трогает.</div></details>
+  <details class="quiz"><summary><code>--scale api=3</code>: <code>Bind for 0.0.0.0:3000 failed: port is already allocated</code>.</summary><div class="ans"><b>Опубликованный порт у масштабируемого сервиса.</b> Порт открывает только прокси, у <code>api</code> — без <code>ports</code>.</div></details>
+  <details class="quiz"><summary>Поменяли <code>environment</code> в <code>compose.yaml</code>, сделали <code>docker compose restart api</code> — ничего не изменилось.</summary><div class="ans"><b><code>restart</code> не перечитывает файл.</b> <code>docker compose up -d</code> пересоздаст контейнер с новыми настройками.</div></details>
+  <details class="quiz"><summary>Прод-контейнер <code>web</code> бесконечно перезапускается без логов.</summary><div class="ans"><b>Dev-сборка записалась под прод-тегом</b> — в образе <code>CMD node</code>. Разные <code>image:</code> для dev и прод, пересобрать.</div></details>
+
+  <h3>Шпаргалка</h3>
+  <table class="cmp">
+    <thead><tr><th>Задача</th><th>Как</th></tr></thead>
+    <tbody>
+      <tr><td>имя проекта</td><td><code>name: films</code> первой строкой</td></tr>
+      <tr><td>сервис из образа / из Dockerfile</td><td><code>image: postgres:18</code> · <code>build: ./папка</code> (+ <code>args:</code>, <code>target:</code>)</td></tr>
+      <tr><td>адрес другого сервиса</td><td>имя сервиса: <code>DB_HOST: db</code>, <code>proxy_pass http://api:3000/</code></td></tr>
+      <tr><td>наружу</td><td><code>ports: ["8080:80"]</code> — только то, куда ходит браузер</td></tr>
+      <tr><td>данные</td><td><code>volumes: [pgdata:/var/lib/postgresql]</code> + объявить <code>volumes: pgdata:</code> внизу</td></tr>
+      <tr><td>ждать готовности</td><td><code>healthcheck: test: […]</code> + <code>depends_on: db: condition: service_healthy</code></td></tr>
+      <tr><td>Postgres готов</td><td><code>pg_isready -h 127.0.0.1 -U postgres -d pagila</code></td></tr>
+      <tr><td>секреты</td><td><code>.env</code> рядом с файлом → <code>${DB_PASSWORD:?текст}</code>; <code>.env</code> в <code>.gitignore</code></td></tr>
+      <tr><td>режим разработки</td><td><code>compose.override.yaml</code> подключается сам; прод — <code>-f compose.yaml</code></td></tr>
+      <tr><td>заменить список при слиянии</td><td><code>ports: !override</code></td></tr>
+      <tr><td>команды</td><td><code>up -d --build</code> · <code>ps</code> · <code>logs -f сервис</code> · <code>exec сервис sh</code> · <code>config</code> · <code>down</code> / <code>down -v</code></td></tr>
+      <tr><td>копии</td><td><code>up -d --scale api=3</code> или <code>deploy: replicas: 3</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Домашнее задание</h3>
+  <ol>
+    <li><b>Повторить с нуля.</b> Удалите <code>compose.yaml</code> и <code>compose.override.yaml</code> и напишите их сами, подглядывая только в шпаргалку. Проверка: <code>docker compose down -v &amp;&amp; docker compose up -d --build</code> — и страница на <code>localhost:5173</code> показывает фильмы.</li>
+    <li><b>pgAdmin в стек.</b> Добавьте сервис <code>pgadmin</code> (образ <code>dpage/pgadmin4</code>, порт <code>5050:80</code>, переменные <code>PGADMIN_DEFAULT_EMAIL</code> и <code>PGADMIN_DEFAULT_PASSWORD</code> — из <code>.env</code>). Подключитесь к базе. Какой хост вписать в pgAdmin: <code>localhost</code> или <code>db</code>? Почему?</li>
+    <li><b>Только для разработки.</b> Сделайте так, чтобы pgAdmin запускался только в режиме разработки. Два способа: перенести сервис в <code>compose.override.yaml</code> или использовать <code>profiles: [tools]</code> (запуск: <code>docker compose --profile tools up -d</code>). Сравните.</li>
+    <li><b>Эндпоинт поиска.</b> Добавьте в <code>films-api</code> маршрут <code>/films/search?q=…</code> (<code>ILIKE</code>), а в <code>films-web</code> — поле поиска. Всё — в режиме разработки, без единой пересборки образа. Сколько раз вы перезапускали контейнеры?</li>
+    <li><b>Redis-кеш.</b> Добавьте сервис <code>cache</code> (образ <code>redis:7-alpine</code>) и кешируйте ответ <code>/films</code> на 30 секунд. Пакет <code>redis</code> для Node, адрес — <code>redis://cache:6379</code>. Нужен ли Redis том? Нужен ли ему <code>ports</code>?</li>
+    <li><b>Со звёздочкой: миграция как отдельный сервис.</b> Сервис <code>migrate</code>, который один раз выполняет SQL (например, создаёт таблицу <code>wishlist</code> из урока 1) и завершается. <code>api</code> должен ждать его: <code>condition: service_completed_successfully</code>.</li>
+  </ol>
+
+  <h3>Чек-лист</h3>
+  <ul style="list-style:none; padding-left:4px;">
+    <li>☐ Переписываю <code>docker run</code> в сервис <code>compose.yaml</code> и обратно.</li>
+    <li>☐ Объясняю, откуда берутся имена проекта, сети, томов и контейнеров, и фиксирую <code>name:</code>.</li>
+    <li>☐ Обращаюсь к сервисам по именам и проверяю это через <code>getent hosts</code>.</li>
+    <li>☐ Отличаю «контейнер запущен» от «сервис готов»: <code>healthcheck</code> и <code>condition: service_healthy</code>.</li>
+    <li>☐ Выношу секреты в <code>.env</code>, делаю обязательные переменные и проверяю итог через <code>config</code>.</li>
+    <li>☐ Понимаю, почему браузер не видит имён сервисов, и настраиваю прокси <code>/api</code> вместо CORS.</li>
+    <li>☐ Открываю наружу только нужные порты.</li>
+    <li>☐ Делаю режим разработки через <code>compose.override.yaml</code>: bind mount, <code>node --watch</code>, Vite.</li>
+    <li>☐ Знаю разницу <code>stop</code> / <code>down</code> / <code>down -v</code> и <code>restart</code> / <code>up -d</code>.</li>
+    <li>☐ Масштабирую сервис и объясняю, почему у него не должно быть опубликованного порта.</li>
+  </ul>
+
+  <h3>Полезные ссылки</h3>
+  <ul>
+    <li><a href="https://docs.docker.com/compose/" target="_blank" rel="noopener">Docker Docs: Compose</a> — обзор и быстрый старт.</li>
+    <li><a href="https://docs.docker.com/reference/compose-file/services/" target="_blank" rel="noopener">Справочник: services</a> — все поля сервиса, включая <code>healthcheck</code> и <code>depends_on</code>.</li>
+    <li><a href="https://docs.docker.com/compose/how-tos/startup-order/" target="_blank" rel="noopener">Порядок запуска сервисов</a> — почему одного <code>depends_on</code> мало.</li>
+    <li><a href="https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/" target="_blank" rel="noopener">Слияние нескольких compose-файлов</a> — правила, <code>!override</code> и <code>!reset</code>.</li>
+    <li><a href="https://docs.docker.com/compose/how-tos/environment-variables/" target="_blank" rel="noopener">Переменные окружения в Compose</a> — <code>.env</code>, <code>env_file</code>, приоритеты.</li>
+    <li><a href="https://vite.dev/config/server-options#server-proxy" target="_blank" rel="noopener">Vite: server.proxy</a> и <a href="https://developer.mozilla.org/ru/docs/Web/HTTP/CORS" target="_blank" rel="noopener">MDN: CORS</a>.</li>
+  </ul>
+
+  <p class="foot">Методичка · Модуль Backend для фронтенд-разработчиков · Docker, урок 4 · Docker Compose v2, compose.yaml, name, services, image и build (args, target), environment, ports, volumes (именованные тома и bind mount), сеть проекта и DNS по именам сервисов, depends_on и condition service_healthy, healthcheck и pg_isready, .env и ${VAR:?}, docker compose config, CORS и origin, прокси /api в nginx и Vite, compose.override.yaml и !override, node --watch, горячая перезагрузка, up/ps/logs/exec/run/restart/stop/down/down -v, --scale и round-robin, restart: unless-stopped.</p>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js" data-manual></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+  (function(){
+    if (window.Prism && Prism.plugins && Prism.plugins.autoloader){
+      Prism.plugins.autoloader.languages_path =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+    }
+    if (window.Prism) { Prism.highlightAll(); }
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+    document.querySelectorAll('section[id]').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>

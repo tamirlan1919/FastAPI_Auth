@@ -8,7 +8,9 @@ DB_PATH = Path(__file__).resolve().parent.parent.parent / 'db.sqlite3'
 DATABASE_URL: str = f'sqlite+aiosqlite:///{DB_PATH}'
 
 
-engine = create_async_engine(DATABASE_URL, echo=True) #echo=True - видим логи того что присходит
+# SQL-логи включаются в main.py через logging.getLogger('sqlalchemy.engine').
+# echo=True не используем: он добавляет свой handler, и вместе с basicConfig каждая строка печатается дважды
+engine = create_async_engine(DATABASE_URL)
 
 
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)

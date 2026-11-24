@@ -2,14 +2,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
-from app.core.config import settings
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from redis.asyncio import Redis
-import logging
 from app.bot.handlers import router
-import asyncio
 
 
 def create_bot(token: str, api_url: str = 'https://api.telegram.org') -> Bot:
@@ -18,7 +15,8 @@ def create_bot(token: str, api_url: str = 'https://api.telegram.org') -> Bot:
 
 
 def create_dispatcher(redis: Redis) -> Dispatcher:
-    dp = Dispatcher()
+    # kwargs Dispatcher'а попадают в workflow_data — так redis приходит аргументом в хендлеры
+    dp = Dispatcher(redis=redis)
     dp.include_router(router)
     return dp
 

@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     yandex_disk_token: SecretStr | None = None
     yandex_disk_url: str = 'https://cloud-api.yandex.net'
 
+    telegram_api_id: int | None = None
+    telegram_api_hash: SecretStr | None = None
+    telegram_session: SecretStr | None = None
+    
+
 
     #YandexGPT
 
