@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from pathlib import Path
 
@@ -5,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 # Абсолютный путь к app/db.sqlite3 — не зависит от того, откуда запущено приложение/alembic
 DB_PATH = Path(__file__).resolve().parent.parent.parent / 'db.sqlite3'
-DATABASE_URL: str = f'sqlite+aiosqlite:///{DB_PATH}'
+DATABASE_URL: str = os.getenv('DATABASE_URL', f'sqlite+aiosqlite:///{DB_PATH}')
 
 
 # SQL-логи включаются в main.py через logging.getLogger('sqlalchemy.engine').

@@ -41,7 +41,9 @@ class Settings(BaseSettings):
     telegram_api_id: int | None = None
     telegram_api_hash: SecretStr | None = None
     telegram_session: SecretStr | None = None
-    
+
+    cors_origins: list[str] = []
+
 
 
     #YandexGPT

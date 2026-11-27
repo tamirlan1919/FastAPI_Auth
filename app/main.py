@@ -15,11 +15,17 @@ from app.db import models  # noqa: F401 — регистрирует модел�
 from contextlib import asynccontextmanager
 from app.db.redis_db import create_redis
 from app.broker.rabbit import connect_rabbit, declare_events_exchange, EventPublisher
+from fastapi.middleware.cors import CORSMiddleware
 
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)  # SQL-запросы в лог (один раз, без echo=True)
 logger = logging.getLogger(__name__)
+
+
+CORS_ORIGINS = [
+    'http://127.0.0.1:5500'
+]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +36,7 @@ async def lifespan(app: FastAPI):
 
     # try/finally: если старт упадёт на середине, уже открытые соединения всё равно закроются
     try:
+        await init_db()
         await app.state.redis.ping()
 
         app.state.rabbit = await connect_rabbit('auth-api')
@@ -97,6 +104,14 @@ app.include_router(weather.router)
 app.include_router(yandex_auth.router)
 app.include_router(telegram.router)
 app.middleware('http')(request_id_middleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=['GET', 'POST', 'DELETE'],
+    allow_headers=['X-Request-ID', 'X-Cache', 'Authorization', 'Content-Type'],
+)
 
 
 # Prometheus: middleware считает запросы/латентность, GET /metrics отдаёт их в формате Prometheus

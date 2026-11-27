@@ -12,7 +12,3 @@ from app.tasks.utils import run_async
 def send_welcome_email_task(email: str, username: str) -> str:
     run_async(send_welcome_email(email, username))
     return f'sent email to {email}'
-
-
-t.apply_async(args=(f'vip@ex.com', f'user'), priority=1)
-t.apply_async(args=(f'promo@ex.com', f'user'), priority=9)
